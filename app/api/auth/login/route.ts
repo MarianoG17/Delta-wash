@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
     try {
@@ -14,9 +15,9 @@ export async function POST(request: Request) {
 
         // Buscar usuario en la base de datos
         const result = await sql`
-      SELECT id, username, nombre, rol
+      SELECT id, username, nombre, rol, password
       FROM usuarios
-      WHERE username = ${username} AND password = ${password}
+      WHERE username = ${username}
     `;
 
         if (result.rows.length === 0) {
@@ -27,6 +28,26 @@ export async function POST(request: Request) {
         }
 
         const user = result.rows[0];
+
+        // Verificar contraseña
+        // Si la contraseña en DB no está hasheada (texto plano), compararla directamente
+        // Si está hasheada, usar bcrypt
+        let passwordMatch = false;
+
+        if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
+            // Contraseña hasheada con bcrypt
+            passwordMatch = await bcrypt.compare(password, user.password);
+        } else {
+            // Contraseña en texto plano (compatibilidad con usuarios existentes)
+            passwordMatch = password === user.password;
+        }
+
+        if (!passwordMatch) {
+            return NextResponse.json(
+                { success: false, message: 'Usuario o contraseña incorrectos' },
+                { status: 401 }
+            );
+        }
 
         return NextResponse.json({
             success: true,

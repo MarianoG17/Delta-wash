@@ -1,0 +1,33 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo -->
+  <rect width="512" height="512" rx="128" fill="#0ea5e9"/>
+  
+  <!-- Auto simplificado -->
+  <g transform="translate(100, 200)">
+    <!-- Carrocería -->
+    <rect x="20" y="40" width="280" height="80" rx="10" fill="white"/>
+    <path d="M 60 40 L 100 0 L 220 0 L 260 40 Z" fill="white"/>
+    
+    <!-- Ventanas -->
+    <rect x="110" y="10" width="50" height="25" rx="3" fill="#0ea5e9"/>
+    <rect x="170" y="10" width="50" height="25" rx="3" fill="#0ea5e9"/>
+    
+    <!-- Ruedas -->
+    <circle cx="80" cy="120" r="25" fill="#1e293b"/>
+    <circle cx="80" cy="120" r="15" fill="#64748b"/>
+    <circle cx="240" cy="120" r="25" fill="#1e293b"/>
+    <circle cx="240" cy="120" r="15" fill="#64748b"/>
+    
+    <!-- Detalles -->
+    <rect x="40" y="60" width="15" height="8" rx="2" fill="#fbbf24"/>
+    <rect x="265" y="60" width="15" height="8" rx="2" fill="#ef4444"/>
+  </g>
+  
+  <!-- Gotas de agua (lavado) -->
+  <circle cx="140" cy="150" r="8" fill="white" opacity="0.7"/>
+  <circle cx="180" cy="140" r="6" fill="white" opacity="0.7"/>
+  <circle cx="220" cy="155" r="7" fill="white" opacity="0.7"/>
+  <circle cx="370" cy="150" r="8" fill="white" opacity="0.7"/>
+  <circle cx="330" cy="140" r="6" fill="white" opacity="0.7"/>
+  <circle cx="290" cy="155" r="7" fill="white" opacity="0.7"/>
+</svg>
