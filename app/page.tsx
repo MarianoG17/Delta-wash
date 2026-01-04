@@ -23,7 +23,8 @@ export default function Home() {
     const [mounted, setMounted] = useState(false);
 
     // Form states
-    const [marcaModelo, setMarcaModelo] = useState('');
+    const [marca, setMarca] = useState('');
+    const [modelo, setModelo] = useState('');
     const [patente, setPatente] = useState('');
     const [tipoLimpieza, setTipoLimpieza] = useState('simple');
     const [nombreCliente, setNombreCliente] = useState('');
@@ -71,7 +72,7 @@ export default function Home() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    marca_modelo: marcaModelo,
+                    marca_modelo: `${marca} ${modelo}`.trim(),
                     patente: patente.toUpperCase(),
                     tipo_limpieza: tipoLimpieza,
                     nombre_cliente: nombreCliente,
@@ -85,7 +86,8 @@ export default function Home() {
             if (data.success) {
                 setMessage('✅ Auto registrado exitosamente');
                 // Limpiar formulario
-                setMarcaModelo('');
+                setMarca('');
+                setModelo('');
                 setPatente('');
                 setTipoLimpieza('simple');
                 setNombreCliente('');
@@ -187,42 +189,57 @@ export default function Home() {
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Marca y Modelo
-                                </label>
-                                <input
-                                    type="text"
-                                    value={marcaModelo}
-                                    onChange={(e) => setMarcaModelo(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="Ej: Toyota Corolla"
-                                    required
-                                />
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                                        Marca
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={marca}
+                                        onChange={(e) => setMarca(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                        placeholder="Toyota"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 mb-2">
+                                        Modelo
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={modelo}
+                                        onChange={(e) => setModelo(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                        placeholder="Corolla"
+                                        required
+                                    />
+                                </div>
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-900 mb-2">
                                     Patente
                                 </label>
                                 <input
                                     type="text"
                                     value={patente}
                                     onChange={(e) => setPatente(e.target.value.toUpperCase())}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase text-gray-900"
                                     placeholder="ABC123"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-900 mb-2">
                                     Tipo de Limpieza
                                 </label>
                                 <select
                                     value={tipoLimpieza}
                                     onChange={(e) => setTipoLimpieza(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                     required
                                 >
                                     <option value="simple">Simple (solo por fuera)</option>
@@ -234,28 +251,28 @@ export default function Home() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-900 mb-2">
                                     Nombre del Cliente
                                 </label>
                                 <input
                                     type="text"
                                     value={nombreCliente}
                                     onChange={(e) => setNombreCliente(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                     placeholder="Nombre completo"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <label className="block text-sm font-medium text-gray-900 mb-2">
                                     Número de Celular
                                 </label>
                                 <input
                                     type="tel"
                                     value={celular}
                                     onChange={(e) => setCelular(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                     placeholder="1166004684"
                                     required
                                 />
