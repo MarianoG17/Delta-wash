@@ -486,16 +486,18 @@ export default function Home() {
                                                 Tipo: {registro.tipo_limpieza.replace(/_/g, ' ')}
                                             </p>
                                             <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => enviarWhatsApp(registro.id)}
-                                                    className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
-                                                >
-                                                    <Send size={16} />
-                                                    WhatsApp
-                                                </button>
+                                                {userRole === 'admin' && (
+                                                    <button
+                                                        onClick={() => enviarWhatsApp(registro.id)}
+                                                        className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                    >
+                                                        <Send size={16} />
+                                                        WhatsApp
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => marcarComoEntregado(registro.id)}
-                                                    className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                    className={`${userRole === 'admin' ? 'flex-1' : 'w-full'} flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition-colors`}
                                                 >
                                                     ✓ Entregado
                                                 </button>
