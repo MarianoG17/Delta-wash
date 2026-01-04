@@ -102,8 +102,12 @@ export default function Home() {
         }
     };
 
-    const marcarComoListo = async (registro: Registro) => {
-        if (!confirm(`¿Marcar como listo el ${registro.marca_modelo} - ${registro.patente}?`)) {
+    const marcarComoListo = async (registro: Registro, enviarWhatsApp: boolean = false) => {
+        const mensaje = enviarWhatsApp
+            ? `¿Marcar como listo el ${registro.marca_modelo} - ${registro.patente} y enviar WhatsApp?`
+            : `¿Marcar como listo el ${registro.marca_modelo} - ${registro.patente}?`;
+
+        if (!confirm(mensaje)) {
             return;
         }
 
@@ -117,9 +121,13 @@ export default function Home() {
             const data = await res.json();
 
             if (data.success) {
-                // Abrir WhatsApp en nueva ventana
-                window.open(data.whatsappUrl, '_blank');
-                alert('✅ Auto marcado como listo. Se abrió WhatsApp para enviar el mensaje.');
+                if (enviarWhatsApp) {
+                    // Abrir WhatsApp en nueva ventana
+                    window.open(data.whatsappUrl, '_blank');
+                    alert('✅ Auto marcado como listo. Se abrió WhatsApp para enviar el mensaje.');
+                } else {
+                    alert('✅ Auto marcado como listo.');
+                }
                 cargarRegistrosEnProceso();
             } else {
                 alert('❌ ' + data.message);
@@ -311,13 +319,21 @@ export default function Home() {
                                         <p className="text-xs text-gray-500 mb-3">
                                             Ingreso: {new Date(registro.fecha_ingreso).toLocaleString('es-AR')}
                                         </p>
-                                        <button
-                                            onClick={() => marcarComoListo(registro)}
-                                            className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition-colors"
-                                        >
-                                            <Send size={16} />
-                                            Marcar como Listo y Enviar WhatsApp
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => marcarComoListo(registro, false)}
+                                                className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                            >
+                                                ✓ Listo
+                                            </button>
+                                            <button
+                                                onClick={() => marcarComoListo(registro, true)}
+                                                className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                            >
+                                                <Send size={16} />
+                                                WhatsApp
+                                            </button>
+                                        </div>
                                     </div>
                                 ))
                             )}
