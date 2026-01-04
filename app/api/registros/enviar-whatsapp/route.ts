@@ -31,11 +31,26 @@ export async function POST(request: Request) {
         // Formatear el número de teléfono para WhatsApp
         let numeroFormateado = registro.celular.replace(/\D/g, '');
 
-        // Si el número empieza con 11 (Buenos Aires), agregar el prefijo de Argentina
+        // Formato correcto para Argentina:
+        // Si viene como 1164812804 (11 + número sin 15) → 5491164812804
+        // Si viene como 91164812804 (ya tiene el 9) → 5491164812804
+
+        // Remover el 15 si está presente
+        if (numeroFormateado.startsWith('1115')) {
+            numeroFormateado = '11' + numeroFormateado.substring(4);
+        }
+
+        // Si empieza con 11 (Buenos Aires), agregar prefijo 549
         if (numeroFormateado.startsWith('11')) {
-            numeroFormateado = `5491${numeroFormateado.substring(2)}`;
-        } else if (!numeroFormateado.startsWith('549')) {
-            // Si no tiene el prefijo de Argentina, agregarlo
+            numeroFormateado = `549${numeroFormateado}`;
+        }
+        // Si empieza con 9 y luego 11, agregar solo 54
+        else if (numeroFormateado.startsWith('911')) {
+            numeroFormateado = `54${numeroFormateado}`;
+        }
+        // Si ya tiene 549, dejarlo como está
+        else if (!numeroFormateado.startsWith('549')) {
+            // Para otros códigos de área
             numeroFormateado = `549${numeroFormateado}`;
         }
 
