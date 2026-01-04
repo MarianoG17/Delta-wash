@@ -26,14 +26,15 @@ export default function Home() {
     const [marca, setMarca] = useState('');
     const [modelo, setModelo] = useState('');
     const [patente, setPatente] = useState('');
-    const [tipoLimpieza, setTipoLimpieza] = useState('simple');
+    const [tiposLimpieza, setTiposLimpieza] = useState<string[]>([]);
     const [nombreCliente, setNombreCliente] = useState('');
     const [celular, setCelular] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
-    // Registros en proceso
+    // Registros en proceso y listos
     const [registrosEnProceso, setRegistrosEnProceso] = useState<Registro[]>([]);
+    const [registrosListos, setRegistrosListos] = useState<Registro[]>([]);
 
     useEffect(() => {
         setMounted(true);
@@ -52,10 +53,16 @@ export default function Home() {
 
     const cargarRegistrosEnProceso = async () => {
         try {
-            const res = await fetch('/api/registros?estado=en_proceso');
-            const data = await res.json();
-            if (data.success) {
-                setRegistrosEnProceso(data.registros);
+            const resEnProceso = await fetch('/api/registros?estado=en_proceso');
+            const dataEnProceso = await resEnProceso.json();
+            if (dataEnProceso.success) {
+                setRegistrosEnProceso(dataEnProceso.registros);
+            }
+
+            const resListos = await fetch('/api/registros?estado=listo');
+            const dataListos = await resListos.json();
+            if (dataListos.success) {
+                setRegistrosListos(dataListos.registros);
             }
         } catch (error) {
             console.error('Error cargando registros:', error);
@@ -64,6 +71,12 @@ export default function Home() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (tiposLimpieza.length === 0) {
+            setMessage('❌ Debes seleccionar al menos un tipo de limpieza');
+            return;
+        }
+
         setLoading(true);
         setMessage('');
 
@@ -74,7 +87,7 @@ export default function Home() {
                 body: JSON.stringify({
                     marca_modelo: `${marca} ${modelo}`.trim(),
                     patente: patente.toUpperCase(),
-                    tipo_limpieza: tipoLimpieza,
+                    tipo_limpieza: tiposLimpieza.join(', '),
                     nombre_cliente: nombreCliente,
                     celular: celular,
                     usuario_id: userId,
@@ -89,7 +102,7 @@ export default function Home() {
                 setMarca('');
                 setModelo('');
                 setPatente('');
-                setTipoLimpieza('simple');
+                setTiposLimpieza([]);
                 setNombreCliente('');
                 setCelular('');
                 // Recargar registros
@@ -104,38 +117,69 @@ export default function Home() {
         }
     };
 
-    const marcarComoListo = async (registro: Registro, enviarWhatsApp: boolean = false) => {
-        const mensaje = enviarWhatsApp
-            ? `¿Marcar como listo el ${registro.marca_modelo} - ${registro.patente} y enviar WhatsApp?`
-            : `¿Marcar como listo el ${registro.marca_modelo} - ${registro.patente}?`;
-
-        if (!confirm(mensaje)) {
-            return;
-        }
-
+    const marcarComoListo = async (id: number) => {
         try {
             const res = await fetch('/api/registros/marcar-listo', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: registro.id }),
+                body: JSON.stringify({ id }),
             });
 
             const data = await res.json();
 
             if (data.success) {
-                if (enviarWhatsApp) {
-                    // Abrir WhatsApp en nueva ventana
-                    window.open(data.whatsappUrl, '_blank');
-                    alert('✅ Auto marcado como listo. Se abrió WhatsApp para enviar el mensaje.');
-                } else {
-                    alert('✅ Auto marcado como listo.');
-                }
+                alert('✅ Auto marcado como listo');
                 cargarRegistrosEnProceso();
             } else {
-                alert('❌ ' + data.message);
+                alert('❌ Error al marcar como listo');
             }
         } catch (error) {
             alert('❌ Error al marcar como listo');
+        }
+    };
+
+    const enviarWhatsApp = async (id: number) => {
+        try {
+            const res = await fetch('/api/registros/enviar-whatsapp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                window.open(data.whatsappUrl, '_blank');
+            } else {
+                alert('❌ Error al generar link de WhatsApp');
+            }
+        } catch (error) {
+            alert('❌ Error al generar link de WhatsApp');
+        }
+    };
+
+    const marcarComoEntregado = async (id: number) => {
+        if (!confirm('¿Marcar este auto como entregado?')) {
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/registros/marcar-entregado', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                alert('✅ Auto marcado como entregado');
+                cargarRegistrosEnProceso();
+            } else {
+                alert('❌ Error al marcar como entregado');
+            }
+        } catch (error) {
+            alert('❌ Error al marcar como entregado');
         }
     };
 
@@ -233,21 +277,37 @@ export default function Home() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-900 mb-2">
-                                    Tipo de Limpieza
+                                <label className="block text-sm font-medium text-gray-900 mb-3">
+                                    Tipos de Limpieza (puedes seleccionar varios)
                                 </label>
-                                <select
-                                    value={tipoLimpieza}
-                                    onChange={(e) => setTipoLimpieza(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                                    required
-                                >
-                                    <option value="simple">Simple (solo por fuera)</option>
-                                    <option value="con_cera">Con Cera</option>
-                                    <option value="pulido">Pulido</option>
-                                    <option value="limpieza_chasis">Limpieza de Chasis</option>
-                                    <option value="limpieza_motor">Limpieza de Motor</option>
-                                </select>
+                                <div className="space-y-2">
+                                    {[
+                                        { value: 'simple', label: 'Simple (solo por fuera)' },
+                                        { value: 'con_cera', label: 'Con Cera' },
+                                        { value: 'pulido', label: 'Pulido' },
+                                        { value: 'limpieza_chasis', label: 'Limpieza de Chasis' },
+                                        { value: 'limpieza_motor', label: 'Limpieza de Motor' },
+                                    ].map((tipo) => (
+                                        <label key={tipo.value} className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={tiposLimpieza.includes(tipo.value)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setTiposLimpieza([...tiposLimpieza, tipo.value]);
+                                                    } else {
+                                                        setTiposLimpieza(tiposLimpieza.filter(t => t !== tipo.value));
+                                                    }
+                                                }}
+                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                            />
+                                            <span className="text-sm text-gray-900">{tipo.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                {tiposLimpieza.length === 0 && (
+                                    <p className="text-xs text-red-600 mt-2">Selecciona al menos un tipo de limpieza</p>
+                                )}
                             </div>
 
                             <div>
@@ -300,60 +360,111 @@ export default function Home() {
                         </form>
                     </div>
 
-                    {/* Autos en Proceso */}
-                    <div className="bg-white rounded-2xl shadow-xl p-6">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                            Autos en Proceso ({registrosEnProceso.length})
-                        </h2>
+                    {/* Autos en Proceso y Listos */}
+                    <div className="space-y-6">
+                        {/* Autos en Proceso */}
+                        <div className="bg-white rounded-2xl shadow-xl p-6">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                                Autos en Proceso ({registrosEnProceso.length})
+                            </h2>
 
-                        <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                            {registrosEnProceso.length === 0 ? (
-                                <p className="text-gray-500 text-center py-8">
-                                    No hay autos en proceso
-                                </p>
-                            ) : (
-                                registrosEnProceso.map((registro) => (
-                                    <div
-                                        key={registro.id}
-                                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                                    >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <h3 className="font-bold text-gray-900">
-                                                    {registro.marca_modelo}
-                                                </h3>
-                                                <p className="text-sm text-gray-600">
-                                                    Patente: <span className="font-mono font-semibold">{registro.patente}</span>
-                                                </p>
+                            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                                {registrosEnProceso.length === 0 ? (
+                                    <p className="text-gray-500 text-center py-8">
+                                        No hay autos en proceso
+                                    </p>
+                                ) : (
+                                    registrosEnProceso.map((registro) => (
+                                        <div
+                                            key={registro.id}
+                                            className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h3 className="font-bold text-gray-900">
+                                                        {registro.marca_modelo}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-600">
+                                                        Patente: <span className="font-mono font-semibold">{registro.patente}</span>
+                                                    </p>
+                                                </div>
+                                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                                    {registro.tipo_limpieza.replace(/_/g, ' ')}
+                                                </span>
                                             </div>
-                                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                                                {registro.tipo_limpieza.replace(/_/g, ' ')}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm text-gray-600 mb-1">
-                                            Cliente: {registro.nombre_cliente}
-                                        </p>
-                                        <p className="text-xs text-gray-500 mb-3">
-                                            Ingreso: {new Date(registro.fecha_ingreso).toLocaleString('es-AR')}
-                                        </p>
-                                        <div className="flex gap-2">
+                                            <p className="text-sm text-gray-600 mb-1">
+                                                Cliente: {registro.nombre_cliente}
+                                            </p>
+                                            <p className="text-xs text-gray-500 mb-3">
+                                                Ingreso: {new Date(registro.fecha_ingreso).toLocaleString('es-AR')}
+                                            </p>
                                             <button
-                                                onClick={() => marcarComoListo(registro, false)}
-                                                className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                onClick={() => marcarComoListo(registro.id)}
+                                                className="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
                                             >
-                                                ✓ Listo
-                                            </button>
-                                            <button
-                                                onClick={() => marcarComoListo(registro, true)}
-                                                className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition-colors"
-                                            >
-                                                <Send size={16} />
-                                                WhatsApp
+                                                ✓ Marcar como Listo
                                             </button>
                                         </div>
-                                    </div>
-                                ))
-                            )}
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Autos Listos */}
+                        <div className="bg-white rounded-2xl shadow-xl p-6">
+                            <h2 className="text-2xl font-bold text-green-700 mb-6">
+                                Autos Listos ({registrosListos.length})
+                            </h2>
+
+                            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                                {registrosListos.length === 0 ? (
+                                    <p className="text-gray-500 text-center py-8">
+                                        No hay autos listos
+                                    </p>
+                                ) : (
+                                    registrosListos.map((registro) => (
+                                        <div
+                                            key={registro.id}
+                                            className="border border-green-200 bg-green-50 rounded-lg p-4 hover:shadow-md transition-shadow"
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h3 className="font-bold text-gray-900">
+                                                        {registro.marca_modelo}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-600">
+                                                        Patente: <span className="font-mono font-semibold">{registro.patente}</span>
+                                                    </p>
+                                                </div>
+                                                <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded font-semibold">
+                                                    LISTO
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-gray-600 mb-1">
+                                                Cliente: {registro.nombre_cliente}
+                                            </p>
+                                            <p className="text-xs text-gray-500 mb-3">
+                                                Tipo: {registro.tipo_limpieza.replace(/_/g, ' ')}
+                                            </p>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => enviarWhatsApp(registro.id)}
+                                                    className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                >
+                                                    <Send size={16} />
+                                                    WhatsApp
+                                                </button>
+                                                <button
+                                                    onClick={() => marcarComoEntregado(registro.id)}
+                                                    className="flex-1 flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                >
+                                                    ✓ Entregado
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

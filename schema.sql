@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS registros_lavado (
   celular VARCHAR(20) NOT NULL,
   fecha_ingreso TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   fecha_listo TIMESTAMP,
+  fecha_entregado TIMESTAMP,
   estado VARCHAR(20) DEFAULT 'en_proceso',
   mensaje_enviado BOOLEAN DEFAULT FALSE,
   usuario_id INTEGER REFERENCES usuarios(id),

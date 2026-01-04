@@ -12,23 +12,23 @@ export async function POST(request: Request) {
             );
         }
 
-        // Actualizar el estado a listo
+        // Actualizar el estado a entregado
         await sql`
-      UPDATE registros_lavado
-      SET estado = 'listo',
-          fecha_listo = CURRENT_TIMESTAMP
+      UPDATE registros_lavado 
+      SET estado = 'entregado',
+          fecha_entregado = CURRENT_TIMESTAMP
       WHERE id = ${id}
     `;
 
         return NextResponse.json({
             success: true,
-            message: 'Auto marcado como listo'
+            message: 'Auto marcado como entregado'
         });
 
     } catch (error) {
-        console.error('Error al marcar como listo:', error);
+        console.error('Error al marcar como entregado:', error);
         return NextResponse.json(
-            { error: 'Error al marcar como listo' },
+            { error: 'Error al marcar como entregado' },
             { status: 500 }
         );
     }

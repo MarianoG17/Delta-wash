@@ -14,6 +14,7 @@ interface Registro {
     celular: string;
     fecha_ingreso: string;
     fecha_listo: string | null;
+    fecha_entregado: string | null;
     estado: string;
 }
 
@@ -163,11 +164,11 @@ export default function Historial() {
 
                     <div className="bg-white rounded-2xl p-6 shadow-xl">
                         <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-bold text-gray-900">Completados</h3>
+                            <h3 className="font-bold text-gray-900">Entregados</h3>
                             <Calendar className="text-green-600" size={24} />
                         </div>
                         <p className="text-3xl font-bold text-green-600">
-                            {registros.filter((r) => r.estado === 'listo').length}
+                            {registros.filter((r) => r.estado === 'entregado').length}
                         </p>
                     </div>
 
@@ -230,7 +231,10 @@ export default function Historial() {
                                         Ingreso
                                     </th>
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
-                                        Completado
+                                        Listo
+                                    </th>
+                                    <th className="text-left py-3 px-2 font-semibold text-gray-700">
+                                        Entregado
                                     </th>
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
                                         Tiempo
@@ -258,34 +262,43 @@ export default function Historial() {
                             <tbody>
                                 {registros.map((registro) => (
                                     <tr key={registro.id} className="border-b border-gray-100 hover:bg-gray-50">
-                                        <td className="py-3 px-2 text-sm">
+                                        <td className="py-3 px-2 text-sm text-gray-900">
                                             {formatFecha(registro.fecha_ingreso)}
                                         </td>
-                                        <td className="py-3 px-2 text-sm">
+                                        <td className="py-3 px-2 text-sm text-gray-900">
                                             {registro.fecha_listo ? formatFecha(registro.fecha_listo) : '-'}
+                                        </td>
+                                        <td className="py-3 px-2 text-sm text-gray-900">
+                                            {registro.fecha_entregado ? formatFecha(registro.fecha_entregado) : '-'}
                                         </td>
                                         <td className="py-3 px-2 text-sm font-semibold text-blue-600">
                                             {calcularTiempoTotal(registro.fecha_ingreso, registro.fecha_listo)}
                                         </td>
-                                        <td className="py-3 px-2 text-sm font-medium">
+                                        <td className="py-3 px-2 text-sm font-medium text-gray-900">
                                             {registro.marca_modelo}
                                         </td>
-                                        <td className="py-3 px-2 text-sm font-mono">
+                                        <td className="py-3 px-2 text-sm font-mono text-gray-900">
                                             {registro.patente}
                                         </td>
-                                        <td className="py-3 px-2 text-sm">{registro.nombre_cliente}</td>
+                                        <td className="py-3 px-2 text-sm text-gray-900">{registro.nombre_cliente}</td>
                                         <td className="py-3 px-2 text-sm font-mono text-blue-600">{registro.celular}</td>
-                                        <td className="py-3 px-2 text-sm">
+                                        <td className="py-3 px-2 text-sm text-gray-900">
                                             {registro.tipo_limpieza.replace(/_/g, ' ')}
                                         </td>
                                         <td className="py-3 px-2">
                                             <span
-                                                className={`text-xs px-2 py-1 rounded-full font-medium ${registro.estado === 'listo'
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-yellow-100 text-yellow-700'
+                                                className={`text-xs px-2 py-1 rounded-full font-medium ${registro.estado === 'entregado'
+                                                        ? 'bg-purple-100 text-purple-700'
+                                                        : registro.estado === 'listo'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : 'bg-yellow-100 text-yellow-700'
                                                     }`}
                                             >
-                                                {registro.estado === 'listo' ? '✓ Listo' : '⏳ En proceso'}
+                                                {registro.estado === 'entregado'
+                                                    ? '✓ Entregado'
+                                                    : registro.estado === 'listo'
+                                                        ? '✓ Listo'
+                                                        : '⏳ En proceso'}
                                             </span>
                                         </td>
                                     </tr>
