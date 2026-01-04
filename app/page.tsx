@@ -256,11 +256,11 @@ export default function Home() {
                                     value={celular}
                                     onChange={(e) => setCelular(e.target.value)}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    placeholder="5491112345678"
+                                    placeholder="1166004684"
                                     required
                                 />
                                 <p className="text-xs text-gray-500 mt-1">
-                                    Formato: 549 + código de área + número (sin 0 ni 15)
+                                    Solo el número con código de área (ej: 1166004684)
                                 </p>
                             </div>
 

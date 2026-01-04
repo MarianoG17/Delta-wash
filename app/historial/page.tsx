@@ -245,6 +245,9 @@ export default function Historial() {
                                         Cliente
                                     </th>
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
+                                        Teléfono
+                                    </th>
+                                    <th className="text-left py-3 px-2 font-semibold text-gray-700">
                                         Tipo
                                     </th>
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
@@ -271,6 +274,7 @@ export default function Historial() {
                                             {registro.patente}
                                         </td>
                                         <td className="py-3 px-2 text-sm">{registro.nombre_cliente}</td>
+                                        <td className="py-3 px-2 text-sm font-mono text-blue-600">{registro.celular}</td>
                                         <td className="py-3 px-2 text-sm">
                                             {registro.tipo_limpieza.replace(/_/g, ' ')}
                                         </td>

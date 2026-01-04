@@ -38,7 +38,18 @@ export async function POST(request: Request) {
         // Crear mensaje de WhatsApp
         const mensaje = `Hola ${auto.nombre_cliente}! Tu ${auto.marca_modelo} ya está listo. ¡Gracias por confiar en nosotros!`;
         const mensajeCodificado = encodeURIComponent(mensaje);
-        const whatsappUrl = `https://wa.me/${auto.celular}?text=${mensajeCodificado}`;
+
+        // Formatear número: si empieza con 11, agregar +5491, si no, agregar +549
+        let numeroFormateado = auto.celular.replace(/\D/g, ''); // Eliminar caracteres no numéricos
+        if (numeroFormateado.startsWith('11')) {
+            numeroFormateado = `5491${numeroFormateado.substring(2)}`;
+        } else if (numeroFormateado.startsWith('9')) {
+            numeroFormateado = `549${numeroFormateado}`;
+        } else {
+            numeroFormateado = `549${numeroFormateado}`;
+        }
+
+        const whatsappUrl = `https://wa.me/${numeroFormateado}?text=${mensajeCodificado}`;
 
         return NextResponse.json({
             success: true,
