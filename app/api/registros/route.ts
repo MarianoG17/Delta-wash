@@ -35,6 +35,15 @@ export async function GET(request: Request) {
     }
 }
 
+// Función para capitalizar nombres (primera letra de cada palabra en mayúscula)
+function capitalizarNombre(nombre: string): string {
+    return nombre
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+
 export async function POST(request: Request) {
     try {
         const { marca_modelo, patente, tipo_limpieza, nombre_cliente, celular, usuario_id } = await request.json();
@@ -46,11 +55,14 @@ export async function POST(request: Request) {
             );
         }
 
+        // Normalizar nombre del cliente (capitalizar)
+        const nombreNormalizado = capitalizarNombre(nombre_cliente.trim());
+
         const result = await sql`
       INSERT INTO registros_lavado (
         marca_modelo, patente, tipo_limpieza, nombre_cliente, celular, usuario_id, estado
       ) VALUES (
-        ${marca_modelo}, ${patente}, ${tipo_limpieza}, ${nombre_cliente}, ${celular}, ${usuario_id}, 'en_proceso'
+        ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${usuario_id}, 'en_proceso'
       )
       RETURNING *
     `;

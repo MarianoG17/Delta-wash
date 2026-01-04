@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Car, LogOut, History, Plus, Send } from 'lucide-react';
+import { Car, LogOut, History, Plus, Send, Users } from 'lucide-react';
 
 interface Registro {
     id: number;
@@ -207,6 +207,13 @@ export default function Home() {
                         <p className="text-sm opacity-90">Bienvenido/a, {username}</p>
                     </div>
                     <div className="flex gap-2">
+                        <Link
+                            href="/clientes"
+                            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
+                        >
+                            <Users size={18} />
+                            <span className="text-sm">Clientes</span>
+                        </Link>
                         <Link
                             href="/historial"
                             className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
