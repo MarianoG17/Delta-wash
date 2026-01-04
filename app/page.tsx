@@ -218,7 +218,7 @@ export default function Home() {
                                     required
                                 >
                                     <option value="simple">Simple (solo por fuera)</option>
-                                    <option value="con_cero">Con Cero</option>
+                                    <option value="con_cera">Con Cera</option>
                                     <option value="pulido">Pulido</option>
                                     <option value="limpieza_chasis">Limpieza de Chasis</option>
                                     <option value="limpieza_motor">Limpieza de Motor</option>
