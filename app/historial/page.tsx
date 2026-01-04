@@ -100,6 +100,22 @@ export default function Historial() {
         });
     };
 
+    const calcularTiempoTotal = (fechaIngreso: string, fechaListo: string | null) => {
+        if (!fechaListo) return '-';
+
+        const ingreso = new Date(fechaIngreso);
+        const listo = new Date(fechaListo);
+        const diffMs = listo.getTime() - ingreso.getTime();
+
+        const horas = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+        if (horas > 0) {
+            return `${horas}h ${minutos}m`;
+        }
+        return `${minutos}m`;
+    };
+
     const getDiasDesdeVisita = (fecha: Date) => {
         const hoy = new Date();
         const diff = hoy.getTime() - fecha.getTime();
@@ -211,7 +227,13 @@ export default function Historial() {
                             <thead>
                                 <tr className="border-b-2 border-gray-200">
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
-                                        Fecha Ingreso
+                                        Ingreso
+                                    </th>
+                                    <th className="text-left py-3 px-2 font-semibold text-gray-700">
+                                        Completado
+                                    </th>
+                                    <th className="text-left py-3 px-2 font-semibold text-gray-700">
+                                        Tiempo
                                     </th>
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
                                         Auto
@@ -236,6 +258,12 @@ export default function Historial() {
                                         <td className="py-3 px-2 text-sm">
                                             {formatFecha(registro.fecha_ingreso)}
                                         </td>
+                                        <td className="py-3 px-2 text-sm">
+                                            {registro.fecha_listo ? formatFecha(registro.fecha_listo) : '-'}
+                                        </td>
+                                        <td className="py-3 px-2 text-sm font-semibold text-blue-600">
+                                            {calcularTiempoTotal(registro.fecha_ingreso, registro.fecha_listo)}
+                                        </td>
                                         <td className="py-3 px-2 text-sm font-medium">
                                             {registro.marca_modelo}
                                         </td>
@@ -249,8 +277,8 @@ export default function Historial() {
                                         <td className="py-3 px-2">
                                             <span
                                                 className={`text-xs px-2 py-1 rounded-full font-medium ${registro.estado === 'listo'
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : 'bg-yellow-100 text-yellow-700'
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : 'bg-yellow-100 text-yellow-700'
                                                     }`}
                                             >
                                                 {registro.estado === 'listo' ? '✓ Listo' : '⏳ En proceso'}
