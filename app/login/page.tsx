@@ -45,7 +45,7 @@ export default function Login() {
                     <div className="bg-blue-500 p-4 rounded-full mb-4">
                         <Car size={48} className="text-white" />
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900">Lavadero App</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">DeltaWash</h1>
                     <p className="text-gray-600 mt-2">Sistema de Gestión</p>
                 </div>
 

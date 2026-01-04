@@ -204,7 +204,7 @@ export default function Home() {
                     <div className="text-white">
                         <div className="flex items-center gap-2 mb-2">
                             <Car size={32} />
-                            <h1 className="text-3xl font-bold">Lavadero App</h1>
+                            <h1 className="text-3xl font-bold">DeltaWash</h1>
                         </div>
                         <p className="text-sm opacity-90">Bienvenido/a, {username}</p>
                     </div>
