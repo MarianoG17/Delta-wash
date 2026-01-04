@@ -233,6 +233,46 @@ export default function Home() {
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-900 mb-2">
+                                    Patente
+                                </label>
+                                <input
+                                    type="text"
+                                    value={patente}
+                                    onChange={async (e) => {
+                                        const value = e.target.value.toUpperCase();
+                                        setPatente(value);
+
+                                        // Buscar automáticamente cuando la patente tiene 6 o 7 caracteres
+                                        if (value.length >= 6) {
+                                            try {
+                                                const res = await fetch(`/api/registros/buscar-patente?patente=${value}`);
+                                                const data = await res.json();
+
+                                                if (data.found) {
+                                                    setMarca(data.data.marca);
+                                                    setModelo(data.data.modelo);
+                                                    setNombreCliente(data.data.nombre_cliente);
+                                                    setCelular(data.data.celular);
+                                                    setMessage('✅ Cliente encontrado! Datos autocompletados');
+                                                    setTimeout(() => setMessage(''), 3000);
+                                                }
+                                            } catch (error) {
+                                                console.error('Error buscando patente:', error);
+                                            }
+                                        }
+                                    }}
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase text-gray-900"
+                                    placeholder="ABC123"
+                                    required
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Se autocompletarán los datos si el cliente ya visitó
+                                </p>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-900 mb-2">
@@ -260,20 +300,6 @@ export default function Home() {
                                         required
                                     />
                                 </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-900 mb-2">
-                                    Patente
-                                </label>
-                                <input
-                                    type="text"
-                                    value={patente}
-                                    onChange={(e) => setPatente(e.target.value.toUpperCase())}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase text-gray-900"
-                                    placeholder="ABC123"
-                                    required
-                                />
                             </div>
 
                             <div>
