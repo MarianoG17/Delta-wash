@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
+import * as XLSX from 'xlsx';
 
 export async function GET() {
     try {
         // Obtener todos los registros
         const result = await sql`
-      SELECT 
+      SELECT
         id,
         fecha_ingreso,
         fecha_listo,
@@ -16,52 +17,51 @@ export async function GET() {
         nombre_cliente,
         celular,
         estado
-      FROM registros_lavado 
+      FROM registros_lavado
       ORDER BY fecha_ingreso DESC
     `;
 
-        // Crear CSV
-        const headers = [
-            'ID',
-            'Fecha Ingreso',
-            'Fecha Listo',
-            'Fecha Entregado',
-            'Auto',
-            'Patente',
-            'Tipo Limpieza',
-            'Cliente',
-            'Teléfono',
-            'Estado'
+        // Preparar datos para Excel
+        const data = result.rows.map(row => ({
+            'ID': row.id,
+            'Fecha Ingreso': row.fecha_ingreso ? new Date(row.fecha_ingreso).toLocaleString('es-AR') : '',
+            'Fecha Listo': row.fecha_listo ? new Date(row.fecha_listo).toLocaleString('es-AR') : '',
+            'Fecha Entregado': row.fecha_entregado ? new Date(row.fecha_entregado).toLocaleString('es-AR') : '',
+            'Auto': row.marca_modelo,
+            'Patente': row.patente,
+            'Tipo Limpieza': row.tipo_limpieza,
+            'Cliente': row.nombre_cliente,
+            'Teléfono': row.celular,
+            'Estado': row.estado
+        }));
+
+        // Crear libro de Excel
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Registros');
+
+        // Ajustar ancho de columnas
+        const maxWidth = 20;
+        worksheet['!cols'] = [
+            { wch: 5 },   // ID
+            { wch: 18 },  // Fecha Ingreso
+            { wch: 18 },  // Fecha Listo
+            { wch: 18 },  // Fecha Entregado
+            { wch: 20 },  // Auto
+            { wch: 10 },  // Patente
+            { wch: 25 },  // Tipo Limpieza
+            { wch: 20 },  // Cliente
+            { wch: 15 },  // Teléfono
+            { wch: 12 }   // Estado
         ];
 
-        const csvRows = [headers.join(',')];
+        // Generar buffer de Excel
+        const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
-        result.rows.forEach(row => {
-            const values = [
-                row.id,
-                row.fecha_ingreso ? new Date(row.fecha_ingreso).toLocaleString('es-AR') : '',
-                row.fecha_listo ? new Date(row.fecha_listo).toLocaleString('es-AR') : '',
-                row.fecha_entregado ? new Date(row.fecha_entregado).toLocaleString('es-AR') : '',
-                `"${row.marca_modelo}"`, // Comillas para manejar comas en el texto
-                row.patente,
-                `"${row.tipo_limpieza}"`,
-                `"${row.nombre_cliente}"`,
-                row.celular,
-                row.estado
-            ];
-            csvRows.push(values.join(','));
-        });
-
-        const csv = csvRows.join('\n');
-
-        // Agregar BOM para que Excel reconozca UTF-8
-        const bom = '\uFEFF';
-        const csvWithBom = bom + csv;
-
-        return new NextResponse(csvWithBom, {
+        return new NextResponse(excelBuffer, {
             headers: {
-                'Content-Type': 'text/csv; charset=utf-8',
-                'Content-Disposition': `attachment; filename="lavadero_registros_${new Date().toISOString().split('T')[0]}.csv"`
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition': `attachment; filename="lavadero_registros_${new Date().toISOString().split('T')[0]}.xlsx"`
             }
         });
 

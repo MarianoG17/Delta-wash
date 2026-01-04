@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   username VARCHAR(50) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
   nombre VARCHAR(100) NOT NULL,
+  rol VARCHAR(20) DEFAULT 'operador', -- 'admin' o 'operador'
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -30,7 +31,9 @@ CREATE INDEX IF NOT EXISTS idx_celular ON registros_lavado(celular);
 CREATE INDEX IF NOT EXISTS idx_fecha_ingreso ON registros_lavado(fecha_ingreso);
 CREATE INDEX IF NOT EXISTS idx_estado ON registros_lavado(estado);
 
--- Insertar usuario por defecto (password: admin123)
-INSERT INTO usuarios (username, password, nombre) 
-VALUES ('admin', 'admin123', 'Administrador')
+-- Insertar usuarios por defecto
+INSERT INTO usuarios (username, password, nombre, rol)
+VALUES
+  ('admin', 'admin123', 'Administrador', 'admin'),
+  ('operador', 'operador123', 'Operador', 'operador')
 ON CONFLICT (username) DO NOTHING;

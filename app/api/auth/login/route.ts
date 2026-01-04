@@ -14,8 +14,8 @@ export async function POST(request: Request) {
 
         // Buscar usuario en la base de datos
         const result = await sql`
-      SELECT id, username, nombre 
-      FROM usuarios 
+      SELECT id, username, nombre, rol
+      FROM usuarios
       WHERE username = ${username} AND password = ${password}
     `;
 
@@ -34,6 +34,7 @@ export async function POST(request: Request) {
                 id: user.id,
                 username: user.username,
                 nombre: user.nombre,
+                rol: user.rol || 'operador',
             },
         });
     } catch (error) {

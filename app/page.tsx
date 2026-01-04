@@ -20,6 +20,7 @@ export default function Home() {
     const router = useRouter();
     const [username, setUsername] = useState('');
     const [userId, setUserId] = useState<number | null>(null);
+    const [userRole, setUserRole] = useState<string>('operador');
     const [mounted, setMounted] = useState(false);
 
     // Form states
@@ -46,6 +47,7 @@ export default function Home() {
                 const data = JSON.parse(session);
                 setUsername(data.nombre || data.username);
                 setUserId(data.id);
+                setUserRole(data.rol || 'operador');
                 cargarRegistrosEnProceso();
             }
         }
@@ -207,20 +209,24 @@ export default function Home() {
                         <p className="text-sm opacity-90">Bienvenido/a, {username}</p>
                     </div>
                     <div className="flex gap-2">
-                        <Link
-                            href="/clientes"
-                            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
-                        >
-                            <Users size={18} />
-                            <span className="text-sm">Clientes</span>
-                        </Link>
-                        <Link
-                            href="/historial"
-                            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
-                        >
-                            <History size={18} />
-                            <span className="text-sm">Historial</span>
-                        </Link>
+                        {userRole === 'admin' && (
+                            <>
+                                <Link
+                                    href="/clientes"
+                                    className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
+                                >
+                                    <Users size={18} />
+                                    <span className="text-sm">Clientes</span>
+                                </Link>
+                                <Link
+                                    href="/historial"
+                                    className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
+                                >
+                                    <History size={18} />
+                                    <span className="text-sm">Historial</span>
+                                </Link>
+                            </>
+                        )}
                         <button
                             onClick={handleLogout}
                             className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
@@ -445,7 +451,7 @@ export default function Home() {
 
                         {/* Autos Listos */}
                         <div className="bg-white rounded-2xl shadow-xl p-6">
-                            <h2 className="text-2xl font-bold text-green-700 mb-6">
+                            <h2 className="text-2xl font-bold text-orange-700 mb-6">
                                 Autos Listos ({registrosListos.length})
                             </h2>
 
@@ -458,7 +464,7 @@ export default function Home() {
                                     registrosListos.map((registro) => (
                                         <div
                                             key={registro.id}
-                                            className="border border-green-200 bg-green-50 rounded-lg p-4 hover:shadow-md transition-shadow"
+                                            className="border border-orange-200 bg-orange-50 rounded-lg p-4 hover:shadow-md transition-shadow"
                                         >
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
@@ -469,7 +475,7 @@ export default function Home() {
                                                         Patente: <span className="font-mono font-semibold">{registro.patente}</span>
                                                     </p>
                                                 </div>
-                                                <span className="text-xs bg-green-200 text-green-800 px-2 py-1 rounded font-semibold">
+                                                <span className="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded font-semibold">
                                                     LISTO
                                                 </span>
                                             </div>
@@ -482,14 +488,14 @@ export default function Home() {
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => enviarWhatsApp(registro.id)}
-                                                    className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                    className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
                                                 >
                                                     <Send size={16} />
                                                     WhatsApp
                                                 </button>
                                                 <button
                                                     onClick={() => marcarComoEntregado(registro.id)}
-                                                    className="flex-1 flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                    className="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition-colors"
                                                 >
                                                     ✓ Entregado
                                                 </button>

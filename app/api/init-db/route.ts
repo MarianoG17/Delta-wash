@@ -39,10 +39,12 @@ export async function GET() {
     await sql`CREATE INDEX IF NOT EXISTS idx_fecha_ingreso ON registros_lavado(fecha_ingreso)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_estado ON registros_lavado(estado)`;
 
-    // Insertar usuario por defecto
+    // Insertar usuarios por defecto
     await sql`
-      INSERT INTO usuarios (username, password, nombre) 
-      VALUES ('admin', 'admin123', 'Administrador')
+      INSERT INTO usuarios (username, password, nombre, rol)
+      VALUES
+        ('admin', 'admin123', 'Administrador', 'admin'),
+        ('operador', 'operador123', 'Operador', 'operador')
       ON CONFLICT (username) DO NOTHING
     `;
 
