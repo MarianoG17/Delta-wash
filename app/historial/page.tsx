@@ -338,18 +338,23 @@ export default function Historial() {
                                         </td>
                                         <td className="py-3 px-2">
                                             <span
-                                                className={`text-xs px-2 py-1 rounded-full font-medium ${registro.estado === 'entregado'
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : registro.estado === 'listo'
-                                                        ? 'bg-orange-100 text-orange-700'
-                                                        : 'bg-blue-100 text-blue-700'
+                                                className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                                    registro.estado === 'entregado'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : registro.estado === 'listo'
+                                                            ? 'bg-orange-100 text-orange-700'
+                                                            : registro.estado === 'cancelado'
+                                                                ? 'bg-red-100 text-red-700'
+                                                                : 'bg-blue-100 text-blue-700'
                                                     }`}
                                             >
                                                 {registro.estado === 'entregado'
                                                     ? '✓ Entregado'
                                                     : registro.estado === 'listo'
                                                         ? '⚠ Listo'
-                                                        : '⏳ En proceso'}
+                                                        : registro.estado === 'cancelado'
+                                                            ? '✕ Cancelado'
+                                                            : '⏳ En proceso'}
                                             </span>
                                         </td>
                                     </tr>

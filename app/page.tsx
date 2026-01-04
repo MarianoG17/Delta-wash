@@ -185,6 +185,30 @@ export default function Home() {
         }
     };
 
+    const cancelarRegistro = async (id: number) => {
+        const motivo = prompt('¿Por qué se cancela? (opcional)');
+        if (motivo === null) return; // Usuario canceló el prompt
+
+        try {
+            const res = await fetch('/api/registros/cancelar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, motivo }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                alert('✅ Registro cancelado');
+                cargarRegistrosEnProceso();
+            } else {
+                alert('❌ Error al cancelar registro');
+            }
+        } catch (error) {
+            alert('❌ Error al cancelar registro');
+        }
+    };
+
     const handleLogout = () => {
         if (typeof window !== 'undefined') {
             localStorage.removeItem('lavadero_user');
@@ -437,12 +461,21 @@ export default function Home() {
                                             <p className="text-xs text-gray-500 mb-3">
                                                 Ingreso: {new Date(registro.fecha_ingreso).toLocaleString('es-AR')}
                                             </p>
-                                            <button
-                                                onClick={() => marcarComoListo(registro.id)}
-                                                className="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
-                                            >
-                                                ✓ Marcar como Listo
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => marcarComoListo(registro.id)}
+                                                    className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                >
+                                                    ✓ Listo
+                                                </button>
+                                                <button
+                                                    onClick={() => cancelarRegistro(registro.id)}
+                                                    className="flex items-center justify-center gap-2 px-3 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                    title="Cancelar"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
                                         </div>
                                     ))
                                 )}
