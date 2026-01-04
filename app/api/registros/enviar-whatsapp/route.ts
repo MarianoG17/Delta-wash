@@ -14,8 +14,8 @@ export async function POST(request: Request) {
 
         // Obtener los datos del registro
         const result = await sql`
-      SELECT cliente, celular, marca, modelo, patente
-      FROM registros_lavado 
+      SELECT nombre_cliente, celular, marca_modelo, patente
+      FROM registros_lavado
       WHERE id = ${id}
     `;
 
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         }
 
         // Crear el mensaje de WhatsApp
-        const mensaje = `Hola ${registro.cliente}! Tu ${registro.marca} ${registro.modelo} (${registro.patente}) ya está listo. Podés pasar a retirarlo cuando quieras. Gracias!`;
+        const mensaje = `Hola ${registro.nombre_cliente}! Tu ${registro.marca_modelo} (${registro.patente}) ya está listo. Podés pasar a retirarlo cuando quieras. Gracias!`;
         const mensajeCodificado = encodeURIComponent(mensaje);
         const whatsappUrl = `https://wa.me/${numeroFormateado}?text=${mensajeCodificado}`;
 
