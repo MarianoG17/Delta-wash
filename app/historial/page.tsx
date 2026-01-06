@@ -102,7 +102,15 @@ export default function Historial() {
         }
         
         const whatsappUrl = `https://wa.me/${numeroFormateado}?text=${mensajeCodificado}`;
-        window.open(whatsappUrl, '_blank');
+        
+        // Detectar iOS para usar location.href en lugar de window.open
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        
+        if (isIOS) {
+            window.location.href = whatsappUrl;
+        } else {
+            window.open(whatsappUrl, '_blank');
+        }
     };
 
     const formatFecha = (fecha: string) => {

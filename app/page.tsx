@@ -151,7 +151,14 @@ export default function Home() {
             const data = await res.json();
 
             if (data.success) {
-                window.open(data.whatsappUrl, '_blank');
+                // Detectar iOS para usar location.href en lugar de window.open
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                
+                if (isIOS) {
+                    window.location.href = data.whatsappUrl;
+                } else {
+                    window.open(data.whatsappUrl, '_blank');
+                }
             } else {
                 alert('❌ Error al generar link de WhatsApp');
             }
