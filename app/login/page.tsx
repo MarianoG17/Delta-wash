@@ -92,11 +92,6 @@ export default function Login() {
                         {loading ? 'Ingresando...' : 'Ingresar'}
                     </button>
                 </form>
-
-                <div className="mt-6 text-center text-sm text-gray-600">
-                    <p>Usuario por defecto: <strong>admin</strong></p>
-                    <p>Contraseña: <strong>admin123</strong></p>
-                </div>
             </div>
         </div>
     );

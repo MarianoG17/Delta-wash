@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Car, LogOut, History, Plus, Send, Users } from 'lucide-react';
+import { Car, LogOut, History, Plus, Send, Users, ArrowLeft } from 'lucide-react';
 
 interface Registro {
     id: number;
@@ -14,9 +14,13 @@ interface Registro {
     celular: string;
     fecha_ingreso: string;
     estado: string;
+    tipo_vehiculo?: string;
+    precio?: number;
+    extras?: string;
+    extras_valor?: number;
 }
 
-export default function Home() {
+export default function PruebaPage() {
     const router = useRouter();
     const [username, setUsername] = useState('');
     const [userId, setUserId] = useState<number | null>(null);
@@ -31,6 +35,8 @@ export default function Home() {
     const [tiposLimpieza, setTiposLimpieza] = useState<string[]>([]);
     const [nombreCliente, setNombreCliente] = useState('');
     const [celular, setCelular] = useState('');
+    const [extras, setExtras] = useState('');
+    const [extrasValor, setExtrasValor] = useState('');
     const [precio, setPrecio] = useState(0);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
@@ -92,11 +98,12 @@ export default function Home() {
         return precioFinal;
     };
 
-    // Recalcular precio cuando cambia el tipo de vehículo o tipos de limpieza
+    // Recalcular precio cuando cambia el tipo de vehículo, tipos de limpieza o extras
     useEffect(() => {
-        const nuevoPrecio = calcularPrecio(tipoVehiculo, tiposLimpieza);
-        setPrecio(nuevoPrecio);
-    }, [tipoVehiculo, tiposLimpieza]);
+        const precioBase = calcularPrecio(tipoVehiculo, tiposLimpieza);
+        const valorExtras = parseFloat(extrasValor) || 0;
+        setPrecio(precioBase + valorExtras);
+    }, [tipoVehiculo, tiposLimpieza, extrasValor]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -120,6 +127,8 @@ export default function Home() {
                     tipo_limpieza: tiposLimpieza.join(', '),
                     nombre_cliente: nombreCliente,
                     celular: celular,
+                    extras: extras || null,
+                    extras_valor: parseFloat(extrasValor) || 0,
                     precio: precio,
                     usuario_id: userId,
                 }),
@@ -137,6 +146,8 @@ export default function Home() {
                 setTiposLimpieza([]);
                 setNombreCliente('');
                 setCelular('');
+                setExtras('');
+                setExtrasValor('');
                 setPrecio(0);
                 // Recargar registros
                 cargarRegistrosEnProceso();
@@ -182,7 +193,6 @@ export default function Home() {
             const data = await res.json();
 
             if (data.success) {
-                // Detectar iOS para usar location.href en lugar de window.open
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
                 if (isIOS) {
@@ -225,7 +235,7 @@ export default function Home() {
 
     const cancelarRegistro = async (id: number) => {
         const motivo = prompt('¿Por qué se cancela? (opcional)');
-        if (motivo === null) return; // Usuario canceló el prompt
+        if (motivo === null) return;
 
         try {
             const res = await fetch('/api/registros/cancelar', {
@@ -259,18 +269,28 @@ export default function Home() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 p-4">
+        <div className="min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 p-4">
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="flex justify-between items-center mb-6">
                     <div className="text-white">
                         <div className="flex items-center gap-2 mb-2">
                             <Car size={32} />
-                            <h1 className="text-3xl font-bold">DeltaWash</h1>
+                            <h1 className="text-3xl font-bold">DeltaWash - PRUEBA</h1>
                         </div>
                         <p className="text-sm opacity-90">Bienvenido/a, {username}</p>
+                        <p className="text-xs opacity-75 bg-yellow-400 text-black px-2 py-1 rounded mt-1 inline-block">
+                            ⚠️ Modo de Prueba - Nuevas Funcionalidades
+                        </p>
                     </div>
                     <div className="flex gap-2">
+                        <Link
+                            href="/"
+                            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
+                        >
+                            <ArrowLeft size={18} />
+                            <span className="text-sm">Volver</span>
+                        </Link>
                         {userRole === 'admin' && (
                             <>
                                 <Link
@@ -303,7 +323,7 @@ export default function Home() {
                     {/* Formulario de Registro */}
                     <div className="bg-white rounded-2xl shadow-xl p-6">
                         <div className="flex items-center gap-2 mb-6">
-                            <Plus className="text-blue-600" size={24} />
+                            <Plus className="text-purple-600" size={24} />
                             <h2 className="text-2xl font-bold text-gray-900">Nuevo Registro</h2>
                         </div>
 
@@ -320,7 +340,6 @@ export default function Home() {
                                         const value = e.target.value.toUpperCase();
                                         setPatente(value);
 
-                                        // Buscar automáticamente cuando la patente tiene 6 o 7 caracteres
                                         if (value.length >= 6) {
                                             try {
                                                 const res = await fetch(`/api/registros/buscar-patente?patente=${value}`);
@@ -339,7 +358,7 @@ export default function Home() {
                                             }
                                         }
                                     }}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase text-gray-900"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase text-gray-900"
                                     placeholder="ABC123"
                                     required
                                 />
@@ -357,7 +376,7 @@ export default function Home() {
                                         type="text"
                                         value={marca}
                                         onChange={(e) => setMarca(e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                                         placeholder="Toyota"
                                         required
                                     />
@@ -370,7 +389,7 @@ export default function Home() {
                                         type="text"
                                         value={modelo}
                                         onChange={(e) => setModelo(e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                                         placeholder="Corolla"
                                         required
                                     />
@@ -384,7 +403,7 @@ export default function Home() {
                                 <select
                                     value={tipoVehiculo}
                                     onChange={(e) => setTipoVehiculo(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                                     required
                                 >
                                     <option value="auto">Auto</option>
@@ -419,7 +438,7 @@ export default function Home() {
                                                         setTiposLimpieza(tiposLimpieza.filter(t => t !== tipo.value));
                                                     }
                                                 }}
-                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                                             />
                                             <span className="text-sm text-gray-900">{tipo.label}</span>
                                         </label>
@@ -438,7 +457,7 @@ export default function Home() {
                                     type="text"
                                     value={nombreCliente}
                                     onChange={(e) => setNombreCliente(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                                     placeholder="Nombre completo"
                                     required
                                 />
@@ -452,7 +471,7 @@ export default function Home() {
                                     type="tel"
                                     value={celular}
                                     onChange={(e) => setCelular(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                                     placeholder="11-12345678"
                                     required
                                 />
@@ -461,22 +480,79 @@ export default function Home() {
                                 </p>
                             </div>
 
+                            <div className="border-t border-gray-200 pt-4">
+                                <label className="block text-sm font-medium text-gray-900 mb-3">
+                                    Extras (Opcional)
+                                </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs text-gray-600 mb-1">
+                                            Descripción
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={extras}
+                                            onChange={(e) => setExtras(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                                            placeholder="Ej: Lavado de tapizados"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-600 mb-1">
+                                            Valor ($)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={extrasValor}
+                                            onChange={(e) => setExtrasValor(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                                            placeholder="0"
+                                            min="0"
+                                            step="1000"
+                                        />
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Agrega servicios adicionales y su costo
+                                </p>
+                            </div>
+
                             {precio > 0 && (
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <div className="flex justify-between items-center">
+                                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                    <div className="space-y-2 mb-3">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-700">
+                                                {tipoVehiculo === 'auto' && '🚗 Auto'}
+                                                {tipoVehiculo === 'mono' && '🚙 Mono (SUV)'}
+                                                {tipoVehiculo === 'camioneta' && '🚐 Camioneta'}
+                                                {tipoVehiculo === 'camioneta_xl' && '🚐 Camioneta XL'}
+                                                {tipoVehiculo === 'moto' && '🏍️ Moto'}
+                                            </span>
+                                            <span className="font-semibold text-gray-900">
+                                                ${calcularPrecio(tipoVehiculo, tiposLimpieza.filter(t => t !== 'con_cera')).toLocaleString('es-AR')}
+                                            </span>
+                                        </div>
+                                        {tiposLimpieza.includes('con_cera') && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-700">+ Con Cera</span>
+                                                <span className="font-semibold text-gray-900">$2.000</span>
+                                            </div>
+                                        )}
+                                        {extrasValor && parseFloat(extrasValor) > 0 && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-700">+ {extras || 'Extras'}</span>
+                                                <span className="font-semibold text-gray-900">
+                                                    ${parseFloat(extrasValor).toLocaleString('es-AR')}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="border-t border-purple-300 pt-2 flex justify-between items-center">
                                         <span className="text-sm font-medium text-gray-900">Precio Total:</span>
-                                        <span className="text-2xl font-bold text-blue-600">
+                                        <span className="text-2xl font-bold text-purple-600">
                                             ${precio.toLocaleString('es-AR')}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-gray-600 mt-1">
-                                        {tipoVehiculo === 'auto' && 'Auto'}
-                                        {tipoVehiculo === 'mono' && 'Mono (SUV)'}
-                                        {tipoVehiculo === 'camioneta' && 'Camioneta'}
-                                        {tipoVehiculo === 'camioneta_xl' && 'Camioneta XL'}
-                                        {tipoVehiculo === 'moto' && 'Moto'}
-                                        {tiposLimpieza.includes('con_cera') && ' + Con Cera (+$2.000)'}
-                                    </p>
                                 </div>
                             )}
 
@@ -492,7 +568,7 @@ export default function Home() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? 'Registrando...' : 'Registrar Auto'}
                             </button>
@@ -526,21 +602,42 @@ export default function Home() {
                                                     <p className="text-sm text-gray-600">
                                                         Patente: <span className="font-mono font-semibold">{registro.patente}</span>
                                                     </p>
+                                                    {registro.tipo_vehiculo && (
+                                                        <p className="text-xs text-purple-600 font-semibold">
+                                                            {registro.tipo_vehiculo === 'auto' && '🚗 Auto'}
+                                                            {registro.tipo_vehiculo === 'mono' && '🚙 Mono (SUV)'}
+                                                            {registro.tipo_vehiculo === 'camioneta' && '🚐 Camioneta'}
+                                                            {registro.tipo_vehiculo === 'camioneta_xl' && '🚐 Camioneta XL'}
+                                                            {registro.tipo_vehiculo === 'moto' && '🏍️ Moto'}
+                                                        </p>
+                                                    )}
                                                 </div>
-                                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                                                    {registro.tipo_limpieza.replace(/_/g, ' ')}
-                                                </span>
+                                                <div className="text-right">
+                                                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded block mb-1">
+                                                        {registro.tipo_limpieza.replace(/_/g, ' ')}
+                                                    </span>
+                                                    {registro.precio && registro.precio > 0 && (
+                                                        <span className="text-sm font-bold text-purple-600">
+                                                            ${registro.precio.toLocaleString('es-AR')}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <p className="text-sm text-gray-600 mb-1">
                                                 Cliente: {registro.nombre_cliente}
                                             </p>
+                                            {registro.extras && (
+                                                <p className="text-xs text-purple-600 mb-1">
+                                                    Extra: {registro.extras} (+${registro.extras_valor?.toLocaleString('es-AR')})
+                                                </p>
+                                            )}
                                             <p className="text-xs text-gray-500 mb-3">
                                                 Ingreso: {new Date(registro.fecha_ingreso).toLocaleString('es-AR')}
                                             </p>
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => marcarComoListo(registro.id)}
-                                                    className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                    className="flex-1 flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 rounded-lg transition-colors"
                                                 >
                                                     ✓ Listo
                                                 </button>
@@ -583,14 +680,35 @@ export default function Home() {
                                                     <p className="text-sm text-gray-600">
                                                         Patente: <span className="font-mono font-semibold">{registro.patente}</span>
                                                     </p>
+                                                    {registro.tipo_vehiculo && (
+                                                        <p className="text-xs text-purple-600 font-semibold">
+                                                            {registro.tipo_vehiculo === 'auto' && '🚗 Auto'}
+                                                            {registro.tipo_vehiculo === 'mono' && '🚙 Mono (SUV)'}
+                                                            {registro.tipo_vehiculo === 'camioneta' && '🚐 Camioneta'}
+                                                            {registro.tipo_vehiculo === 'camioneta_xl' && '🚐 Camioneta XL'}
+                                                            {registro.tipo_vehiculo === 'moto' && '🏍️ Moto'}
+                                                        </p>
+                                                    )}
                                                 </div>
-                                                <span className="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded font-semibold">
-                                                    LISTO
-                                                </span>
+                                                <div className="text-right">
+                                                    <span className="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded font-semibold block mb-1">
+                                                        LISTO
+                                                    </span>
+                                                    {registro.precio && registro.precio > 0 && (
+                                                        <span className="text-sm font-bold text-purple-600">
+                                                            ${registro.precio.toLocaleString('es-AR')}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <p className="text-sm text-gray-600 mb-1">
                                                 Cliente: {registro.nombre_cliente}
                                             </p>
+                                            {registro.extras && (
+                                                <p className="text-xs text-purple-600 mb-1">
+                                                    Extra: {registro.extras} (+${registro.extras_valor?.toLocaleString('es-AR')})
+                                                </p>
+                                            )}
                                             <p className="text-xs text-gray-500 mb-3">
                                                 Tipo: {registro.tipo_limpieza.replace(/_/g, ' ')}
                                             </p>
@@ -598,7 +716,7 @@ export default function Home() {
                                                 {userRole === 'admin' && (
                                                     <button
                                                         onClick={() => enviarWhatsApp(registro.id)}
-                                                        className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                        className="flex-1 flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 rounded-lg transition-colors"
                                                     >
                                                         <Send size={16} />
                                                         WhatsApp
