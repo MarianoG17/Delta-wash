@@ -219,9 +219,9 @@ export default function CuentasCorrientesPage() {
                                         value={saldoInicial}
                                         onChange={(e) => setSaldoInicial(e.target.value)}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                                        placeholder="50000"
+                                        placeholder="100000"
                                         min="1"
-                                        step="1000"
+                                        step="any"
                                         required
                                     />
                                 </div>
@@ -318,7 +318,7 @@ export default function CuentasCorrientesPage() {
                                                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900"
                                                     placeholder="Monto a cargar"
                                                     min="1"
-                                                    step="1000"
+                                                    step="any"
                                                 />
                                                 <button
                                                     onClick={() => cargarSaldo(cuenta.id)}
