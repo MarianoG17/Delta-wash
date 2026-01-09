@@ -13,12 +13,11 @@ export async function GET(request: Request) {
             );
         }
 
-        // Obtener información de la cuenta
+        // Obtener información de la cuenta (sin JOIN con clientes)
         const cuentaResult = await sql`
-            SELECT cc.*, c.nombre, c.celular
-            FROM cuentas_corrientes cc
-            JOIN clientes c ON cc.cliente_id = c.id
-            WHERE cc.id = ${cuentaId}
+            SELECT *
+            FROM cuentas_corrientes
+            WHERE id = ${cuentaId}
         `;
 
         if (cuentaResult.rows.length === 0) {
@@ -30,45 +29,64 @@ export async function GET(request: Request) {
 
         const cuenta = cuentaResult.rows[0];
 
-        // Obtener todos los movimientos de la cuenta
-        const movimientosResult = await sql`
-            SELECT
-                mc.id,
-                mc.tipo,
-                mc.monto,
-                mc.saldo_anterior,
-                mc.saldo_nuevo,
-                mc.descripcion,
-                mc.fecha as fecha_movimiento,
-                mc.registro_id,
-                r.patente,
-                r.marca_modelo,
-                r.tipo_limpieza,
-                u.nombre as usuario_nombre
-            FROM movimientos_cuenta mc
-            LEFT JOIN registros r ON mc.registro_id = r.id
-            LEFT JOIN usuarios u ON mc.usuario_id = u.id
-            WHERE mc.cuenta_id = ${cuentaId}
-            ORDER BY mc.fecha DESC
-        `;
+        // Intentar obtener movimientos (puede fallar si la tabla no existe)
+        let movimientos = [];
+        try {
+            const movimientosResult = await sql`
+                SELECT
+                    mc.id,
+                    mc.tipo,
+                    mc.monto,
+                    mc.saldo_anterior,
+                    mc.saldo_nuevo,
+                    mc.descripcion,
+                    mc.fecha as fecha_movimiento,
+                    mc.registro_id,
+                    r.patente,
+                    r.marca_modelo,
+                    r.tipo_limpieza,
+                    u.nombre as usuario_nombre
+                FROM movimientos_cuenta mc
+                LEFT JOIN registros r ON mc.registro_id = r.id
+                LEFT JOIN usuarios u ON mc.usuario_id = u.id
+                WHERE mc.cuenta_id = ${cuentaId}
+                ORDER BY mc.fecha DESC
+            `;
+            movimientos = movimientosResult.rows;
+        } catch (movError: any) {
+            console.error('Error obteniendo movimientos:', movError);
+            // Si la tabla no existe, devolver array vacío con mensaje
+            if (movError.message && movError.message.includes('does not exist')) {
+                return NextResponse.json({
+                    success: false,
+                    message: 'La tabla movimientos_cuenta no existe. Ejecuta la migración en Neon.',
+                    error_detail: movError.message
+                }, { status: 500 });
+            }
+            throw movError;
+        }
 
         return NextResponse.json({
             success: true,
             cuenta: {
                 id: cuenta.id,
-                cliente_nombre: cuenta.nombre,
+                cliente_nombre: cuenta.nombre_cliente,
                 celular: cuenta.celular,
                 saldo_actual: cuenta.saldo_actual,
                 fecha_creacion: cuenta.fecha_creacion,
                 fecha_actualizacion: cuenta.fecha_actualizacion
             },
-            movimientos: movimientosResult.rows
+            movimientos: movimientos
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error obteniendo movimientos:', error);
         return NextResponse.json(
-            { success: false, message: 'Error al obtener movimientos' },
+            {
+                success: false,
+                message: 'Error al obtener movimientos',
+                error_detail: error.message || 'Error desconocido'
+            },
             { status: 500 }
         );
     }
