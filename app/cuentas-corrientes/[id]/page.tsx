@@ -66,11 +66,12 @@ export default function MovimientosCuentaCorriente() {
                 setCuenta(data.cuenta);
                 setMovimientos(data.movimientos);
             } else {
-                alert('Error al cargar movimientos');
+                console.error('Error del servidor:', data);
+                alert(`Error al cargar movimientos: ${data.message || 'Error desconocido'}`);
             }
         } catch (error) {
-            console.error('Error:', error);
-            alert('Error al cargar movimientos');
+            console.error('Error de red:', error);
+            alert(`Error al cargar movimientos: ${error instanceof Error ? error.message : 'Error de conexión'}`);
         } finally {
             setLoading(false);
         }
