@@ -552,12 +552,21 @@ export default function Home() {
                                                 Usar Cuenta Corriente
                                             </span>
                                         </label>
-                                        <p className="text-xs text-green-700 mt-1 ml-6">
-                                            💰 Saldo disponible: <strong>${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}</strong>
-                                        </p>
-                                        {usaCuentaCorriente && precio > 0 && (
+                                        {userRole === 'admin' && (
+                                            <>
+                                                <p className="text-xs text-green-700 mt-1 ml-6">
+                                                    💰 Saldo disponible: <strong>${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}</strong>
+                                                </p>
+                                                {usaCuentaCorriente && precio > 0 && (
+                                                    <p className="text-xs text-green-700 mt-1 ml-6">
+                                                        Saldo después del lavado: <strong>${(parseFloat(cuentaCorriente.saldo_actual) - precio).toLocaleString('es-AR')}</strong>
+                                                    </p>
+                                                )}
+                                            </>
+                                        )}
+                                        {userRole !== 'admin' && (
                                             <p className="text-xs text-green-700 mt-1 ml-6">
-                                                Saldo después del lavado: <strong>${(parseFloat(cuentaCorriente.saldo_actual) - precio).toLocaleString('es-AR')}</strong>
+                                                ✅ Cliente tiene cuenta corriente disponible
                                             </p>
                                         )}
                                     </div>
