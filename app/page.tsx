@@ -798,15 +798,6 @@ export default function Home() {
                                                 >
                                                     ✕
                                                 </button>
-                                                {userRole === 'admin' && (
-                                                    <button
-                                                        onClick={() => anularRegistro(registro.id)}
-                                                        className="flex items-center justify-center gap-2 px-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition-colors"
-                                                        title="Anular registro (no cuenta en estadísticas)"
-                                                    >
-                                                        <Ban size={18} />
-                                                    </button>
-                                                )}
                                             </div>
                                         </div>
                                     ))
@@ -887,15 +878,6 @@ export default function Home() {
                                                 >
                                                     ✓ Entregado
                                                 </button>
-                                                {userRole === 'admin' && (
-                                                    <button
-                                                        onClick={() => anularRegistro(registro.id)}
-                                                        className="flex items-center justify-center gap-2 px-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition-colors"
-                                                        title="Anular registro (no cuenta en estadísticas)"
-                                                    >
-                                                        <Ban size={18} />
-                                                    </button>
-                                                )}
                                             </div>
                                         </div>
                                     ))

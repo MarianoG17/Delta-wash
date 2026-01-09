@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Car, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, Car, AlertCircle, Ban } from 'lucide-react';
 
 interface Registro {
     id: number;
@@ -16,6 +16,7 @@ interface Registro {
     fecha_listo: string | null;
     fecha_entregado: string | null;
     estado: string;
+    anulado?: boolean;
 }
 
 export default function Historial() {
@@ -24,6 +25,8 @@ export default function Historial() {
     const [registros, setRegistros] = useState<Registro[]>([]);
     const [loading, setLoading] = useState(true);
     const [clientesSinVisitar, setClientesSinVisitar] = useState<any[]>([]);
+    const [userId, setUserId] = useState<number | null>(null);
+    const [userRole, setUserRole] = useState<string>('operador');
 
     useEffect(() => {
         setMounted(true);
@@ -32,6 +35,9 @@ export default function Historial() {
             if (!session) {
                 router.push('/login');
             } else {
+                const data = JSON.parse(session);
+                setUserId(data.id);
+                setUserRole(data.rol || 'operador');
                 cargarDatos();
             }
         }
@@ -39,17 +45,48 @@ export default function Historial() {
 
     const cargarDatos = async () => {
         try {
-            // Cargar todos los registros
-            const res = await fetch('/api/registros');
+            // Cargar todos los registros (incluyendo anulados para el historial)
+            const res = await fetch('/api/registros?incluir_anulados=true');
             const data = await res.json();
             if (data.success) {
                 setRegistros(data.registros);
-                analizarClientesSinVisitar(data.registros);
+                // Para análisis de clientes sin visitar, excluir anulados
+                const registrosActivos = data.registros.filter((r: Registro) => !r.anulado);
+                analizarClientesSinVisitar(registrosActivos);
             }
         } catch (error) {
             console.error('Error cargando datos:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const anularRegistro = async (id: number) => {
+        const motivo = prompt('⚠️ ¿Por qué se anula este registro?\n\nEl registro quedará marcado como anulado y NO se contará en estadísticas ni facturación.\nSi usó cuenta corriente, se revertirá el saldo.');
+        
+        if (motivo === null) return; // Usuario canceló
+
+        try {
+            const res = await fetch('/api/registros/anular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, motivo, usuario_id: userId }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                let mensaje = '✅ Registro anulado exitosamente';
+                if (data.saldo_revertido) {
+                    mensaje += `\n💰 Saldo revertido: $${data.saldo_revertido.toLocaleString('es-AR')}`;
+                }
+                alert(mensaje);
+                cargarDatos(); // Recargar la lista
+            } else {
+                alert('❌ Error: ' + data.message);
+            }
+        } catch (error) {
+            alert('❌ Error al anular registro');
         }
     };
 
@@ -316,11 +353,16 @@ export default function Historial() {
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
                                         Estado
                                     </th>
+                                    {userRole === 'admin' && (
+                                        <th className="text-center py-3 px-2 font-semibold text-gray-700">
+                                            Acción
+                                        </th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody>
                                 {registros.map((registro) => (
-                                    <tr key={registro.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                    <tr key={registro.id} className={`border-b border-gray-100 hover:bg-gray-50 ${registro.anulado ? 'bg-red-50 opacity-60' : ''}`}>
                                         <td className="py-3 px-2 text-sm text-gray-900">
                                             {formatFecha(registro.fecha_ingreso)}
                                         </td>
@@ -345,26 +387,46 @@ export default function Historial() {
                                             {registro.tipo_limpieza.replace(/_/g, ' ')}
                                         </td>
                                         <td className="py-3 px-2">
-                                            <span
-                                                className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                                    registro.estado === 'entregado'
-                                                        ? 'bg-green-100 text-green-700'
+                                            {registro.anulado ? (
+                                                <span className="text-xs px-2 py-1 rounded-full font-medium bg-red-100 text-red-700">
+                                                    🚫 ANULADO
+                                                </span>
+                                            ) : (
+                                                <span
+                                                    className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                                        registro.estado === 'entregado'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : registro.estado === 'listo'
+                                                                ? 'bg-orange-100 text-orange-700'
+                                                                : registro.estado === 'cancelado'
+                                                                    ? 'bg-red-100 text-red-700'
+                                                                    : 'bg-blue-100 text-blue-700'
+                                                        }`}
+                                                >
+                                                    {registro.estado === 'entregado'
+                                                        ? '✓ Entregado'
                                                         : registro.estado === 'listo'
-                                                            ? 'bg-orange-100 text-orange-700'
+                                                            ? '⚠ Listo'
                                                             : registro.estado === 'cancelado'
-                                                                ? 'bg-red-100 text-red-700'
-                                                                : 'bg-blue-100 text-blue-700'
-                                                    }`}
-                                            >
-                                                {registro.estado === 'entregado'
-                                                    ? '✓ Entregado'
-                                                    : registro.estado === 'listo'
-                                                        ? '⚠ Listo'
-                                                        : registro.estado === 'cancelado'
-                                                            ? '✕ Cancelado'
-                                                            : '⏳ En proceso'}
-                                            </span>
+                                                                ? '✕ Cancelado'
+                                                                : '⏳ En proceso'}
+                                                </span>
+                                            )}
                                         </td>
+                                        {userRole === 'admin' && (
+                                            <td className="py-3 px-2 text-center">
+                                                {!registro.anulado && (
+                                                    <button
+                                                        onClick={() => anularRegistro(registro.id)}
+                                                        className="inline-flex items-center gap-1 px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-colors"
+                                                        title="Anular registro (no cuenta en estadísticas)"
+                                                    >
+                                                        <Ban size={16} />
+                                                        Anular
+                                                    </button>
+                                                )}
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
