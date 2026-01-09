@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
             // Eliminar el movimiento de cuenta corriente asociado
             await sql`
-                DELETE FROM movimientos_cuenta_corriente
+                DELETE FROM movimientos_cuenta
                 WHERE registro_id = ${id}
             `;
         }

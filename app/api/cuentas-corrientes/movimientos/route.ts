@@ -32,24 +32,24 @@ export async function GET(request: Request) {
 
         // Obtener todos los movimientos de la cuenta
         const movimientosResult = await sql`
-            SELECT 
-                mcc.id,
-                mcc.tipo,
-                mcc.monto,
-                mcc.saldo_anterior,
-                mcc.saldo_nuevo,
-                mcc.descripcion,
-                mcc.fecha_movimiento,
-                mcc.registro_id,
+            SELECT
+                mc.id,
+                mc.tipo,
+                mc.monto,
+                mc.saldo_anterior,
+                mc.saldo_nuevo,
+                mc.descripcion,
+                mc.fecha as fecha_movimiento,
+                mc.registro_id,
                 r.patente,
                 r.marca_modelo,
                 r.tipo_limpieza,
                 u.nombre as usuario_nombre
-            FROM movimientos_cuenta_corriente mcc
-            LEFT JOIN registros r ON mcc.registro_id = r.id
-            LEFT JOIN usuarios u ON mcc.usuario_id = u.id
-            WHERE mcc.cuenta_corriente_id = ${cuentaId}
-            ORDER BY mcc.fecha_movimiento DESC
+            FROM movimientos_cuenta mc
+            LEFT JOIN registros r ON mc.registro_id = r.id
+            LEFT JOIN usuarios u ON mc.usuario_id = u.id
+            WHERE mc.cuenta_id = ${cuentaId}
+            ORDER BY mc.fecha DESC
         `;
 
         return NextResponse.json({
