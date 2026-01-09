@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Car, LogOut, History, Plus, Send, Users, Wallet } from 'lucide-react';
+import { Car, LogOut, History, Plus, Send, Users, Wallet, Ban } from 'lucide-react';
 
 interface Registro {
     id: number;
@@ -299,6 +299,35 @@ export default function Home() {
             }
         } catch (error) {
             alert('❌ Error al cancelar registro');
+        }
+    };
+
+    const anularRegistro = async (id: number) => {
+        const motivo = prompt('⚠️ ¿Por qué se anula este registro?\n\nEl registro quedará marcado como anulado y NO se contará en estadísticas ni facturación.\nSi usó cuenta corriente, se revertirá el saldo.');
+        
+        if (motivo === null) return; // Usuario canceló
+
+        try {
+            const res = await fetch('/api/registros/anular', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, motivo, usuario_id: userId }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                let mensaje = '✅ Registro anulado exitosamente';
+                if (data.saldo_revertido) {
+                    mensaje += `\n💰 Saldo revertido: $${data.saldo_revertido.toLocaleString('es-AR')}`;
+                }
+                alert(mensaje);
+                cargarRegistrosEnProceso();
+            } else {
+                alert('❌ Error: ' + data.message);
+            }
+        } catch (error) {
+            alert('❌ Error al anular registro');
         }
     };
 
@@ -771,11 +800,11 @@ export default function Home() {
                                                 </button>
                                                 {userRole === 'admin' && (
                                                     <button
-                                                        onClick={() => eliminarRegistro(registro.id)}
-                                                        className="flex items-center justify-center gap-2 px-3 bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 rounded-lg transition-colors"
-                                                        title="Eliminar permanentemente"
+                                                        onClick={() => anularRegistro(registro.id)}
+                                                        className="flex items-center justify-center gap-2 px-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                        title="Anular registro (no cuenta en estadísticas)"
                                                     >
-                                                        🗑️
+                                                        <Ban size={18} />
                                                     </button>
                                                 )}
                                             </div>
@@ -860,11 +889,11 @@ export default function Home() {
                                                 </button>
                                                 {userRole === 'admin' && (
                                                     <button
-                                                        onClick={() => eliminarRegistro(registro.id)}
-                                                        className="flex items-center justify-center gap-2 px-3 bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 rounded-lg transition-colors"
-                                                        title="Eliminar permanentemente"
+                                                        onClick={() => anularRegistro(registro.id)}
+                                                        className="flex items-center justify-center gap-2 px-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                        title="Anular registro (no cuenta en estadísticas)"
                                                     >
-                                                        🗑️
+                                                        <Ban size={18} />
                                                     </button>
                                                 )}
                                             </div>

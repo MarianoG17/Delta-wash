@@ -5,19 +5,36 @@ export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const estado = searchParams.get('estado');
+        const incluirAnulados = searchParams.get('incluir_anulados') === 'true';
 
         let query;
         if (estado) {
-            query = sql`
-        SELECT * FROM registros_lavado 
-        WHERE estado = ${estado}
-        ORDER BY fecha_ingreso DESC
-      `;
+            if (incluirAnulados) {
+                query = sql`
+                    SELECT * FROM registros_lavado
+                    WHERE estado = ${estado}
+                    ORDER BY fecha_ingreso DESC
+                `;
+            } else {
+                query = sql`
+                    SELECT * FROM registros_lavado
+                    WHERE estado = ${estado} AND (anulado IS NULL OR anulado = FALSE)
+                    ORDER BY fecha_ingreso DESC
+                `;
+            }
         } else {
-            query = sql`
-        SELECT * FROM registros_lavado 
-        ORDER BY fecha_ingreso DESC
-      `;
+            if (incluirAnulados) {
+                query = sql`
+                    SELECT * FROM registros_lavado
+                    ORDER BY fecha_ingreso DESC
+                `;
+            } else {
+                query = sql`
+                    SELECT * FROM registros_lavado
+                    WHERE (anulado IS NULL OR anulado = FALSE)
+                    ORDER BY fecha_ingreso DESC
+                `;
+            }
         }
 
         const result = await query;

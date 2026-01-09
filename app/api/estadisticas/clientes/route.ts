@@ -5,6 +5,7 @@ export async function GET() {
   try {
     // Obtener estadísticas de clientes en los últimos 30 días
     // Agrupar SOLO por celular para evitar duplicados por diferencias en nombres
+    // EXCLUIR registros anulados
     const result = await sql`
           SELECT
             MAX(nombre_cliente) as nombre_cliente,
@@ -15,18 +16,20 @@ export async function GET() {
             STRING_AGG(DISTINCT marca_modelo, ', ') as autos
           FROM registros_lavado
           WHERE fecha_ingreso >= NOW() - INTERVAL '30 days'
+            AND (anulado IS NULL OR anulado = FALSE)
           GROUP BY celular
           ORDER BY total_visitas DESC, ultima_visita DESC
         `;
 
-    // También obtener estadísticas generales
+    // También obtener estadísticas generales (EXCLUIR anulados)
     const statsResult = await sql`
-      SELECT 
+      SELECT
         COUNT(*) as total_registros_30dias,
         COUNT(DISTINCT celular) as clientes_unicos,
         COUNT(CASE WHEN estado = 'entregado' THEN 1 END) as completados
       FROM registros_lavado
       WHERE fecha_ingreso >= NOW() - INTERVAL '30 days'
+        AND (anulado IS NULL OR anulado = FALSE)
     `;
 
     return NextResponse.json({

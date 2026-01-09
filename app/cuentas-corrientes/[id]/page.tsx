@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Wallet, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
+import { ArrowLeft, Wallet, TrendingUp, TrendingDown, Calendar, Trash2 } from 'lucide-react';
 
 interface Movimiento {
     id: number;
@@ -74,6 +74,32 @@ export default function MovimientosCuentaCorriente() {
             alert(`Error al cargar movimientos: ${error instanceof Error ? error.message : 'Error de conexión'}`);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const eliminarMovimiento = async (movimientoId: number) => {
+        if (!confirm('⚠️ ¿ELIMINAR este movimiento?\n\nEsta acción revertirá el saldo de la cuenta corriente y NO se puede deshacer.')) {
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/cuentas-corrientes/eliminar-movimiento', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ movimiento_id: movimientoId }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                alert('✅ Movimiento eliminado y saldo revertido');
+                cargarMovimientos(); // Recargar la lista
+            } else {
+                alert(`❌ Error: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ Error al eliminar movimiento');
         }
     };
 
@@ -187,16 +213,26 @@ export default function MovimientosCuentaCorriente() {
                                                     )}
                                                 </div>
 
-                                                <div className="text-right ml-4">
-                                                    <p className={`text-2xl font-bold ${
-                                                        mov.tipo === 'carga' ? 'text-green-600' : 'text-blue-600'
-                                                    }`}>
-                                                        {mov.tipo === 'carga' ? '+' : '-'}${parseFloat(mov.monto.toString()).toLocaleString('es-AR')}
-                                                    </p>
-                                                    <div className="text-xs text-gray-600 mt-1">
-                                                        <p>Anterior: ${parseFloat(mov.saldo_anterior.toString()).toLocaleString('es-AR')}</p>
-                                                        <p className="font-semibold">Nuevo: ${parseFloat(mov.saldo_nuevo.toString()).toLocaleString('es-AR')}</p>
+                                                <div className="flex items-start gap-3">
+                                                    <div className="text-right">
+                                                        <p className={`text-2xl font-bold ${
+                                                            mov.tipo === 'carga' ? 'text-green-600' : 'text-blue-600'
+                                                        }`}>
+                                                            {mov.tipo === 'carga' ? '+' : '-'}${parseFloat(mov.monto.toString()).toLocaleString('es-AR')}
+                                                        </p>
+                                                        <div className="text-xs text-gray-600 mt-1">
+                                                            <p>Anterior: ${parseFloat(mov.saldo_anterior.toString()).toLocaleString('es-AR')}</p>
+                                                            <p className="font-semibold">Nuevo: ${parseFloat(mov.saldo_nuevo.toString()).toLocaleString('es-AR')}</p>
+                                                        </div>
                                                     </div>
+                                                    
+                                                    <button
+                                                        onClick={() => eliminarMovimiento(mov.id)}
+                                                        className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                                                        title="Eliminar movimiento"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
                                                 </div>
                                             </div>
 
