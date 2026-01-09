@@ -184,6 +184,45 @@ export default function CuentasCorrientesPage() {
                             <form onSubmit={crearCuenta} className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-900 mb-2">
+                                        Celular (ID único)
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        value={celular}
+                                        onChange={async (e) => {
+                                            const value = e.target.value;
+                                            setCelular(value);
+                                            
+                                            // Buscar si ya existe una cuenta con este celular
+                                            if (value.length >= 8) {
+                                                try {
+                                                    const res = await fetch(`/api/cuentas-corrientes?celular=${value}`);
+                                                    const data = await res.json();
+                                                    
+                                                    if (data.success && data.found) {
+                                                        setMessage('⚠️ Ya existe una cuenta con este celular. Puedes cargarle saldo desde la lista.');
+                                                        setNombreCliente(data.cuenta.nombre_cliente);
+                                                    } else {
+                                                        setMessage('');
+                                                    }
+                                                } catch (error) {
+                                                    console.error('Error buscando celular:', error);
+                                                }
+                                            } else {
+                                                setMessage('');
+                                            }
+                                        }}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                        placeholder="11-12345678"
+                                        required
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Se verificará si ya existe una cuenta con este celular
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-900 mb-2">
                                         Nombre del Cliente
                                     </label>
                                     <input
@@ -192,20 +231,6 @@ export default function CuentasCorrientesPage() {
                                         onChange={(e) => setNombreCliente(e.target.value)}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                         placeholder="Juan Pérez"
-                                        required
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-900 mb-2">
-                                        Celular
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        value={celular}
-                                        onChange={(e) => setCelular(e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                                        placeholder="11-12345678"
                                         required
                                     />
                                 </div>
