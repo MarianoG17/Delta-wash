@@ -117,10 +117,19 @@ export default function PruebaPage() {
             'moto': 15000
         };
 
-        // Si incluye "con_cera", sumar 2000 al precio base
+        // Incremento por "con_cera" según tipo de vehículo
+        const incrementoCera: { [key: string]: number } = {
+            'auto': 2000,
+            'mono': 2000,
+            'camioneta': 5000,
+            'camioneta_xl': 4000,
+            'moto': 0  // Moto no tiene opción de cera
+        };
+
         const tieneConCera = tiposLav.includes('con_cera');
         const precioBase = preciosBase[tipoVeh] || 0;
-        const precioFinal = tieneConCera ? precioBase + 2000 : precioBase;
+        const incremento = tieneConCera ? (incrementoCera[tipoVeh] || 0) : 0;
+        const precioFinal = precioBase + incremento;
 
         return precioFinal;
     };
@@ -617,10 +626,16 @@ export default function PruebaPage() {
                                                 ${calcularPrecio(tipoVehiculo, tiposLimpieza.filter(t => t !== 'con_cera')).toLocaleString('es-AR')}
                                             </span>
                                         </div>
-                                        {tiposLimpieza.includes('con_cera') && (
+                                        {tiposLimpieza.includes('con_cera') && tipoVehiculo !== 'moto' && (
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-gray-700">+ Con Cera</span>
-                                                <span className="font-semibold text-gray-900">$2.000</span>
+                                                <span className="font-semibold text-gray-900">
+                                                    ${(
+                                                        tipoVehiculo === 'camioneta' ? 5000 :
+                                                        tipoVehiculo === 'camioneta_xl' ? 4000 :
+                                                        2000
+                                                    ).toLocaleString('es-AR')}
+                                                </span>
                                             </div>
                                         )}
                                         {extrasValor && parseFloat(extrasValor) > 0 && (
