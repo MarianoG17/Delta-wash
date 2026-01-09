@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Car, LogOut, History, Plus, Send, Users } from 'lucide-react';
+import { Car, LogOut, History, Plus, Send, Users, Wallet } from 'lucide-react';
 
 interface Registro {
     id: number;
@@ -14,6 +14,10 @@ interface Registro {
     celular: string;
     fecha_ingreso: string;
     estado: string;
+    tipo_vehiculo?: string;
+    precio?: number;
+    extras?: string;
+    extras_valor?: number;
 }
 
 export default function Home() {
@@ -31,7 +35,11 @@ export default function Home() {
     const [tiposLimpieza, setTiposLimpieza] = useState<string[]>([]);
     const [nombreCliente, setNombreCliente] = useState('');
     const [celular, setCelular] = useState('');
+    const [extras, setExtras] = useState('');
+    const [extrasValor, setExtrasValor] = useState('');
     const [precio, setPrecio] = useState(0);
+    const [usaCuentaCorriente, setUsaCuentaCorriente] = useState(false);
+    const [cuentaCorriente, setCuentaCorriente] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
@@ -73,6 +81,31 @@ export default function Home() {
         }
     };
 
+    // Buscar cuenta corriente por celular
+    const buscarCuentaCorriente = async (celularBuscar: string) => {
+        if (!celularBuscar || celularBuscar.length < 8) {
+            setCuentaCorriente(null);
+            setUsaCuentaCorriente(false);
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/cuentas-corrientes?celular=${celularBuscar}`);
+            const data = await res.json();
+
+            if (data.success && data.found && data.cuenta.saldo_actual > 0) {
+                setCuentaCorriente(data.cuenta);
+            } else {
+                setCuentaCorriente(null);
+                setUsaCuentaCorriente(false);
+            }
+        } catch (error) {
+            console.error('Error buscando cuenta corriente:', error);
+            setCuentaCorriente(null);
+            setUsaCuentaCorriente(false);
+        }
+    };
+
     // Función para calcular el precio según tipo de vehículo y lavado
     const calcularPrecio = (tipoVeh: string, tiposLav: string[]) => {
         // Precios base por tipo de vehículo (lavado simple)
@@ -84,19 +117,29 @@ export default function Home() {
             'moto': 15000
         };
 
-        // Si incluye "con_cera", sumar 2000 al precio base
+        // Incremento por "con_cera" según tipo de vehículo
+        const incrementoCera: { [key: string]: number } = {
+            'auto': 2000,
+            'mono': 2000,
+            'camioneta': 5000,
+            'camioneta_xl': 4000,
+            'moto': 0  // Moto no tiene opción de cera
+        };
+
         const tieneConCera = tiposLav.includes('con_cera');
         const precioBase = preciosBase[tipoVeh] || 0;
-        const precioFinal = tieneConCera ? precioBase + 2000 : precioBase;
+        const incremento = tieneConCera ? (incrementoCera[tipoVeh] || 0) : 0;
+        const precioFinal = precioBase + incremento;
 
         return precioFinal;
     };
 
-    // Recalcular precio cuando cambia el tipo de vehículo o tipos de limpieza
+    // Recalcular precio cuando cambia el tipo de vehículo, tipos de limpieza o extras
     useEffect(() => {
-        const nuevoPrecio = calcularPrecio(tipoVehiculo, tiposLimpieza);
-        setPrecio(nuevoPrecio);
-    }, [tipoVehiculo, tiposLimpieza]);
+        const precioBase = calcularPrecio(tipoVehiculo, tiposLimpieza);
+        const valorExtras = parseFloat(extrasValor) || 0;
+        setPrecio(precioBase + valorExtras);
+    }, [tipoVehiculo, tiposLimpieza, extrasValor]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -110,6 +153,15 @@ export default function Home() {
         setMessage('');
 
         try {
+            // Validar saldo si usa cuenta corriente
+            if (usaCuentaCorriente && cuentaCorriente) {
+                if (parseFloat(cuentaCorriente.saldo_actual) < precio) {
+                    setMessage(`❌ Saldo insuficiente. Disponible: $${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}`);
+                    setLoading(false);
+                    return;
+                }
+            }
+
             const res = await fetch('/api/registros', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -120,15 +172,24 @@ export default function Home() {
                     tipo_limpieza: tiposLimpieza.join(', '),
                     nombre_cliente: nombreCliente,
                     celular: celular,
+                    extras: extras || null,
+                    extras_valor: parseFloat(extrasValor) || 0,
                     precio: precio,
                     usuario_id: userId,
+                    usa_cuenta_corriente: usaCuentaCorriente,
+                    cuenta_corriente_id: usaCuentaCorriente && cuentaCorriente ? cuentaCorriente.id : null,
                 }),
             });
 
             const data = await res.json();
 
             if (data.success) {
-                setMessage('✅ Auto registrado exitosamente');
+                let mensaje = '✅ Auto registrado exitosamente';
+                if (data.cuenta_corriente) {
+                    mensaje += `\n💰 Saldo descontado: $${data.cuenta_corriente.monto_descontado.toLocaleString('es-AR')}`;
+                    mensaje += `\n💳 Nuevo saldo: $${data.cuenta_corriente.saldo_nuevo.toLocaleString('es-AR')}`;
+                }
+                setMessage(mensaje);
                 // Limpiar formulario
                 setMarca('');
                 setModelo('');
@@ -137,7 +198,11 @@ export default function Home() {
                 setTiposLimpieza([]);
                 setNombreCliente('');
                 setCelular('');
+                setExtras('');
+                setExtrasValor('');
                 setPrecio(0);
+                setUsaCuentaCorriente(false);
+                setCuentaCorriente(null);
                 // Recargar registros
                 cargarRegistrosEnProceso();
             } else {
@@ -182,7 +247,6 @@ export default function Home() {
             const data = await res.json();
 
             if (data.success) {
-                // Detectar iOS para usar location.href en lugar de window.open
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
                 if (isIOS) {
@@ -225,7 +289,7 @@ export default function Home() {
 
     const cancelarRegistro = async (id: number) => {
         const motivo = prompt('¿Por qué se cancela? (opcional)');
-        if (motivo === null) return; // Usuario canceló el prompt
+        if (motivo === null) return;
 
         try {
             const res = await fetch('/api/registros/cancelar', {
@@ -274,6 +338,13 @@ export default function Home() {
                         {userRole === 'admin' && (
                             <>
                                 <Link
+                                    href="/cuentas-corrientes"
+                                    className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
+                                >
+                                    <Wallet size={18} />
+                                    <span className="text-sm">Cuentas</span>
+                                </Link>
+                                <Link
                                     href="/clientes"
                                     className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
                                 >
@@ -320,7 +391,6 @@ export default function Home() {
                                         const value = e.target.value.toUpperCase();
                                         setPatente(value);
 
-                                        // Buscar automáticamente cuando la patente tiene 6 o 7 caracteres
                                         if (value.length >= 6) {
                                             try {
                                                 const res = await fetch(`/api/registros/buscar-patente?patente=${value}`);
@@ -451,7 +521,17 @@ export default function Home() {
                                 <input
                                     type="tel"
                                     value={celular}
-                                    onChange={(e) => setCelular(e.target.value)}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setCelular(value);
+                                        // Buscar cuenta corriente cuando el celular tiene suficientes dígitos
+                                        if (value.length >= 8) {
+                                            buscarCuentaCorriente(value);
+                                        } else {
+                                            setCuentaCorriente(null);
+                                            setUsaCuentaCorriente(false);
+                                        }
+                                    }}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                     placeholder="11-12345678"
                                     required
@@ -459,24 +539,110 @@ export default function Home() {
                                 <p className="text-xs text-gray-500 mt-1">
                                     Formato: código de área + número (ej: 11-12345678)
                                 </p>
+                                {cuentaCorriente && cuentaCorriente.saldo_actual > 0 && (
+                                    <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={usaCuentaCorriente}
+                                                onChange={(e) => setUsaCuentaCorriente(e.target.checked)}
+                                                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                            />
+                                            <span className="text-sm font-medium text-green-900">
+                                                Usar Cuenta Corriente
+                                            </span>
+                                        </label>
+                                        <p className="text-xs text-green-700 mt-1 ml-6">
+                                            💰 Saldo disponible: <strong>${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}</strong>
+                                        </p>
+                                        {usaCuentaCorriente && precio > 0 && (
+                                            <p className="text-xs text-green-700 mt-1 ml-6">
+                                                Saldo después del lavado: <strong>${(parseFloat(cuentaCorriente.saldo_actual) - precio).toLocaleString('es-AR')}</strong>
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="border-t border-gray-200 pt-4">
+                                <label className="block text-sm font-medium text-gray-900 mb-3">
+                                    Extras (Opcional)
+                                </label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-xs text-gray-600 mb-1">
+                                            Descripción
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={extras}
+                                            onChange={(e) => setExtras(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                            placeholder="Ej: Lavado de tapizados"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-600 mb-1">
+                                            Valor ($)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={extrasValor}
+                                            onChange={(e) => setExtrasValor(e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                            placeholder="0"
+                                            min="0"
+                                            step="1000"
+                                        />
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Agrega servicios adicionales y su costo
+                                </p>
                             </div>
 
                             {precio > 0 && (
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <div className="flex justify-between items-center">
+                                    <div className="space-y-2 mb-3">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-700">
+                                                {tipoVehiculo === 'auto' && '🚗 Auto'}
+                                                {tipoVehiculo === 'mono' && '🚙 Mono (SUV)'}
+                                                {tipoVehiculo === 'camioneta' && '🚐 Camioneta'}
+                                                {tipoVehiculo === 'camioneta_xl' && '🚐 Camioneta XL'}
+                                                {tipoVehiculo === 'moto' && '🏍️ Moto'}
+                                            </span>
+                                            <span className="font-semibold text-gray-900">
+                                                ${calcularPrecio(tipoVehiculo, tiposLimpieza.filter(t => t !== 'con_cera')).toLocaleString('es-AR')}
+                                            </span>
+                                        </div>
+                                        {tiposLimpieza.includes('con_cera') && tipoVehiculo !== 'moto' && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-700">+ Con Cera</span>
+                                                <span className="font-semibold text-gray-900">
+                                                    ${(
+                                                        tipoVehiculo === 'camioneta' ? 5000 :
+                                                        tipoVehiculo === 'camioneta_xl' ? 4000 :
+                                                        2000
+                                                    ).toLocaleString('es-AR')}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {extrasValor && parseFloat(extrasValor) > 0 && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-700">+ {extras || 'Extras'}</span>
+                                                <span className="font-semibold text-gray-900">
+                                                    ${parseFloat(extrasValor).toLocaleString('es-AR')}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="border-t border-blue-300 pt-2 flex justify-between items-center">
                                         <span className="text-sm font-medium text-gray-900">Precio Total:</span>
                                         <span className="text-2xl font-bold text-blue-600">
                                             ${precio.toLocaleString('es-AR')}
                                         </span>
                                     </div>
-                                    <p className="text-xs text-gray-600 mt-1">
-                                        {tipoVehiculo === 'auto' && 'Auto'}
-                                        {tipoVehiculo === 'mono' && 'Mono (SUV)'}
-                                        {tipoVehiculo === 'camioneta' && 'Camioneta'}
-                                        {tipoVehiculo === 'camioneta_xl' && 'Camioneta XL'}
-                                        {tipoVehiculo === 'moto' && 'Moto'}
-                                        {tiposLimpieza.includes('con_cera') && ' + Con Cera (+$2.000)'}
-                                    </p>
                                 </div>
                             )}
 
@@ -526,14 +692,35 @@ export default function Home() {
                                                     <p className="text-sm text-gray-600">
                                                         Patente: <span className="font-mono font-semibold">{registro.patente}</span>
                                                     </p>
+                                                    {registro.tipo_vehiculo && (
+                                                        <p className="text-xs text-blue-600 font-semibold">
+                                                            {registro.tipo_vehiculo === 'auto' && '🚗 Auto'}
+                                                            {registro.tipo_vehiculo === 'mono' && '🚙 Mono (SUV)'}
+                                                            {registro.tipo_vehiculo === 'camioneta' && '🚐 Camioneta'}
+                                                            {registro.tipo_vehiculo === 'camioneta_xl' && '🚐 Camioneta XL'}
+                                                            {registro.tipo_vehiculo === 'moto' && '🏍️ Moto'}
+                                                        </p>
+                                                    )}
                                                 </div>
-                                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                                                    {registro.tipo_limpieza.replace(/_/g, ' ')}
-                                                </span>
+                                                <div className="text-right">
+                                                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded block mb-1">
+                                                        {registro.tipo_limpieza.replace(/_/g, ' ')}
+                                                    </span>
+                                                    {registro.precio && registro.precio > 0 && (
+                                                        <span className="text-sm font-bold text-blue-600">
+                                                            ${registro.precio.toLocaleString('es-AR')}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <p className="text-sm text-gray-600 mb-1">
                                                 Cliente: {registro.nombre_cliente}
                                             </p>
+                                            {registro.extras && (
+                                                <p className="text-xs text-blue-600 mb-1">
+                                                    Extra: {registro.extras} (+${registro.extras_valor?.toLocaleString('es-AR')})
+                                                </p>
+                                            )}
                                             <p className="text-xs text-gray-500 mb-3">
                                                 Ingreso: {new Date(registro.fecha_ingreso).toLocaleString('es-AR')}
                                             </p>
@@ -583,14 +770,35 @@ export default function Home() {
                                                     <p className="text-sm text-gray-600">
                                                         Patente: <span className="font-mono font-semibold">{registro.patente}</span>
                                                     </p>
+                                                    {registro.tipo_vehiculo && (
+                                                        <p className="text-xs text-blue-600 font-semibold">
+                                                            {registro.tipo_vehiculo === 'auto' && '🚗 Auto'}
+                                                            {registro.tipo_vehiculo === 'mono' && '🚙 Mono (SUV)'}
+                                                            {registro.tipo_vehiculo === 'camioneta' && '🚐 Camioneta'}
+                                                            {registro.tipo_vehiculo === 'camioneta_xl' && '🚐 Camioneta XL'}
+                                                            {registro.tipo_vehiculo === 'moto' && '🏍️ Moto'}
+                                                        </p>
+                                                    )}
                                                 </div>
-                                                <span className="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded font-semibold">
-                                                    LISTO
-                                                </span>
+                                                <div className="text-right">
+                                                    <span className="text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded font-semibold block mb-1">
+                                                        LISTO
+                                                    </span>
+                                                    {registro.precio && registro.precio > 0 && (
+                                                        <span className="text-sm font-bold text-blue-600">
+                                                            ${registro.precio.toLocaleString('es-AR')}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <p className="text-sm text-gray-600 mb-1">
                                                 Cliente: {registro.nombre_cliente}
                                             </p>
+                                            {registro.extras && (
+                                                <p className="text-xs text-blue-600 mb-1">
+                                                    Extra: {registro.extras} (+${registro.extras_valor?.toLocaleString('es-AR')})
+                                                </p>
+                                            )}
                                             <p className="text-xs text-gray-500 mb-3">
                                                 Tipo: {registro.tipo_limpieza.replace(/_/g, ' ')}
                                             </p>
