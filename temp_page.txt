@@ -1,9 +1,9 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Car, LogOut, History, Plus, Send, Users, Wallet } from 'lucide-react';
+import { Car, LogOut, History, Plus, Send, Users, ArrowLeft, Wallet } from 'lucide-react';
 
 interface Registro {
     id: number;
@@ -20,7 +20,7 @@ interface Registro {
     extras_valor?: number;
 }
 
-export default function Home() {
+export default function PruebaPage() {
     const router = useRouter();
     const [username, setUsername] = useState('');
     const [userId, setUserId] = useState<number | null>(null);
@@ -93,7 +93,7 @@ export default function Home() {
             const res = await fetch(`/api/cuentas-corrientes?celular=${celularBuscar}`);
             const data = await res.json();
 
-            if (data.success && data.found) {
+            if (data.success && data.found && data.cuenta.saldo_actual > 0) {
                 setCuentaCorriente(data.cuenta);
             } else {
                 setCuentaCorriente(null);
@@ -153,6 +153,15 @@ export default function Home() {
         setMessage('');
 
         try {
+            // Validar saldo si usa cuenta corriente
+            if (usaCuentaCorriente && cuentaCorriente) {
+                if (parseFloat(cuentaCorriente.saldo_actual) < precio) {
+                    setMessage(`❌ Saldo insuficiente. Disponible: $${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}`);
+                    setLoading(false);
+                    return;
+                }
+            }
+
             const res = await fetch('/api/registros', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -302,35 +311,6 @@ export default function Home() {
         }
     };
 
-    const eliminarRegistro = async (id: number) => {
-        if (!confirm('⚠️ ¿ELIMINAR este registro permanentemente?\n\nEsta acción NO se puede deshacer.\nSi usó cuenta corriente, se revertirá el movimiento.')) {
-            return;
-        }
-
-        try {
-            const res = await fetch('/api/registros/eliminar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id }),
-            });
-
-            const data = await res.json();
-
-            if (data.success) {
-                let mensaje = '✅ Registro eliminado exitosamente';
-                if (data.cuenta_corriente_revertida) {
-                    mensaje += '\n💰 Movimiento de cuenta corriente revertido';
-                }
-                alert(mensaje);
-                cargarRegistrosEnProceso();
-            } else {
-                alert('❌ Error al eliminar registro');
-            }
-        } catch (error) {
-            alert('❌ Error al eliminar registro');
-        }
-    };
-
     const handleLogout = () => {
         if (typeof window !== 'undefined') {
             localStorage.removeItem('lavadero_user');
@@ -343,18 +323,28 @@ export default function Home() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 p-4">
+        <div className="min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 p-4">
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
                 <div className="flex justify-between items-center mb-6">
                     <div className="text-white">
                         <div className="flex items-center gap-2 mb-2">
                             <Car size={32} />
-                            <h1 className="text-3xl font-bold">DeltaWash</h1>
+                            <h1 className="text-3xl font-bold">DeltaWash - PRUEBA</h1>
                         </div>
                         <p className="text-sm opacity-90">Bienvenido/a, {username}</p>
+                        <p className="text-xs opacity-75 bg-yellow-400 text-black px-2 py-1 rounded mt-1 inline-block">
+                            ⚠️ Modo de Prueba - Nuevas Funcionalidades
+                        </p>
                     </div>
                     <div className="flex gap-2">
+                        <Link
+                            href="/"
+                            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
+                        >
+                            <ArrowLeft size={18} />
+                            <span className="text-sm">Volver</span>
+                        </Link>
                         {userRole === 'admin' && (
                             <>
                                 <Link
@@ -394,7 +384,7 @@ export default function Home() {
                     {/* Formulario de Registro */}
                     <div className="bg-white rounded-2xl shadow-xl p-6">
                         <div className="flex items-center gap-2 mb-6">
-                            <Plus className="text-blue-600" size={24} />
+                            <Plus className="text-purple-600" size={24} />
                             <h2 className="text-2xl font-bold text-gray-900">Nuevo Registro</h2>
                         </div>
 
@@ -429,7 +419,7 @@ export default function Home() {
                                             }
                                         }
                                     }}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase text-gray-900"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent uppercase text-gray-900"
                                     placeholder="ABC123"
                                     required
                                 />
@@ -447,7 +437,7 @@ export default function Home() {
                                         type="text"
                                         value={marca}
                                         onChange={(e) => setMarca(e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                                         placeholder="Toyota"
                                         required
                                     />
@@ -460,7 +450,7 @@ export default function Home() {
                                         type="text"
                                         value={modelo}
                                         onChange={(e) => setModelo(e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                                         placeholder="Corolla"
                                         required
                                     />
@@ -474,7 +464,7 @@ export default function Home() {
                                 <select
                                     value={tipoVehiculo}
                                     onChange={(e) => setTipoVehiculo(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                                     required
                                 >
                                     <option value="auto">Auto</option>
@@ -509,7 +499,7 @@ export default function Home() {
                                                         setTiposLimpieza(tiposLimpieza.filter(t => t !== tipo.value));
                                                     }
                                                 }}
-                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                                             />
                                             <span className="text-sm text-gray-900">{tipo.label}</span>
                                         </label>
@@ -528,7 +518,7 @@ export default function Home() {
                                     type="text"
                                     value={nombreCliente}
                                     onChange={(e) => setNombreCliente(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                                     placeholder="Nombre completo"
                                     required
                                 />
@@ -552,15 +542,15 @@ export default function Home() {
                                             setUsaCuentaCorriente(false);
                                         }
                                     }}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                                     placeholder="11-12345678"
                                     required
                                 />
                                 <p className="text-xs text-gray-500 mt-1">
                                     Formato: código de área + número (ej: 11-12345678)
                                 </p>
-                                {cuentaCorriente && (
-                                    <div className={`mt-2 p-3 rounded-lg ${parseFloat(cuentaCorriente.saldo_actual) >= 0 ? 'bg-green-50 border border-green-200' : 'bg-orange-50 border border-orange-200'}`}>
+                                {cuentaCorriente && cuentaCorriente.saldo_actual > 0 && (
+                                    <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
                                         <label className="flex items-center gap-2 cursor-pointer">
                                             <input
                                                 type="checkbox"
@@ -572,23 +562,12 @@ export default function Home() {
                                                 Usar Cuenta Corriente
                                             </span>
                                         </label>
-                                        {userRole === 'admin' && (
-                                            <>
-                                                <p className={`text-xs mt-1 ml-6 ${parseFloat(cuentaCorriente.saldo_actual) >= 0 ? 'text-green-700' : 'text-orange-700'}`}>
-                                                    💰 Saldo actual: <strong>${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}</strong>
-                                                </p>
-                                                {usaCuentaCorriente && precio > 0 && (
-                                                    <p className={`text-xs mt-1 ml-6 ${(parseFloat(cuentaCorriente.saldo_actual) - precio) >= 0 ? 'text-green-700' : 'text-orange-700'}`}>
-                                                        Saldo después del lavado: <strong>${(parseFloat(cuentaCorriente.saldo_actual) - precio).toLocaleString('es-AR')}</strong>
-                                                    </p>
-                                                )}
-                                            </>
-                                        )}
-                                        {userRole !== 'admin' && (
-                                            <p className={`text-xs mt-1 ml-6 ${parseFloat(cuentaCorriente.saldo_actual) >= 0 ? 'text-green-700' : 'text-orange-700'}`}>
-                                                {parseFloat(cuentaCorriente.saldo_actual) >= 0
-                                                    ? '✅ Cliente tiene cuenta corriente disponible'
-                                                    : '⚠️ Cliente tiene cuenta corriente (saldo en negativo)'}
+                                        <p className="text-xs text-green-700 mt-1 ml-6">
+                                            💰 Saldo disponible: <strong>${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}</strong>
+                                        </p>
+                                        {usaCuentaCorriente && precio > 0 && (
+                                            <p className="text-xs text-green-700 mt-1 ml-6">
+                                                Saldo después del lavado: <strong>${(parseFloat(cuentaCorriente.saldo_actual) - precio).toLocaleString('es-AR')}</strong>
                                             </p>
                                         )}
                                     </div>
@@ -608,7 +587,7 @@ export default function Home() {
                                             type="text"
                                             value={extras}
                                             onChange={(e) => setExtras(e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                                             placeholder="Ej: Lavado de tapizados"
                                         />
                                     </div>
@@ -620,7 +599,7 @@ export default function Home() {
                                             type="number"
                                             value={extrasValor}
                                             onChange={(e) => setExtrasValor(e.target.value)}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                                             placeholder="0"
                                             min="0"
                                             step="1000"
@@ -633,7 +612,7 @@ export default function Home() {
                             </div>
 
                             {precio > 0 && (
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                                     <div className="space-y-2 mb-3">
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-700">
@@ -668,9 +647,9 @@ export default function Home() {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="border-t border-blue-300 pt-2 flex justify-between items-center">
+                                    <div className="border-t border-purple-300 pt-2 flex justify-between items-center">
                                         <span className="text-sm font-medium text-gray-900">Precio Total:</span>
-                                        <span className="text-2xl font-bold text-blue-600">
+                                        <span className="text-2xl font-bold text-purple-600">
                                             ${precio.toLocaleString('es-AR')}
                                         </span>
                                     </div>
@@ -689,7 +668,7 @@ export default function Home() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? 'Registrando...' : 'Registrar Auto'}
                             </button>
@@ -724,7 +703,7 @@ export default function Home() {
                                                         Patente: <span className="font-mono font-semibold">{registro.patente}</span>
                                                     </p>
                                                     {registro.tipo_vehiculo && (
-                                                        <p className="text-xs text-blue-600 font-semibold">
+                                                        <p className="text-xs text-purple-600 font-semibold">
                                                             {registro.tipo_vehiculo === 'auto' && '🚗 Auto'}
                                                             {registro.tipo_vehiculo === 'mono' && '🚙 Mono (SUV)'}
                                                             {registro.tipo_vehiculo === 'camioneta' && '🚐 Camioneta'}
@@ -734,11 +713,11 @@ export default function Home() {
                                                     )}
                                                 </div>
                                                 <div className="text-right">
-                                                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded block mb-1">
+                                                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded block mb-1">
                                                         {registro.tipo_limpieza.replace(/_/g, ' ')}
                                                     </span>
                                                     {registro.precio && registro.precio > 0 && (
-                                                        <span className="text-sm font-bold text-blue-600">
+                                                        <span className="text-sm font-bold text-purple-600">
                                                             ${registro.precio.toLocaleString('es-AR')}
                                                         </span>
                                                     )}
@@ -748,7 +727,7 @@ export default function Home() {
                                                 Cliente: {registro.nombre_cliente}
                                             </p>
                                             {registro.extras && (
-                                                <p className="text-xs text-blue-600 mb-1">
+                                                <p className="text-xs text-purple-600 mb-1">
                                                     Extra: {registro.extras} (+${registro.extras_valor?.toLocaleString('es-AR')})
                                                 </p>
                                             )}
@@ -758,7 +737,7 @@ export default function Home() {
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => marcarComoListo(registro.id)}
-                                                    className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                    className="flex-1 flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 rounded-lg transition-colors"
                                                 >
                                                     ✓ Listo
                                                 </button>
@@ -769,15 +748,6 @@ export default function Home() {
                                                 >
                                                     ✕
                                                 </button>
-                                                {userRole === 'admin' && (
-                                                    <button
-                                                        onClick={() => eliminarRegistro(registro.id)}
-                                                        className="flex items-center justify-center gap-2 px-3 bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 rounded-lg transition-colors"
-                                                        title="Eliminar permanentemente"
-                                                    >
-                                                        🗑️
-                                                    </button>
-                                                )}
                                             </div>
                                         </div>
                                     ))
@@ -811,7 +781,7 @@ export default function Home() {
                                                         Patente: <span className="font-mono font-semibold">{registro.patente}</span>
                                                     </p>
                                                     {registro.tipo_vehiculo && (
-                                                        <p className="text-xs text-blue-600 font-semibold">
+                                                        <p className="text-xs text-purple-600 font-semibold">
                                                             {registro.tipo_vehiculo === 'auto' && '🚗 Auto'}
                                                             {registro.tipo_vehiculo === 'mono' && '🚙 Mono (SUV)'}
                                                             {registro.tipo_vehiculo === 'camioneta' && '🚐 Camioneta'}
@@ -825,7 +795,7 @@ export default function Home() {
                                                         LISTO
                                                     </span>
                                                     {registro.precio && registro.precio > 0 && (
-                                                        <span className="text-sm font-bold text-blue-600">
+                                                        <span className="text-sm font-bold text-purple-600">
                                                             ${registro.precio.toLocaleString('es-AR')}
                                                         </span>
                                                     )}
@@ -835,7 +805,7 @@ export default function Home() {
                                                 Cliente: {registro.nombre_cliente}
                                             </p>
                                             {registro.extras && (
-                                                <p className="text-xs text-blue-600 mb-1">
+                                                <p className="text-xs text-purple-600 mb-1">
                                                     Extra: {registro.extras} (+${registro.extras_valor?.toLocaleString('es-AR')})
                                                 </p>
                                             )}
@@ -846,7 +816,7 @@ export default function Home() {
                                                 {userRole === 'admin' && (
                                                     <button
                                                         onClick={() => enviarWhatsApp(registro.id)}
-                                                        className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                        className="flex-1 flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 rounded-lg transition-colors"
                                                     >
                                                         <Send size={16} />
                                                         WhatsApp
@@ -858,15 +828,6 @@ export default function Home() {
                                                 >
                                                     ✓ Entregado
                                                 </button>
-                                                {userRole === 'admin' && (
-                                                    <button
-                                                        onClick={() => eliminarRegistro(registro.id)}
-                                                        className="flex items-center justify-center gap-2 px-3 bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 rounded-lg transition-colors"
-                                                        title="Eliminar permanentemente"
-                                                    >
-                                                        🗑️
-                                                    </button>
-                                                )}
                                             </div>
                                         </div>
                                     ))

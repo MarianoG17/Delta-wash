@@ -1,9 +1,9 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Car, LogOut, History, Plus, Send, Users, Wallet } from 'lucide-react';
+import { Car, LogOut, History, Plus, Send, Users, ArrowLeft, Wallet } from 'lucide-react';
 
 interface Registro {
     id: number;
@@ -93,7 +93,7 @@ export default function Home() {
             const res = await fetch(`/api/cuentas-corrientes?celular=${celularBuscar}`);
             const data = await res.json();
 
-            if (data.success && data.found) {
+            if (data.success && data.found && data.cuenta.saldo_actual > 0) {
                 setCuentaCorriente(data.cuenta);
             } else {
                 setCuentaCorriente(null);
@@ -153,6 +153,15 @@ export default function Home() {
         setMessage('');
 
         try {
+            // Validar saldo si usa cuenta corriente
+            if (usaCuentaCorriente && cuentaCorriente) {
+                if (parseFloat(cuentaCorriente.saldo_actual) < precio) {
+                    setMessage(`❌ Saldo insuficiente. Disponible: $${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}`);
+                    setLoading(false);
+                    return;
+                }
+            }
+
             const res = await fetch('/api/registros', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -302,35 +311,6 @@ export default function Home() {
         }
     };
 
-    const eliminarRegistro = async (id: number) => {
-        if (!confirm('⚠️ ¿ELIMINAR este registro permanentemente?\n\nEsta acción NO se puede deshacer.\nSi usó cuenta corriente, se revertirá el movimiento.')) {
-            return;
-        }
-
-        try {
-            const res = await fetch('/api/registros/eliminar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id }),
-            });
-
-            const data = await res.json();
-
-            if (data.success) {
-                let mensaje = '✅ Registro eliminado exitosamente';
-                if (data.cuenta_corriente_revertida) {
-                    mensaje += '\n💰 Movimiento de cuenta corriente revertido';
-                }
-                alert(mensaje);
-                cargarRegistrosEnProceso();
-            } else {
-                alert('❌ Error al eliminar registro');
-            }
-        } catch (error) {
-            alert('❌ Error al eliminar registro');
-        }
-    };
-
     const handleLogout = () => {
         if (typeof window !== 'undefined') {
             localStorage.removeItem('lavadero_user');
@@ -353,8 +333,18 @@ export default function Home() {
                             <h1 className="text-3xl font-bold">DeltaWash</h1>
                         </div>
                         <p className="text-sm opacity-90">Bienvenido/a, {username}</p>
+                        <p className="text-xs opacity-75 bg-yellow-400 text-black px-2 py-1 rounded mt-1 inline-block">
+                            ⚠️ Modo de Prueba - Nuevas Funcionalidades
+                        </p>
                     </div>
                     <div className="flex gap-2">
+                        <Link
+                            href="/"
+                            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
+                        >
+                            <ArrowLeft size={18} />
+                            <span className="text-sm">Volver</span>
+                        </Link>
                         {userRole === 'admin' && (
                             <>
                                 <Link
@@ -559,8 +549,8 @@ export default function Home() {
                                 <p className="text-xs text-gray-500 mt-1">
                                     Formato: código de área + número (ej: 11-12345678)
                                 </p>
-                                {cuentaCorriente && (
-                                    <div className={`mt-2 p-3 rounded-lg ${parseFloat(cuentaCorriente.saldo_actual) >= 0 ? 'bg-green-50 border border-green-200' : 'bg-orange-50 border border-orange-200'}`}>
+                                {cuentaCorriente && cuentaCorriente.saldo_actual > 0 && (
+                                    <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
                                         <label className="flex items-center gap-2 cursor-pointer">
                                             <input
                                                 type="checkbox"
@@ -572,23 +562,12 @@ export default function Home() {
                                                 Usar Cuenta Corriente
                                             </span>
                                         </label>
-                                        {userRole === 'admin' && (
-                                            <>
-                                                <p className={`text-xs mt-1 ml-6 ${parseFloat(cuentaCorriente.saldo_actual) >= 0 ? 'text-green-700' : 'text-orange-700'}`}>
-                                                    💰 Saldo actual: <strong>${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}</strong>
-                                                </p>
-                                                {usaCuentaCorriente && precio > 0 && (
-                                                    <p className={`text-xs mt-1 ml-6 ${(parseFloat(cuentaCorriente.saldo_actual) - precio) >= 0 ? 'text-green-700' : 'text-orange-700'}`}>
-                                                        Saldo después del lavado: <strong>${(parseFloat(cuentaCorriente.saldo_actual) - precio).toLocaleString('es-AR')}</strong>
-                                                    </p>
-                                                )}
-                                            </>
-                                        )}
-                                        {userRole !== 'admin' && (
-                                            <p className={`text-xs mt-1 ml-6 ${parseFloat(cuentaCorriente.saldo_actual) >= 0 ? 'text-green-700' : 'text-orange-700'}`}>
-                                                {parseFloat(cuentaCorriente.saldo_actual) >= 0
-                                                    ? '✅ Cliente tiene cuenta corriente disponible'
-                                                    : '⚠️ Cliente tiene cuenta corriente (saldo en negativo)'}
+                                        <p className="text-xs text-green-700 mt-1 ml-6">
+                                            💰 Saldo disponible: <strong>${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}</strong>
+                                        </p>
+                                        {usaCuentaCorriente && precio > 0 && (
+                                            <p className="text-xs text-green-700 mt-1 ml-6">
+                                                Saldo después del lavado: <strong>${(parseFloat(cuentaCorriente.saldo_actual) - precio).toLocaleString('es-AR')}</strong>
                                             </p>
                                         )}
                                     </div>
@@ -764,20 +743,11 @@ export default function Home() {
                                                 </button>
                                                 <button
                                                     onClick={() => cancelarRegistro(registro.id)}
-                                                    className="flex items-center justify-center gap-2 px-3 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                    className="flex items-center justify-center gap-2 px-3 bg-teal-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg transition-colors"
                                                     title="Cancelar"
                                                 >
                                                     ✕
                                                 </button>
-                                                {userRole === 'admin' && (
-                                                    <button
-                                                        onClick={() => eliminarRegistro(registro.id)}
-                                                        className="flex items-center justify-center gap-2 px-3 bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 rounded-lg transition-colors"
-                                                        title="Eliminar permanentemente"
-                                                    >
-                                                        🗑️
-                                                    </button>
-                                                )}
                                             </div>
                                         </div>
                                     ))
@@ -858,15 +828,6 @@ export default function Home() {
                                                 >
                                                     ✓ Entregado
                                                 </button>
-                                                {userRole === 'admin' && (
-                                                    <button
-                                                        onClick={() => eliminarRegistro(registro.id)}
-                                                        className="flex items-center justify-center gap-2 px-3 bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 rounded-lg transition-colors"
-                                                        title="Eliminar permanentemente"
-                                                    >
-                                                        🗑️
-                                                    </button>
-                                                )}
                                             </div>
                                         </div>
                                     ))

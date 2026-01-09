@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Wallet, ArrowLeft, Plus, DollarSign } from 'lucide-react';
+import { Wallet, ArrowLeft, Plus, DollarSign, FileText } from 'lucide-react';
 
 interface CuentaCorriente {
     id: number;
@@ -160,7 +160,7 @@ export default function CuentasCorrientesPage() {
                     </div>
                     <div className="flex gap-2">
                         <Link
-                            href="/prueba"
+                            href="/"
                             className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
                         >
                             <ArrowLeft size={18} />
@@ -363,13 +363,22 @@ export default function CuentasCorrientesPage() {
                                                 </button>
                                             </div>
                                         ) : (
-                                            <button
-                                                onClick={() => setCuentaSeleccionada(cuenta.id)}
-                                                className="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
-                                            >
-                                                <DollarSign size={16} />
-                                                Cargar Saldo
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <Link
+                                                    href={`/cuentas-corrientes/${cuenta.id}`}
+                                                    className="flex-1 flex items-center justify-center gap-2 bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                >
+                                                    <FileText size={16} />
+                                                    Ver Movimientos
+                                                </Link>
+                                                <button
+                                                    onClick={() => setCuentaSeleccionada(cuenta.id)}
+                                                    className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                >
+                                                    <DollarSign size={16} />
+                                                    Cargar Saldo
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                 ))
