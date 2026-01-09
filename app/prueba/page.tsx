@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Car, LogOut, History, Plus, Send, Users, ArrowLeft } from 'lucide-react';
+import { Car, LogOut, History, Plus, Send, Users, ArrowLeft, Wallet } from 'lucide-react';
 
 interface Registro {
     id: number;
@@ -38,6 +38,8 @@ export default function PruebaPage() {
     const [extras, setExtras] = useState('');
     const [extrasValor, setExtrasValor] = useState('');
     const [precio, setPrecio] = useState(0);
+    const [usaCuentaCorriente, setUsaCuentaCorriente] = useState(false);
+    const [cuentaCorriente, setCuentaCorriente] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
@@ -79,6 +81,31 @@ export default function PruebaPage() {
         }
     };
 
+    // Buscar cuenta corriente por celular
+    const buscarCuentaCorriente = async (celularBuscar: string) => {
+        if (!celularBuscar || celularBuscar.length < 8) {
+            setCuentaCorriente(null);
+            setUsaCuentaCorriente(false);
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/cuentas-corrientes?celular=${celularBuscar}`);
+            const data = await res.json();
+
+            if (data.success && data.found && data.cuenta.saldo_actual > 0) {
+                setCuentaCorriente(data.cuenta);
+            } else {
+                setCuentaCorriente(null);
+                setUsaCuentaCorriente(false);
+            }
+        } catch (error) {
+            console.error('Error buscando cuenta corriente:', error);
+            setCuentaCorriente(null);
+            setUsaCuentaCorriente(false);
+        }
+    };
+
     // Función para calcular el precio según tipo de vehículo y lavado
     const calcularPrecio = (tipoVeh: string, tiposLav: string[]) => {
         // Precios base por tipo de vehículo (lavado simple)
@@ -117,6 +144,15 @@ export default function PruebaPage() {
         setMessage('');
 
         try {
+            // Validar saldo si usa cuenta corriente
+            if (usaCuentaCorriente && cuentaCorriente) {
+                if (parseFloat(cuentaCorriente.saldo_actual) < precio) {
+                    setMessage(`❌ Saldo insuficiente. Disponible: $${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}`);
+                    setLoading(false);
+                    return;
+                }
+            }
+
             const res = await fetch('/api/registros', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -131,13 +167,20 @@ export default function PruebaPage() {
                     extras_valor: parseFloat(extrasValor) || 0,
                     precio: precio,
                     usuario_id: userId,
+                    usa_cuenta_corriente: usaCuentaCorriente,
+                    cuenta_corriente_id: usaCuentaCorriente && cuentaCorriente ? cuentaCorriente.id : null,
                 }),
             });
 
             const data = await res.json();
 
             if (data.success) {
-                setMessage('✅ Auto registrado exitosamente');
+                let mensaje = '✅ Auto registrado exitosamente';
+                if (data.cuenta_corriente) {
+                    mensaje += `\n💰 Saldo descontado: $${data.cuenta_corriente.monto_descontado.toLocaleString('es-AR')}`;
+                    mensaje += `\n💳 Nuevo saldo: $${data.cuenta_corriente.saldo_nuevo.toLocaleString('es-AR')}`;
+                }
+                setMessage(mensaje);
                 // Limpiar formulario
                 setMarca('');
                 setModelo('');
@@ -149,6 +192,8 @@ export default function PruebaPage() {
                 setExtras('');
                 setExtrasValor('');
                 setPrecio(0);
+                setUsaCuentaCorriente(false);
+                setCuentaCorriente(null);
                 // Recargar registros
                 cargarRegistrosEnProceso();
             } else {
@@ -293,6 +338,13 @@ export default function PruebaPage() {
                         </Link>
                         {userRole === 'admin' && (
                             <>
+                                <Link
+                                    href="/cuentas-corrientes"
+                                    className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
+                                >
+                                    <Wallet size={18} />
+                                    <span className="text-sm">Cuentas</span>
+                                </Link>
                                 <Link
                                     href="/clientes"
                                     className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
@@ -470,7 +522,17 @@ export default function PruebaPage() {
                                 <input
                                     type="tel"
                                     value={celular}
-                                    onChange={(e) => setCelular(e.target.value)}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setCelular(value);
+                                        // Buscar cuenta corriente cuando el celular tiene suficientes dígitos
+                                        if (value.length >= 8) {
+                                            buscarCuentaCorriente(value);
+                                        } else {
+                                            setCuentaCorriente(null);
+                                            setUsaCuentaCorriente(false);
+                                        }
+                                    }}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                                     placeholder="11-12345678"
                                     required
@@ -478,6 +540,29 @@ export default function PruebaPage() {
                                 <p className="text-xs text-gray-500 mt-1">
                                     Formato: código de área + número (ej: 11-12345678)
                                 </p>
+                                {cuentaCorriente && cuentaCorriente.saldo_actual > 0 && (
+                                    <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={usaCuentaCorriente}
+                                                onChange={(e) => setUsaCuentaCorriente(e.target.checked)}
+                                                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                            />
+                                            <span className="text-sm font-medium text-green-900">
+                                                Usar Cuenta Corriente
+                                            </span>
+                                        </label>
+                                        <p className="text-xs text-green-700 mt-1 ml-6">
+                                            💰 Saldo disponible: <strong>${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}</strong>
+                                        </p>
+                                        {usaCuentaCorriente && precio > 0 && (
+                                            <p className="text-xs text-green-700 mt-1 ml-6">
+                                                Saldo después del lavado: <strong>${(parseFloat(cuentaCorriente.saldo_actual) - precio).toLocaleString('es-AR')}</strong>
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="border-t border-gray-200 pt-4">

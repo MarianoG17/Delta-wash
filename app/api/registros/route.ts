@@ -46,7 +46,7 @@ function capitalizarNombre(nombre: string): string {
 
 export async function POST(request: Request) {
     try {
-        const { marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id } = await request.json();
+        const { marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, usa_cuenta_corriente, cuenta_corriente_id } = await request.json();
 
         if (!marca_modelo || !patente || !tipo_limpieza || !nombre_cliente || !celular) {
             return NextResponse.json(
@@ -58,19 +58,87 @@ export async function POST(request: Request) {
         // Normalizar nombre del cliente (capitalizar)
         const nombreNormalizado = capitalizarNombre(nombre_cliente.trim());
 
-        const result = await sql`
-      INSERT INTO registros_lavado (
-        marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado
-      ) VALUES (
-        ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso'
-      )
-      RETURNING *
-    `;
+        // Si usa cuenta corriente, verificar saldo y descontar
+        if (usa_cuenta_corriente && cuenta_corriente_id) {
+            // Obtener cuenta
+            const cuentaResult = await sql`
+                SELECT * FROM cuentas_corrientes WHERE id = ${cuenta_corriente_id}
+            `;
 
-        return NextResponse.json({
-            success: true,
-            registro: result.rows[0],
-        });
+            if (cuentaResult.rows.length === 0) {
+                return NextResponse.json(
+                    { success: false, message: 'Cuenta corriente no encontrada' },
+                    { status: 404 }
+                );
+            }
+
+            const cuenta = cuentaResult.rows[0];
+            const saldoActual = parseFloat(cuenta.saldo_actual);
+            const precioServicio = parseFloat(precio) || 0;
+
+            if (saldoActual < precioServicio) {
+                return NextResponse.json(
+                    { success: false, message: `Saldo insuficiente. Saldo actual: $${saldoActual.toLocaleString('es-AR')}` },
+                    { status: 400 }
+                );
+            }
+
+            const nuevoSaldo = saldoActual - precioServicio;
+
+            // Crear el registro
+            const result = await sql`
+                INSERT INTO registros_lavado (
+                    marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado, usa_cuenta_corriente, cuenta_corriente_id
+                ) VALUES (
+                    ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso', true, ${cuenta_corriente_id}
+                )
+                RETURNING *
+            `;
+
+            const registroId = result.rows[0].id;
+
+            // Actualizar saldo de cuenta corriente
+            await sql`
+                UPDATE cuentas_corrientes
+                SET saldo_actual = ${nuevoSaldo},
+                    activa = ${nuevoSaldo > 0}
+                WHERE id = ${cuenta_corriente_id}
+            `;
+
+            // Registrar movimiento
+            await sql`
+                INSERT INTO movimientos_cuenta (
+                    cuenta_id, registro_id, tipo, monto, saldo_anterior, saldo_nuevo, descripcion, usuario_id
+                ) VALUES (
+                    ${cuenta_corriente_id}, ${registroId}, 'descuento', ${precioServicio}, ${saldoActual}, ${nuevoSaldo}, ${`Lavado ${tipo_limpieza} - ${patente.toUpperCase()}`}, ${usuario_id}
+                )
+            `;
+
+            return NextResponse.json({
+                success: true,
+                registro: result.rows[0],
+                cuenta_corriente: {
+                    saldo_anterior: saldoActual,
+                    saldo_nuevo: nuevoSaldo,
+                    monto_descontado: precioServicio
+                }
+            });
+        } else {
+            // Registro normal sin cuenta corriente
+            const result = await sql`
+                INSERT INTO registros_lavado (
+                    marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado, usa_cuenta_corriente
+                ) VALUES (
+                    ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso', false
+                )
+                RETURNING *
+            `;
+
+            return NextResponse.json({
+                success: true,
+                registro: result.rows[0],
+            });
+        }
     } catch (error) {
         console.error('Error creando registro:', error);
         return NextResponse.json(
