@@ -93,7 +93,7 @@ export default function Home() {
             const res = await fetch(`/api/cuentas-corrientes?celular=${celularBuscar}`);
             const data = await res.json();
 
-            if (data.success && data.found && data.cuenta.saldo_actual > 0) {
+            if (data.success && data.found) {
                 setCuentaCorriente(data.cuenta);
             } else {
                 setCuentaCorriente(null);
@@ -153,15 +153,6 @@ export default function Home() {
         setMessage('');
 
         try {
-            // Validar saldo si usa cuenta corriente
-            if (usaCuentaCorriente && cuentaCorriente) {
-                if (parseFloat(cuentaCorriente.saldo_actual) < precio) {
-                    setMessage(`❌ Saldo insuficiente. Disponible: $${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}`);
-                    setLoading(false);
-                    return;
-                }
-            }
-
             const res = await fetch('/api/registros', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -539,8 +530,8 @@ export default function Home() {
                                 <p className="text-xs text-gray-500 mt-1">
                                     Formato: código de área + número (ej: 11-12345678)
                                 </p>
-                                {cuentaCorriente && cuentaCorriente.saldo_actual > 0 && (
-                                    <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                {cuentaCorriente && (
+                                    <div className={`mt-2 p-3 rounded-lg ${parseFloat(cuentaCorriente.saldo_actual) >= 0 ? 'bg-green-50 border border-green-200' : 'bg-orange-50 border border-orange-200'}`}>
                                         <label className="flex items-center gap-2 cursor-pointer">
                                             <input
                                                 type="checkbox"
@@ -554,19 +545,21 @@ export default function Home() {
                                         </label>
                                         {userRole === 'admin' && (
                                             <>
-                                                <p className="text-xs text-green-700 mt-1 ml-6">
-                                                    💰 Saldo disponible: <strong>${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}</strong>
+                                                <p className={`text-xs mt-1 ml-6 ${parseFloat(cuentaCorriente.saldo_actual) >= 0 ? 'text-green-700' : 'text-orange-700'}`}>
+                                                    💰 Saldo actual: <strong>${parseFloat(cuentaCorriente.saldo_actual).toLocaleString('es-AR')}</strong>
                                                 </p>
                                                 {usaCuentaCorriente && precio > 0 && (
-                                                    <p className="text-xs text-green-700 mt-1 ml-6">
+                                                    <p className={`text-xs mt-1 ml-6 ${(parseFloat(cuentaCorriente.saldo_actual) - precio) >= 0 ? 'text-green-700' : 'text-orange-700'}`}>
                                                         Saldo después del lavado: <strong>${(parseFloat(cuentaCorriente.saldo_actual) - precio).toLocaleString('es-AR')}</strong>
                                                     </p>
                                                 )}
                                             </>
                                         )}
                                         {userRole !== 'admin' && (
-                                            <p className="text-xs text-green-700 mt-1 ml-6">
-                                                ✅ Cliente tiene cuenta corriente disponible
+                                            <p className={`text-xs mt-1 ml-6 ${parseFloat(cuentaCorriente.saldo_actual) >= 0 ? 'text-green-700' : 'text-orange-700'}`}>
+                                                {parseFloat(cuentaCorriente.saldo_actual) >= 0
+                                                    ? '✅ Cliente tiene cuenta corriente disponible'
+                                                    : '⚠️ Cliente tiene cuenta corriente (saldo en negativo)'}
                                             </p>
                                         )}
                                     </div>
