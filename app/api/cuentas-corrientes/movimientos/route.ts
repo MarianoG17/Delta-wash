@@ -47,7 +47,7 @@ export async function GET(request: Request) {
                     r.tipo_limpieza,
                     u.nombre as usuario_nombre
                 FROM movimientos_cuenta mc
-                LEFT JOIN registros r ON mc.registro_id = r.id
+                LEFT JOIN registros_lavado r ON mc.registro_id = r.id
                 LEFT JOIN usuarios u ON mc.usuario_id = u.id
                 WHERE mc.cuenta_id = ${cuentaId}
                 ORDER BY mc.fecha DESC

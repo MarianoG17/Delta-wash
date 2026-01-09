@@ -15,7 +15,7 @@ export async function POST(request: Request) {
         // Primero obtener el registro para verificar si usó cuenta corriente
         const registroResult = await sql`
             SELECT r.*, cc.id as cuenta_corriente_id, cc.saldo_actual
-            FROM registros r
+            FROM registros_lavado r
             LEFT JOIN cuentas_corrientes cc ON r.cuenta_corriente_id = cc.id
             WHERE r.id = ${id}
         `;
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
         // Eliminar el registro
         await sql`
-            DELETE FROM registros
+            DELETE FROM registros_lavado
             WHERE id = ${id}
         `;
 
