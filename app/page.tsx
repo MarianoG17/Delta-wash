@@ -18,6 +18,9 @@ interface Registro {
     precio?: number;
     extras?: string;
     extras_valor?: number;
+    pagado?: boolean;
+    metodo_pago?: string;
+    usa_cuenta_corriente?: boolean;
 }
 
 export default function Home() {
@@ -40,6 +43,8 @@ export default function Home() {
     const [precio, setPrecio] = useState(0);
     const [usaCuentaCorriente, setUsaCuentaCorriente] = useState(false);
     const [cuentaCorriente, setCuentaCorriente] = useState<any>(null);
+    const [pagado, setPagado] = useState(false);
+    const [metodoPago, setMetodoPago] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
@@ -180,6 +185,8 @@ export default function Home() {
                     usuario_id: userId,
                     usa_cuenta_corriente: usaCuentaCorriente,
                     cuenta_corriente_id: usaCuentaCorriente && cuentaCorriente ? cuentaCorriente.id : null,
+                    pagado: pagado,
+                    metodo_pago: pagado ? metodoPago : null,
                 }),
             });
 
@@ -205,6 +212,8 @@ export default function Home() {
                 setPrecio(0);
                 setUsaCuentaCorriente(false);
                 setCuentaCorriente(null);
+                setPagado(false);
+                setMetodoPago('');
                 // Recargar registros
                 cargarRegistrosEnProceso();
             } else {
@@ -261,6 +270,41 @@ export default function Home() {
             }
         } catch (error) {
             alert('❌ Error al generar link de WhatsApp');
+        }
+    };
+
+    const registrarPago = async (id: number) => {
+        const metodo = prompt('¿Cómo pagó el cliente?\n\n1 = Efectivo\n2 = Transferencia\n\nIngresa 1 o 2:');
+        
+        if (metodo === null) return; // Usuario canceló
+        
+        let metodoPago = '';
+        if (metodo === '1') {
+            metodoPago = 'efectivo';
+        } else if (metodo === '2') {
+            metodoPago = 'transferencia';
+        } else {
+            alert('❌ Opción inválida. Ingresa 1 o 2');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/registros/registrar-pago', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, metodo_pago: metodoPago }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                alert('✅ Pago registrado exitosamente');
+                cargarRegistrosEnProceso();
+            } else {
+                alert('❌ ' + data.message);
+            }
+        } catch (error) {
+            alert('❌ Error al registrar pago');
         }
     };
 
@@ -742,6 +786,63 @@ export default function Home() {
                                 </div>
                             )}
 
+                            {/* Sección de Pago */}
+                            {!usaCuentaCorriente && (
+                                <div className="border-t border-gray-200 pt-4">
+                                    <label className="block text-sm font-medium text-gray-900 mb-3">
+                                        💰 Pago
+                                    </label>
+                                    <div className="space-y-3">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={pagado}
+                                                onChange={(e) => {
+                                                    setPagado(e.target.checked);
+                                                    if (!e.target.checked) {
+                                                        setMetodoPago('');
+                                                    }
+                                                }}
+                                                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                            />
+                                            <span className="text-sm font-medium text-gray-900">
+                                                Cliente pagó al ingresar
+                                            </span>
+                                        </label>
+
+                                        {pagado && (
+                                            <div className="ml-6 space-y-2">
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="radio"
+                                                        name="metodoPago"
+                                                        value="efectivo"
+                                                        checked={metodoPago === 'efectivo'}
+                                                        onChange={(e) => setMetodoPago(e.target.value)}
+                                                        className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500"
+                                                    />
+                                                    <span className="text-sm text-gray-900">💵 Efectivo</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="radio"
+                                                        name="metodoPago"
+                                                        value="transferencia"
+                                                        checked={metodoPago === 'transferencia'}
+                                                        onChange={(e) => setMetodoPago(e.target.value)}
+                                                        className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500"
+                                                    />
+                                                    <span className="text-sm text-gray-900">🏦 Transferencia</span>
+                                                </label>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        Si no paga ahora, podrás registrar el pago cuando retire el vehículo
+                                    </p>
+                                </div>
+                            )}
+
                             {message && (
                                 <div className={`px-4 py-3 rounded-lg text-sm ${message.includes('✅')
                                     ? 'bg-green-50 border border-green-200 text-green-700'
@@ -881,8 +982,22 @@ export default function Home() {
                                                         LISTO
                                                     </span>
                                                     {registro.precio && registro.precio > 0 && (
-                                                        <span className="text-sm font-bold text-blue-600">
+                                                        <span className="text-sm font-bold text-blue-600 block mb-1">
                                                             ${registro.precio.toLocaleString('es-AR')}
+                                                        </span>
+                                                    )}
+                                                    {/* Indicador de estado de pago */}
+                                                    {registro.usa_cuenta_corriente ? (
+                                                        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-semibold block">
+                                                            💳 Cta.Cte.
+                                                        </span>
+                                                    ) : registro.pagado ? (
+                                                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold block">
+                                                            ✓ Pagado
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded font-semibold block">
+                                                            ⏳ Pendiente
                                                         </span>
                                                     )}
                                                 </div>
@@ -898,22 +1013,33 @@ export default function Home() {
                                             <p className="text-xs text-gray-500 mb-3">
                                                 Tipo: {registro.tipo_limpieza.replace(/_/g, ' ')}
                                             </p>
-                                            <div className="flex gap-2">
-                                                {userRole === 'admin' && (
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex gap-2">
+                                                    {userRole === 'admin' && (
+                                                        <button
+                                                            onClick={() => enviarWhatsApp(registro.id)}
+                                                            className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors text-sm"
+                                                        >
+                                                            <Send size={16} />
+                                                            WhatsApp
+                                                        </button>
+                                                    )}
                                                     <button
-                                                        onClick={() => enviarWhatsApp(registro.id)}
-                                                        className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                        onClick={() => marcarComoEntregado(registro.id)}
+                                                        className={`${userRole === 'admin' ? 'flex-1' : 'w-full'} flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition-colors text-sm`}
                                                     >
-                                                        <Send size={16} />
-                                                        WhatsApp
+                                                        ✓ Entregado
+                                                    </button>
+                                                </div>
+                                                {/* Mostrar botón de pago solo si no está pagado y no usó cuenta corriente */}
+                                                {!registro.pagado && !registro.usa_cuenta_corriente && (
+                                                    <button
+                                                        onClick={() => registrarPago(registro.id)}
+                                                        className="w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition-colors text-sm"
+                                                    >
+                                                        💰 Registrar Pago
                                                     </button>
                                                 )}
-                                                <button
-                                                    onClick={() => marcarComoEntregado(registro.id)}
-                                                    className={`${userRole === 'admin' ? 'flex-1' : 'w-full'} flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition-colors`}
-                                                >
-                                                    ✓ Entregado
-                                                </button>
                                             </div>
                                         </div>
                                     ))

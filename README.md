@@ -67,11 +67,6 @@ La aplicación estará disponible en `http://localhost:3000`
 
 ## 📝 Uso
 
-### Login
-
-- Usuario por defecto: `admin`
-- Contraseña: `admin123`
-
 ### Registro de Autos
 
 1. Completa el formulario con:

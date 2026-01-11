@@ -63,7 +63,7 @@ function capitalizarNombre(nombre: string): string {
 
 export async function POST(request: Request) {
     try {
-        const { marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, usa_cuenta_corriente, cuenta_corriente_id } = await request.json();
+        const { marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, usa_cuenta_corriente, cuenta_corriente_id, pagado, metodo_pago } = await request.json();
 
         if (!marca_modelo || !patente || !tipo_limpieza || !nombre_cliente || !celular) {
             return NextResponse.json(
@@ -102,12 +102,12 @@ export async function POST(request: Request) {
 
             const nuevoSaldo = saldoActual - precioServicio;
 
-            // Crear el registro
+            // Crear el registro (cuenta corriente siempre se considera pagado)
             const result = await sql`
                 INSERT INTO registros_lavado (
-                    marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado, usa_cuenta_corriente, cuenta_corriente_id
+                    marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado, usa_cuenta_corriente, cuenta_corriente_id, pagado, metodo_pago, fecha_pago, monto_pagado
                 ) VALUES (
-                    ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso', true, ${cuenta_corriente_id}
+                    ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso', true, ${cuenta_corriente_id}, true, 'cuenta_corriente', NOW(), ${precio || 0}
                 )
                 RETURNING *
             `;
@@ -142,14 +142,26 @@ export async function POST(request: Request) {
             });
         } else {
             // Registro normal sin cuenta corriente
-            const result = await sql`
-                INSERT INTO registros_lavado (
-                    marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado, usa_cuenta_corriente
-                ) VALUES (
-                    ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso', false
-                )
-                RETURNING *
-            `;
+            let result;
+            if (pagado && metodo_pago) {
+                result = await sql`
+                    INSERT INTO registros_lavado (
+                        marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado, usa_cuenta_corriente, pagado, metodo_pago, fecha_pago, monto_pagado
+                    ) VALUES (
+                        ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso', false, true, ${metodo_pago}, NOW(), ${precio || 0}
+                    )
+                    RETURNING *
+                `;
+            } else {
+                result = await sql`
+                    INSERT INTO registros_lavado (
+                        marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado, usa_cuenta_corriente, pagado
+                    ) VALUES (
+                        ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso', false, false
+                    )
+                    RETURNING *
+                `;
+            }
 
             return NextResponse.json({
                 success: true,
