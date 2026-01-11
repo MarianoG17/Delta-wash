@@ -126,10 +126,21 @@ export default function Home() {
             'moto': 0  // Moto no tiene opción de cera
         };
 
+        // Precio por "limpieza_chasis" según tipo de vehículo
+        const precioChasis: { [key: string]: number } = {
+            'auto': 20000,
+            'mono': 30000,
+            'camioneta': 35000,
+            'camioneta_xl': 40000,
+            'moto': 0  // Moto no tiene limpieza de chasis
+        };
+
         const tieneConCera = tiposLav.includes('con_cera');
+        const tieneLimpiezaChasis = tiposLav.includes('limpieza_chasis');
         const precioBase = preciosBase[tipoVeh] || 0;
         const incremento = tieneConCera ? (incrementoCera[tipoVeh] || 0) : 0;
-        const precioFinal = precioBase + incremento;
+        const incrementoChasis = tieneLimpiezaChasis ? (precioChasis[tipoVeh] || 0) : 0;
+        const precioFinal = precioBase + incremento + incrementoChasis;
 
         return precioFinal;
     };
@@ -684,7 +695,7 @@ export default function Home() {
                                                 {tipoVehiculo === 'moto' && '🏍️ Moto'}
                                             </span>
                                             <span className="font-semibold text-gray-900">
-                                                ${calcularPrecio(tipoVehiculo, tiposLimpieza.filter(t => t !== 'con_cera')).toLocaleString('es-AR')}
+                                                ${calcularPrecio(tipoVehiculo, tiposLimpieza.filter(t => t !== 'con_cera' && t !== 'limpieza_chasis')).toLocaleString('es-AR')}
                                             </span>
                                         </div>
                                         {tiposLimpieza.includes('con_cera') && tipoVehiculo !== 'moto' && (
@@ -695,6 +706,20 @@ export default function Home() {
                                                         tipoVehiculo === 'camioneta' ? 5000 :
                                                         tipoVehiculo === 'camioneta_xl' ? 4000 :
                                                         2000
+                                                    ).toLocaleString('es-AR')}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {tiposLimpieza.includes('limpieza_chasis') && tipoVehiculo !== 'moto' && (
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-700">+ Limpieza de Chasis</span>
+                                                <span className="font-semibold text-gray-900">
+                                                    ${(
+                                                        tipoVehiculo === 'auto' ? 20000 :
+                                                        tipoVehiculo === 'mono' ? 30000 :
+                                                        tipoVehiculo === 'camioneta' ? 35000 :
+                                                        tipoVehiculo === 'camioneta_xl' ? 40000 :
+                                                        0
                                                     ).toLocaleString('es-AR')}
                                                 </span>
                                             </div>
