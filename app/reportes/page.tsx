@@ -17,8 +17,14 @@ interface ReporteDiario {
 
 interface ReporteHorario {
     horario: string;
-    cantidad_lavados: number;
-    importe_total: number;
+    hora: number;
+    lunes: number;
+    martes: number;
+    miercoles: number;
+    jueves: number;
+    viernes: number;
+    sabado: number;
+    total: number;
 }
 
 interface Totales {
@@ -303,41 +309,64 @@ export default function Reportes() {
                             </div>
                         )}
 
-                        {/* Reporte por Horario */}
+                        {/* Reporte por Horario - Matriz por día de semana */}
                         {tabActiva === 'horario' && (
                             <div className="overflow-x-auto">
-                                <table className="w-full">
+                                <table className="w-full text-sm">
                                     <thead>
                                         <tr className="border-b-2 border-gray-200">
-                                            <th className="text-left py-3 px-4 font-semibold text-gray-700">Horario</th>
-                                            <th className="text-right py-3 px-4 font-semibold text-gray-700">Cantidad de Lavados</th>
-                                            <th className="text-right py-3 px-4 font-semibold text-gray-700">Importe</th>
+                                            <th className="text-left py-3 px-2 font-semibold text-gray-700 sticky left-0 bg-white">Horario</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-gray-700">Lun</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-gray-700">Mar</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-gray-700">Mié</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-gray-700">Jue</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-gray-700">Vie</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-gray-700">Sáb</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-blue-700 bg-blue-50">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {reporteHorario.length === 0 ? (
                                             <tr>
-                                                <td colSpan={3} className="text-center py-8 text-gray-500">
+                                                <td colSpan={8} className="text-center py-8 text-gray-500">
                                                     No hay datos para el período seleccionado
                                                 </td>
                                             </tr>
                                         ) : (
                                             reporteHorario.map((row, index) => (
                                                 <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                                                    <td className="py-3 px-4 text-gray-900 font-medium">
+                                                    <td className="py-2 px-2 text-gray-900 font-medium sticky left-0 bg-white">
                                                         {row.horario}
                                                     </td>
-                                                    <td className="py-3 px-4 text-right font-semibold text-gray-900">
-                                                        {row.cantidad_lavados}
+                                                    <td className="py-2 px-2 text-center text-gray-700">
+                                                        {row.lunes > 0 ? row.lunes : '-'}
                                                     </td>
-                                                    <td className="py-3 px-4 text-right font-bold text-green-600">
-                                                        ${row.importe_total.toLocaleString('es-AR')}
+                                                    <td className="py-2 px-2 text-center text-gray-700">
+                                                        {row.martes > 0 ? row.martes : '-'}
+                                                    </td>
+                                                    <td className="py-2 px-2 text-center text-gray-700">
+                                                        {row.miercoles > 0 ? row.miercoles : '-'}
+                                                    </td>
+                                                    <td className="py-2 px-2 text-center text-gray-700">
+                                                        {row.jueves > 0 ? row.jueves : '-'}
+                                                    </td>
+                                                    <td className="py-2 px-2 text-center text-gray-700">
+                                                        {row.viernes > 0 ? row.viernes : '-'}
+                                                    </td>
+                                                    <td className="py-2 px-2 text-center text-gray-700">
+                                                        {row.sabado > 0 ? row.sabado : '-'}
+                                                    </td>
+                                                    <td className="py-2 px-2 text-center font-bold text-blue-700 bg-blue-50">
+                                                        {row.total}
                                                     </td>
                                                 </tr>
                                             ))
                                         )}
                                     </tbody>
                                 </table>
+                                <p className="text-xs text-gray-500 mt-4">
+                                    💡 La tabla muestra la cantidad de lavados por horario y día de la semana (Lunes a Sábado) en el período seleccionado.
+                                </p>
                             </div>
                         )}
                     </div>

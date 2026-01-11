@@ -6,6 +6,7 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const fechaDesde = searchParams.get('fecha_desde');
         const fechaHasta = searchParams.get('fecha_hasta');
+        const tipoHorario = searchParams.get('tipo_horario') || 'entrega'; // 'entrega' o 'ingreso'
 
         // Validar fechas
         if (!fechaDesde || !fechaHasta) {
@@ -35,10 +36,12 @@ export async function GET(request: Request) {
             ORDER BY fecha DESC
         `;
 
-        // Reporte por horario (usando fecha_entregado en zona horaria Argentina)
-        const reporteHorario = await sql`
+        // Reporte por horario y día de semana (matriz)
+        // Usar fecha_entregado para el reporte horario (siempre)
+        const reporteHorarioDiaSemana = await sql`
             SELECT
                 EXTRACT(HOUR FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as hora,
+                EXTRACT(DOW FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as dia_semana,
                 COUNT(*) as cantidad_lavados,
                 COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total
             FROM registros_lavado
@@ -47,20 +50,38 @@ export async function GET(request: Request) {
               AND estado = 'entregado'
               AND fecha_entregado IS NOT NULL
               AND (anulado IS NULL OR anulado = FALSE)
-            GROUP BY EXTRACT(HOUR FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires'))
-            ORDER BY hora
+            GROUP BY
+                EXTRACT(HOUR FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')),
+                EXTRACT(DOW FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires'))
+            ORDER BY hora, dia_semana
         `;
 
-        // Formatear datos de horario en rangos (0-23 horas completas)
+        // Formatear datos en matriz: horarios x días de semana
+        // DOW: 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
+        const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const diasLaborables = [1, 2, 3, 4, 5, 6]; // Lunes a Sábado
+        
         const horarios = Array.from({ length: 24 }, (_, i) => i); // 0 a 23
         const reporteHorarioFormateado = horarios.map(hora => {
-            const datos = reporteHorario.rows.find(r => parseInt(r.hora) === hora);
-            return {
+            const fila: any = {
                 horario: `${hora.toString().padStart(2, '0')}:00 - ${(hora + 1).toString().padStart(2, '0')}:00`,
-                cantidad_lavados: datos ? parseInt(datos.cantidad_lavados) : 0,
-                importe_total: datos ? parseFloat(datos.importe_total) : 0
+                hora: hora
             };
-        }).filter(h => h.cantidad_lavados > 0); // Solo mostrar horarios con actividad
+            
+            // Agregar datos para cada día de la semana (Lunes a Sábado)
+            let totalHora = 0;
+            diasLaborables.forEach(dia => {
+                const datos = reporteHorarioDiaSemana.rows.find(
+                    r => parseInt(r.hora) === hora && parseInt(r.dia_semana) === dia
+                );
+                const cantidad = datos ? parseInt(datos.cantidad_lavados) : 0;
+                fila[diasSemana[dia].toLowerCase()] = cantidad;
+                totalHora += cantidad;
+            });
+            
+            fila.total = totalHora;
+            return fila;
+        }).filter(h => h.total > 0); // Solo mostrar horarios con actividad
 
         return NextResponse.json({
             success: true,
