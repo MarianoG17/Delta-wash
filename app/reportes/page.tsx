@@ -41,6 +41,7 @@ export default function Reportes() {
     const [userRole, setUserRole] = useState<string>('operador');
     const [mounted, setMounted] = useState(false);
     const [tabActiva, setTabActiva] = useState<'diario' | 'horario'>('diario');
+    const [tipoHorario, setTipoHorario] = useState<'ingreso' | 'entrega'>('entrega');
     
     // Fechas por defecto: últimos 30 días
     const hoy = new Date();
@@ -85,7 +86,7 @@ export default function Reportes() {
     const cargarReporte = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/reportes/ventas?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`);
+            const res = await fetch(`/api/reportes/ventas?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}&tipo_horario=${tipoHorario}`);
             const data = await res.json();
 
             if (data.success) {
@@ -311,8 +312,43 @@ export default function Reportes() {
 
                         {/* Reporte por Horario - Matriz por día de semana */}
                         {tabActiva === 'horario' && (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
+                            <div>
+                                {/* Selector de tipo de horario */}
+                                <div className="mb-4 flex items-center gap-4 bg-gray-50 p-4 rounded-lg">
+                                    <span className="font-semibold text-gray-700">Mostrar horario de:</span>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="tipo_horario"
+                                            value="ingreso"
+                                            checked={tipoHorario === 'ingreso'}
+                                            onChange={(e) => setTipoHorario(e.target.value as 'ingreso' | 'entrega')}
+                                            className="w-4 h-4 text-blue-600"
+                                        />
+                                        <span className="text-gray-700">Ingreso (cuando llega el auto)</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name="tipo_horario"
+                                            value="entrega"
+                                            checked={tipoHorario === 'entrega'}
+                                            onChange={(e) => setTipoHorario(e.target.value as 'ingreso' | 'entrega')}
+                                            className="w-4 h-4 text-blue-600"
+                                        />
+                                        <span className="text-gray-700">Completado (cuando termina el lavado)</span>
+                                    </label>
+                                    <button
+                                        onClick={cargarReporte}
+                                        disabled={loading}
+                                        className="ml-auto px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                                    >
+                                        {loading ? 'Actualizando...' : 'Actualizar'}
+                                    </button>
+                                </div>
+
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
                                     <thead>
                                         <tr className="border-b-2 border-gray-200">
                                             <th className="text-left py-3 px-2 font-semibold text-gray-700 sticky left-0 bg-white">Horario</th>
@@ -367,6 +403,7 @@ export default function Reportes() {
                                 <p className="text-xs text-gray-500 mt-4">
                                     💡 La tabla muestra la cantidad de lavados por horario y día de la semana (Lunes a Sábado) en el período seleccionado.
                                 </p>
+                                </div>
                             </div>
                         )}
                     </div>

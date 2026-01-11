@@ -37,24 +37,46 @@ export async function GET(request: Request) {
         `;
 
         // Reporte por horario y día de semana (matriz)
-        // Usar fecha_entregado para el reporte horario (siempre)
-        const reporteHorarioDiaSemana = await sql`
-            SELECT
-                EXTRACT(HOUR FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as hora,
-                EXTRACT(DOW FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as dia_semana,
-                COUNT(*) as cantidad_lavados,
-                COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total
-            FROM registros_lavado
-            WHERE DATE(fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') >= ${fechaDesde}
-              AND DATE(fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') <= ${fechaHasta}
-              AND estado = 'entregado'
-              AND fecha_entregado IS NOT NULL
-              AND (anulado IS NULL OR anulado = FALSE)
-            GROUP BY
-                EXTRACT(HOUR FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')),
-                EXTRACT(DOW FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires'))
-            ORDER BY hora, dia_semana
-        `;
+        // Usar fecha según el tipo seleccionado: ingreso o listo (cuando se completa el lavado)
+        let reporteHorarioDiaSemana;
+        if (tipoHorario === 'ingreso') {
+            reporteHorarioDiaSemana = await sql`
+                SELECT
+                    EXTRACT(HOUR FROM (fecha_ingreso AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as hora,
+                    EXTRACT(DOW FROM (fecha_ingreso AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as dia_semana,
+                    COUNT(*) as cantidad_lavados,
+                    COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total
+                FROM registros_lavado
+                WHERE DATE(fecha_ingreso AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') >= ${fechaDesde}
+                  AND DATE(fecha_ingreso AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') <= ${fechaHasta}
+                  AND estado = 'entregado'
+                  AND fecha_ingreso IS NOT NULL
+                  AND (anulado IS NULL OR anulado = FALSE)
+                GROUP BY
+                    EXTRACT(HOUR FROM (fecha_ingreso AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')),
+                    EXTRACT(DOW FROM (fecha_ingreso AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires'))
+                ORDER BY hora, dia_semana
+            `;
+        } else {
+            // Usar fecha_listo (cuando se completa el lavado, no cuando se entrega)
+            reporteHorarioDiaSemana = await sql`
+                SELECT
+                    EXTRACT(HOUR FROM (fecha_listo AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as hora,
+                    EXTRACT(DOW FROM (fecha_listo AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as dia_semana,
+                    COUNT(*) as cantidad_lavados,
+                    COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total
+                FROM registros_lavado
+                WHERE DATE(fecha_listo AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') >= ${fechaDesde}
+                  AND DATE(fecha_listo AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') <= ${fechaHasta}
+                  AND estado = 'entregado'
+                  AND fecha_listo IS NOT NULL
+                  AND (anulado IS NULL OR anulado = FALSE)
+                GROUP BY
+                    EXTRACT(HOUR FROM (fecha_listo AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')),
+                    EXTRACT(DOW FROM (fecha_listo AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires'))
+                ORDER BY hora, dia_semana
+            `;
+        }
 
         // Formatear datos en matriz: horarios x días de semana
         // DOW: 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
