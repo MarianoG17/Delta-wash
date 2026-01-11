@@ -50,16 +50,16 @@ export async function GET(request: Request) {
             ORDER BY hora
         `;
 
-        // Formatear datos de horario en rangos (8-9, 9-10, etc.)
-        const horarios = Array.from({ length: 13 }, (_, i) => i + 8); // 8 a 20
+        // Formatear datos de horario en rangos (0-23 horas completas)
+        const horarios = Array.from({ length: 24 }, (_, i) => i); // 0 a 23
         const reporteHorarioFormateado = horarios.map(hora => {
             const datos = reporteHorario.rows.find(r => parseInt(r.hora) === hora);
             return {
-                horario: `${hora}:00 - ${hora + 1}:00`,
+                horario: `${hora.toString().padStart(2, '0')}:00 - ${(hora + 1).toString().padStart(2, '0')}:00`,
                 cantidad_lavados: datos ? parseInt(datos.cantidad_lavados) : 0,
                 importe_total: datos ? parseFloat(datos.importe_total) : 0
             };
-        });
+        }).filter(h => h.cantidad_lavados > 0); // Solo mostrar horarios con actividad
 
         return NextResponse.json({
             success: true,
