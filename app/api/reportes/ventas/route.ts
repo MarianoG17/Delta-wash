@@ -43,7 +43,7 @@ export async function GET(request: Request) {
             reporteHorarioDiaSemana = await sql`
                 SELECT
                     EXTRACT(HOUR FROM (fecha_ingreso AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as hora,
-                    EXTRACT(DOW FROM (fecha_ingreso AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as dia_semana,
+                    EXTRACT(DOW FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as dia_semana,
                     COUNT(*) as cantidad_lavados,
                     COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total
                 FROM registros_lavado
@@ -55,7 +55,7 @@ export async function GET(request: Request) {
                   AND (anulado IS NULL OR anulado = FALSE)
                 GROUP BY
                     EXTRACT(HOUR FROM (fecha_ingreso AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')),
-                    EXTRACT(DOW FROM (fecha_ingreso AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires'))
+                    EXTRACT(DOW FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires'))
                 ORDER BY hora, dia_semana
             `;
         } else {
@@ -63,7 +63,7 @@ export async function GET(request: Request) {
             reporteHorarioDiaSemana = await sql`
                 SELECT
                     EXTRACT(HOUR FROM (fecha_listo AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as hora,
-                    EXTRACT(DOW FROM (fecha_listo AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as dia_semana,
+                    EXTRACT(DOW FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as dia_semana,
                     COUNT(*) as cantidad_lavados,
                     COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total
                 FROM registros_lavado
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
                   AND (anulado IS NULL OR anulado = FALSE)
                 GROUP BY
                     EXTRACT(HOUR FROM (fecha_listo AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')),
-                    EXTRACT(DOW FROM (fecha_listo AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires'))
+                    EXTRACT(DOW FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires'))
                 ORDER BY hora, dia_semana
             `;
         }
