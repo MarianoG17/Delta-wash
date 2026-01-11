@@ -383,58 +383,58 @@ export default function Home() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 p-4">
+        <div className="min-h-screen bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 p-4 overflow-x-hidden">
             <div className="max-w-6xl mx-auto">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-6">
-                    <div className="text-white">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Car size={32} />
-                            <h1 className="text-3xl font-bold">DeltaWash</h1>
+                <div className="mb-6">
+                    <div className="flex justify-between items-start mb-3">
+                        <div className="text-white">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Car size={32} />
+                                <h1 className="text-3xl font-bold">DeltaWash</h1>
+                            </div>
+                            <p className="text-sm opacity-90">Bienvenido/a, {username}</p>
                         </div>
-                        <p className="text-sm opacity-90">Bienvenido/a, {username}</p>
-                    </div>
-                    <div className="flex gap-2">
-                        {userRole === 'admin' && (
-                            <>
-                                <Link
-                                    href="/cuentas-corrientes"
-                                    className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
-                                >
-                                    <Wallet size={18} />
-                                    <span className="text-sm">Cuentas</span>
-                                </Link>
-                                <Link
-                                    href="/listas-precios"
-                                    className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
-                                >
-                                    <DollarSign size={18} />
-                                    <span className="text-sm">Precios</span>
-                                </Link>
-                                <Link
-                                    href="/clientes"
-                                    className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
-                                >
-                                    <Users size={18} />
-                                    <span className="text-sm">Clientes</span>
-                                </Link>
-                                <Link
-                                    href="/historial"
-                                    className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
-                                >
-                                    <History size={18} />
-                                    <span className="text-sm">Historial</span>
-                                </Link>
-                            </>
-                        )}
                         <button
                             onClick={handleLogout}
-                            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
+                            className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all flex-shrink-0"
                         >
                             <LogOut size={18} />
-                            <span className="text-sm">Salir</span>
+                            <span className="text-sm hidden sm:inline">Salir</span>
                         </button>
                     </div>
+                    {userRole === 'admin' && (
+                        <div className="flex flex-wrap gap-2">
+                            <Link
+                                href="/cuentas-corrientes"
+                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
+                            >
+                                <Wallet size={16} />
+                                <span>Cuentas</span>
+                            </Link>
+                            <Link
+                                href="/listas-precios"
+                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
+                            >
+                                <DollarSign size={16} />
+                                <span>Precios</span>
+                            </Link>
+                            <Link
+                                href="/clientes"
+                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
+                            >
+                                <Users size={16} />
+                                <span>Clientes</span>
+                            </Link>
+                            <Link
+                                href="/historial"
+                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
+                            >
+                                <History size={16} />
+                                <span>Historial</span>
+                            </Link>
+                        </div>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
