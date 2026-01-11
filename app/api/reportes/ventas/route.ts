@@ -16,10 +16,10 @@ export async function GET(request: Request) {
             }, { status: 400 });
         }
 
-        // Reporte por día (usando fecha_entregado - las fechas ya están en hora Argentina)
+        // Reporte por día (convirtiendo de UTC a hora Argentina)
         const reporteDiario = await sql`
             SELECT
-                DATE(fecha_entregado) as fecha,
+                DATE(fecha_entregado AT TIME ZONE 'America/Argentina/Buenos_Aires') as fecha,
                 COUNT(*) as cantidad_lavados,
                 COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total,
                 COALESCE(SUM(CASE WHEN metodo_pago = 'efectivo' AND precio > 0 THEN precio ELSE 0 END), 0) as pago_efectivo,
@@ -27,56 +27,56 @@ export async function GET(request: Request) {
                 COALESCE(SUM(CASE WHEN metodo_pago = 'cuenta_corriente' AND precio > 0 THEN precio ELSE 0 END), 0) as pago_cuenta_corriente,
                 COUNT(CASE WHEN precio IS NULL OR precio = 0 THEN 1 END) as registros_sin_precio
             FROM registros_lavado
-            WHERE DATE(fecha_entregado) >= ${fechaDesde}
-              AND DATE(fecha_entregado) <= ${fechaHasta}
+            WHERE DATE(fecha_entregado AT TIME ZONE 'America/Argentina/Buenos_Aires') >= ${fechaDesde}
+              AND DATE(fecha_entregado AT TIME ZONE 'America/Argentina/Buenos_Aires') <= ${fechaHasta}
               AND estado = 'entregado'
               AND fecha_entregado IS NOT NULL
               AND (anulado IS NULL OR anulado = FALSE)
-            GROUP BY DATE(fecha_entregado)
+            GROUP BY DATE(fecha_entregado AT TIME ZONE 'America/Argentina/Buenos_Aires')
             ORDER BY fecha DESC
         `;
 
         // Reporte por horario y día de semana (matriz)
         // Usar fecha según el tipo seleccionado: ingreso o listo (cuando se completa el lavado)
-        // Las fechas ya están en hora Argentina, no necesitan conversión
+        // Convertir de UTC a hora Argentina
         let reporteHorarioDiaSemana;
         if (tipoHorario === 'ingreso') {
             reporteHorarioDiaSemana = await sql`
                 SELECT
-                    EXTRACT(HOUR FROM fecha_ingreso) as hora,
-                    EXTRACT(DOW FROM fecha_entregado) as dia_semana,
+                    EXTRACT(HOUR FROM (fecha_ingreso AT TIME ZONE 'America/Argentina/Buenos_Aires')) as hora,
+                    EXTRACT(DOW FROM (fecha_entregado AT TIME ZONE 'America/Argentina/Buenos_Aires')) as dia_semana,
                     COUNT(*) as cantidad_lavados,
                     COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total
                 FROM registros_lavado
-                WHERE DATE(fecha_entregado) >= ${fechaDesde}
-                  AND DATE(fecha_entregado) <= ${fechaHasta}
+                WHERE DATE(fecha_entregado AT TIME ZONE 'America/Argentina/Buenos_Aires') >= ${fechaDesde}
+                  AND DATE(fecha_entregado AT TIME ZONE 'America/Argentina/Buenos_Aires') <= ${fechaHasta}
                   AND estado = 'entregado'
                   AND fecha_ingreso IS NOT NULL
                   AND fecha_entregado IS NOT NULL
                   AND (anulado IS NULL OR anulado = FALSE)
                 GROUP BY
-                    EXTRACT(HOUR FROM fecha_ingreso),
-                    EXTRACT(DOW FROM fecha_entregado)
+                    EXTRACT(HOUR FROM (fecha_ingreso AT TIME ZONE 'America/Argentina/Buenos_Aires')),
+                    EXTRACT(DOW FROM (fecha_entregado AT TIME ZONE 'America/Argentina/Buenos_Aires'))
                 ORDER BY hora, dia_semana
             `;
         } else {
             // Usar fecha_listo (cuando se completa el lavado, no cuando se entrega)
             reporteHorarioDiaSemana = await sql`
                 SELECT
-                    EXTRACT(HOUR FROM fecha_listo) as hora,
-                    EXTRACT(DOW FROM fecha_entregado) as dia_semana,
+                    EXTRACT(HOUR FROM (fecha_listo AT TIME ZONE 'America/Argentina/Buenos_Aires')) as hora,
+                    EXTRACT(DOW FROM (fecha_entregado AT TIME ZONE 'America/Argentina/Buenos_Aires')) as dia_semana,
                     COUNT(*) as cantidad_lavados,
                     COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total
                 FROM registros_lavado
-                WHERE DATE(fecha_entregado) >= ${fechaDesde}
-                  AND DATE(fecha_entregado) <= ${fechaHasta}
+                WHERE DATE(fecha_entregado AT TIME ZONE 'America/Argentina/Buenos_Aires') >= ${fechaDesde}
+                  AND DATE(fecha_entregado AT TIME ZONE 'America/Argentina/Buenos_Aires') <= ${fechaHasta}
                   AND estado = 'entregado'
                   AND fecha_listo IS NOT NULL
                   AND fecha_entregado IS NOT NULL
                   AND (anulado IS NULL OR anulado = FALSE)
                 GROUP BY
-                    EXTRACT(HOUR FROM fecha_listo),
-                    EXTRACT(DOW FROM fecha_entregado)
+                    EXTRACT(HOUR FROM (fecha_listo AT TIME ZONE 'America/Argentina/Buenos_Aires')),
+                    EXTRACT(DOW FROM (fecha_entregado AT TIME ZONE 'America/Argentina/Buenos_Aires'))
                 ORDER BY hora, dia_semana
             `;
         }
