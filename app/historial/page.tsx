@@ -284,12 +284,16 @@ function HistorialContent() {
                                         Filtrado por fecha de entrega
                                     </p>
                                     <p className="text-sm text-blue-600">
-                                        Mostrando registros del: <strong>{new Date(fechaFiltro + 'T00:00:00').toLocaleDateString('es-AR', {
-                                            weekday: 'long',
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric'
-                                        })}</strong>
+                                        Mostrando registros del: <strong>{(() => {
+                                            const [year, month, day] = fechaFiltro.split('-');
+                                            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                                            return date.toLocaleDateString('es-AR', {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            });
+                                        })()}</strong>
                                     </p>
                                     <p className="text-xs text-blue-500 mt-1">
                                         {registrosFiltrados.length} registro(s) encontrado(s)
