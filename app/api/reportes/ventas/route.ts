@@ -15,38 +15,39 @@ export async function GET(request: Request) {
             }, { status: 400 });
         }
 
-        // Reporte por día (usando fecha_entregado)
+        // Reporte por día (usando fecha_entregado en zona horaria Argentina)
         const reporteDiario = await sql`
             SELECT
-                DATE(fecha_entregado) as fecha,
+                DATE(fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') as fecha,
                 COUNT(*) as cantidad_lavados,
-                SUM(precio) as importe_total,
-                SUM(CASE WHEN metodo_pago = 'efectivo' THEN precio ELSE 0 END) as pago_efectivo,
-                SUM(CASE WHEN metodo_pago = 'transferencia' THEN precio ELSE 0 END) as pago_transferencia,
-                SUM(CASE WHEN metodo_pago = 'cuenta_corriente' THEN precio ELSE 0 END) as pago_cuenta_corriente
+                COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total,
+                COALESCE(SUM(CASE WHEN metodo_pago = 'efectivo' AND precio > 0 THEN precio ELSE 0 END), 0) as pago_efectivo,
+                COALESCE(SUM(CASE WHEN metodo_pago = 'transferencia' AND precio > 0 THEN precio ELSE 0 END), 0) as pago_transferencia,
+                COALESCE(SUM(CASE WHEN metodo_pago = 'cuenta_corriente' AND precio > 0 THEN precio ELSE 0 END), 0) as pago_cuenta_corriente,
+                COUNT(CASE WHEN precio IS NULL OR precio = 0 THEN 1 END) as registros_sin_precio
             FROM registros_lavado
-            WHERE DATE(fecha_entregado) >= ${fechaDesde}
-              AND DATE(fecha_entregado) <= ${fechaHasta}
+            WHERE DATE(fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') >= ${fechaDesde}
+              AND DATE(fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') <= ${fechaHasta}
               AND estado = 'entregado'
               AND fecha_entregado IS NOT NULL
               AND (anulado IS NULL OR anulado = FALSE)
-            GROUP BY DATE(fecha_entregado)
+            GROUP BY DATE(fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')
             ORDER BY fecha DESC
         `;
 
-        // Reporte por horario (usando fecha_entregado)
+        // Reporte por horario (usando fecha_entregado en zona horaria Argentina)
         const reporteHorario = await sql`
             SELECT
-                EXTRACT(HOUR FROM fecha_entregado) as hora,
+                EXTRACT(HOUR FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')) as hora,
                 COUNT(*) as cantidad_lavados,
-                SUM(precio) as importe_total
+                COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total
             FROM registros_lavado
-            WHERE DATE(fecha_entregado) >= ${fechaDesde}
-              AND DATE(fecha_entregado) <= ${fechaHasta}
+            WHERE DATE(fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') >= ${fechaDesde}
+              AND DATE(fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') <= ${fechaHasta}
               AND estado = 'entregado'
               AND fecha_entregado IS NOT NULL
               AND (anulado IS NULL OR anulado = FALSE)
-            GROUP BY EXTRACT(HOUR FROM fecha_entregado)
+            GROUP BY EXTRACT(HOUR FROM (fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires'))
             ORDER BY hora
         `;
 
@@ -69,7 +70,8 @@ export async function GET(request: Request) {
                 importe_total: parseFloat(row.importe_total) || 0,
                 pago_efectivo: parseFloat(row.pago_efectivo) || 0,
                 pago_transferencia: parseFloat(row.pago_transferencia) || 0,
-                pago_cuenta_corriente: parseFloat(row.pago_cuenta_corriente) || 0
+                pago_cuenta_corriente: parseFloat(row.pago_cuenta_corriente) || 0,
+                registros_sin_precio: parseInt(row.registros_sin_precio) || 0
             })),
             reporte_horario: reporteHorarioFormateado,
             totales: {
@@ -77,7 +79,8 @@ export async function GET(request: Request) {
                 importe_total: reporteDiario.rows.reduce((sum, row) => sum + parseFloat(row.importe_total || 0), 0),
                 efectivo_total: reporteDiario.rows.reduce((sum, row) => sum + parseFloat(row.pago_efectivo || 0), 0),
                 transferencia_total: reporteDiario.rows.reduce((sum, row) => sum + parseFloat(row.pago_transferencia || 0), 0),
-                cuenta_corriente_total: reporteDiario.rows.reduce((sum, row) => sum + parseFloat(row.pago_cuenta_corriente || 0), 0)
+                cuenta_corriente_total: reporteDiario.rows.reduce((sum, row) => sum + parseFloat(row.pago_cuenta_corriente || 0), 0),
+                registros_sin_precio_total: reporteDiario.rows.reduce((sum, row) => sum + parseInt(row.registros_sin_precio || 0), 0)
             }
         });
 
