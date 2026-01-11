@@ -15,36 +15,38 @@ export async function GET(request: Request) {
             }, { status: 400 });
         }
 
-        // Reporte por día
+        // Reporte por día (usando fecha_entregado)
         const reporteDiario = await sql`
-            SELECT 
-                DATE(fecha_ingreso) as fecha,
+            SELECT
+                DATE(fecha_entregado) as fecha,
                 COUNT(*) as cantidad_lavados,
                 SUM(precio) as importe_total,
                 SUM(CASE WHEN metodo_pago = 'efectivo' THEN precio ELSE 0 END) as pago_efectivo,
                 SUM(CASE WHEN metodo_pago = 'transferencia' THEN precio ELSE 0 END) as pago_transferencia,
                 SUM(CASE WHEN metodo_pago = 'cuenta_corriente' THEN precio ELSE 0 END) as pago_cuenta_corriente
             FROM registros_lavado
-            WHERE DATE(fecha_ingreso) >= ${fechaDesde}
-              AND DATE(fecha_ingreso) <= ${fechaHasta}
+            WHERE DATE(fecha_entregado) >= ${fechaDesde}
+              AND DATE(fecha_entregado) <= ${fechaHasta}
               AND estado = 'entregado'
+              AND fecha_entregado IS NOT NULL
               AND (anulado IS NULL OR anulado = FALSE)
-            GROUP BY DATE(fecha_ingreso)
+            GROUP BY DATE(fecha_entregado)
             ORDER BY fecha DESC
         `;
 
-        // Reporte por horario
+        // Reporte por horario (usando fecha_entregado)
         const reporteHorario = await sql`
-            SELECT 
-                EXTRACT(HOUR FROM fecha_ingreso) as hora,
+            SELECT
+                EXTRACT(HOUR FROM fecha_entregado) as hora,
                 COUNT(*) as cantidad_lavados,
                 SUM(precio) as importe_total
             FROM registros_lavado
-            WHERE DATE(fecha_ingreso) >= ${fechaDesde}
-              AND DATE(fecha_ingreso) <= ${fechaHasta}
+            WHERE DATE(fecha_entregado) >= ${fechaDesde}
+              AND DATE(fecha_entregado) <= ${fechaHasta}
               AND estado = 'entregado'
+              AND fecha_entregado IS NOT NULL
               AND (anulado IS NULL OR anulado = FALSE)
-            GROUP BY EXTRACT(HOUR FROM fecha_ingreso)
+            GROUP BY EXTRACT(HOUR FROM fecha_entregado)
             ORDER BY hora
         `;
 
