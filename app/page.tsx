@@ -450,6 +450,10 @@ export default function Home() {
                                                     setModelo(data.data.modelo);
                                                     setNombreCliente(data.data.nombre_cliente);
                                                     setCelular(data.data.celular);
+                                                    // Buscar cuenta corriente automáticamente
+                                                    if (data.data.celular && data.data.celular.length >= 8) {
+                                                        buscarCuentaCorriente(data.data.celular);
+                                                    }
                                                     setMessage('✅ Cliente encontrado! Datos autocompletados');
                                                     setTimeout(() => setMessage(''), 3000);
                                                 }

@@ -50,7 +50,7 @@ export async function GET(request: Request) {
                 LEFT JOIN registros_lavado r ON mc.registro_id = r.id
                 LEFT JOIN usuarios u ON mc.usuario_id = u.id
                 WHERE mc.cuenta_id = ${cuentaId}
-                ORDER BY mc.fecha DESC
+                ORDER BY mc.id DESC
             `;
             movimientos = movimientosResult.rows;
         } catch (movError: any) {
