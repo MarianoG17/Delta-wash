@@ -16,7 +16,7 @@ export async function GET(request: Request) {
             }, { status: 400 });
         }
 
-        // Reporte por día - sin conversión de zona horaria, usar fechas tal cual
+        // Reporte por día - comparar con timestamps completos para incluir todo el día
         const reporteDiario = await sql`
             SELECT
                 fecha_entregado::date as fecha,
@@ -27,8 +27,8 @@ export async function GET(request: Request) {
                 COALESCE(SUM(CASE WHEN metodo_pago = 'cuenta_corriente' AND precio > 0 THEN precio ELSE 0 END), 0) as pago_cuenta_corriente,
                 COUNT(CASE WHEN precio IS NULL OR precio = 0 THEN 1 END) as registros_sin_precio
             FROM registros_lavado
-            WHERE fecha_entregado::date >= ${fechaDesde}::date
-              AND fecha_entregado::date <= ${fechaHasta}::date
+            WHERE fecha_entregado >= ${fechaDesde}::date
+              AND fecha_entregado < (${fechaHasta}::date + INTERVAL '1 day')
               AND estado = 'entregado'
               AND fecha_entregado IS NOT NULL
               AND (anulado IS NULL OR anulado = FALSE)
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
             ORDER BY fecha DESC
         `;
 
-        // Reporte por horario y día de semana (matriz) - sin conversión
+        // Reporte por horario y día de semana (matriz) - usar timestamps completos
         let reporteHorarioDiaSemana;
         if (tipoHorario === 'ingreso') {
             reporteHorarioDiaSemana = await sql`
@@ -46,8 +46,8 @@ export async function GET(request: Request) {
                     COUNT(*) as cantidad_lavados,
                     COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total
                 FROM registros_lavado
-                WHERE fecha_entregado::date >= ${fechaDesde}::date
-                  AND fecha_entregado::date <= ${fechaHasta}::date
+                WHERE fecha_entregado >= ${fechaDesde}::date
+                  AND fecha_entregado < (${fechaHasta}::date + INTERVAL '1 day')
                   AND estado = 'entregado'
                   AND fecha_ingreso IS NOT NULL
                   AND fecha_entregado IS NOT NULL
@@ -66,8 +66,8 @@ export async function GET(request: Request) {
                     COUNT(*) as cantidad_lavados,
                     COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total
                 FROM registros_lavado
-                WHERE fecha_entregado::date >= ${fechaDesde}::date
-                  AND fecha_entregado::date <= ${fechaHasta}::date
+                WHERE fecha_entregado >= ${fechaDesde}::date
+                  AND fecha_entregado < (${fechaHasta}::date + INTERVAL '1 day')
                   AND estado = 'entregado'
                   AND fecha_listo IS NOT NULL
                   AND fecha_entregado IS NOT NULL
