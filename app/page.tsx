@@ -519,6 +519,10 @@ export default function Home() {
                                                     setModelo(data.data.modelo);
                                                     setNombreCliente(data.data.nombre_cliente);
                                                     setCelular(data.data.celular);
+                                                    // Autocompletar tipo de vehículo si está disponible
+                                                    if (data.data.tipo_vehiculo) {
+                                                        setTipoVehiculo(data.data.tipo_vehiculo);
+                                                    }
                                                     // Buscar cuenta corriente automáticamente
                                                     if (data.data.celular && data.data.celular.length >= 8) {
                                                         buscarCuentaCorriente(data.data.celular);

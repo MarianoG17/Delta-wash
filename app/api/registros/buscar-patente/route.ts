@@ -15,8 +15,8 @@ export async function GET(request: Request) {
 
         // Buscar el registro más reciente con esa patente
         const result = await sql`
-      SELECT marca_modelo, nombre_cliente, celular, patente
-      FROM registros_lavado 
+      SELECT marca_modelo, nombre_cliente, celular, patente, tipo_vehiculo
+      FROM registros_lavado
       WHERE UPPER(patente) = UPPER(${patente})
       ORDER BY fecha_ingreso DESC
       LIMIT 1
@@ -42,7 +42,8 @@ export async function GET(request: Request) {
                 modelo,
                 nombre_cliente: registro.nombre_cliente,
                 celular: registro.celular,
-                patente: registro.patente
+                patente: registro.patente,
+                tipo_vehiculo: registro.tipo_vehiculo || 'auto'
             }
         });
 
