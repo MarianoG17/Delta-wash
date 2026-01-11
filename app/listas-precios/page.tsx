@@ -339,6 +339,9 @@ export default function ListasPrecios() {
                                                 + Con Cera
                                             </th>
                                             <th className="text-right py-3 px-2 font-semibold text-gray-700">
+                                                Limpieza Chasis
+                                            </th>
+                                            <th className="text-right py-3 px-2 font-semibold text-gray-700">
                                                 Total con Cera
                                             </th>
                                         </tr>
@@ -347,6 +350,7 @@ export default function ListasPrecios() {
                                         {tiposVehiculo.map((tipo) => {
                                             const precioBase = getPrecio(lista, tipo.value, 'simple');
                                             const precioCera = getPrecio(lista, tipo.value, 'con_cera');
+                                            const precioChasis = getPrecio(lista, tipo.value, 'limpieza_chasis');
                                             const total = precioBase + precioCera;
 
                                             return (
@@ -382,6 +386,22 @@ export default function ListasPrecios() {
                                                         ) : (
                                                             <span className="text-sm text-gray-700">
                                                                 {tipo.value === 'moto' ? '-' : `$${precioCera.toLocaleString('es-AR')}`}
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3 px-2 text-right">
+                                                        {listaEditando === lista.id ? (
+                                                            <input
+                                                                type="number"
+                                                                value={precioChasis}
+                                                                onChange={(e) => setPrecio(tipo.value, 'limpieza_chasis', parseFloat(e.target.value) || 0)}
+                                                                className="w-32 px-2 py-1 border border-gray-300 rounded text-right text-gray-900"
+                                                                step="1000"
+                                                                disabled={tipo.value === 'moto'}
+                                                            />
+                                                        ) : (
+                                                            <span className="text-sm text-gray-700">
+                                                                {tipo.value === 'moto' ? '-' : `$${precioChasis.toLocaleString('es-AR')}`}
                                                             </span>
                                                         )}
                                                     </td>
