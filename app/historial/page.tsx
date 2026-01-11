@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Car, AlertCircle, Ban } from 'lucide-react';
 
@@ -21,12 +21,15 @@ interface Registro {
 
 export default function Historial() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [mounted, setMounted] = useState(false);
     const [registros, setRegistros] = useState<Registro[]>([]);
+    const [registrosFiltrados, setRegistrosFiltrados] = useState<Registro[]>([]);
     const [loading, setLoading] = useState(true);
     const [clientesSinVisitar, setClientesSinVisitar] = useState<any[]>([]);
     const [userId, setUserId] = useState<number | null>(null);
     const [userRole, setUserRole] = useState<string>('operador');
+    const [fechaFiltro, setFechaFiltro] = useState<string | null>(null);
 
     useEffect(() => {
         setMounted(true);
@@ -38,10 +41,17 @@ export default function Historial() {
                 const data = JSON.parse(session);
                 setUserId(data.id);
                 setUserRole(data.rol || 'operador');
+                
+                // Obtener fecha del parámetro URL si existe
+                const fechaParam = searchParams.get('fecha');
+                if (fechaParam) {
+                    setFechaFiltro(fechaParam);
+                }
+                
                 cargarDatos();
             }
         }
-    }, [router]);
+    }, [router, searchParams]);
 
     const cargarDatos = async () => {
         try {
@@ -59,6 +69,26 @@ export default function Historial() {
         } finally {
             setLoading(false);
         }
+    };
+
+    // Filtrar registros cuando cambia la fecha o los registros
+    useEffect(() => {
+        if (fechaFiltro && registros.length > 0) {
+            const filtrados = registros.filter((r) => {
+                if (!r.fecha_entregado) return false;
+                const fechaEntregado = new Date(r.fecha_entregado).toISOString().split('T')[0];
+                return fechaEntregado === fechaFiltro;
+            });
+            setRegistrosFiltrados(filtrados);
+        } else {
+            setRegistrosFiltrados(registros);
+        }
+    }, [fechaFiltro, registros]);
+
+    const limpiarFiltro = () => {
+        setFechaFiltro(null);
+        // Actualizar URL sin el parámetro fecha
+        router.push('/historial');
     };
 
     const anularRegistro = async (id: number) => {
@@ -216,10 +246,10 @@ export default function Historial() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="bg-white rounded-2xl p-6 shadow-xl">
                         <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-bold text-gray-900">Total Registros</h3>
+                            <h3 className="font-bold text-gray-900">{fechaFiltro ? 'Registros del día' : 'Total Registros'}</h3>
                             <Car className="text-blue-600" size={24} />
                         </div>
-                        <p className="text-3xl font-bold text-blue-600">{registros.length}</p>
+                        <p className="text-3xl font-bold text-blue-600">{registrosFiltrados.length}</p>
                     </div>
 
                     <div className="bg-white rounded-2xl p-6 shadow-xl">
@@ -228,7 +258,7 @@ export default function Historial() {
                             <Calendar className="text-green-600" size={24} />
                         </div>
                         <p className="text-3xl font-bold text-green-600">
-                            {registros.filter((r) => r.estado === 'entregado').length}
+                            {registrosFiltrados.filter((r) => r.estado === 'entregado').length}
                         </p>
                     </div>
 
@@ -243,8 +273,41 @@ export default function Historial() {
                     </div>
                 </div>
 
+                {/* Banner de filtro activo */}
+                {fechaFiltro && (
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-lg">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <Calendar className="text-blue-500 mr-3" size={24} />
+                                <div>
+                                    <p className="text-sm font-semibold text-blue-700">
+                                        Filtrado por fecha de entrega
+                                    </p>
+                                    <p className="text-sm text-blue-600">
+                                        Mostrando registros del: <strong>{new Date(fechaFiltro + 'T00:00:00').toLocaleDateString('es-AR', {
+                                            weekday: 'long',
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        })}</strong>
+                                    </p>
+                                    <p className="text-xs text-blue-500 mt-1">
+                                        {registrosFiltrados.length} registro(s) encontrado(s)
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={limpiarFiltro}
+                                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm font-medium"
+                            >
+                                Ver todos
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Clientes sin visitar - Tabla */}
-                {clientesSinVisitar.length > 0 && (
+                {!fechaFiltro && clientesSinVisitar.length > 0 && (
                     <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
                         <h2 className="text-2xl font-bold text-orange-700 mb-4">
                             📢 Clientes Inactivos (+15 días sin visitar)
@@ -361,7 +424,7 @@ export default function Historial() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {registros.map((registro) => (
+                                {registrosFiltrados.map((registro) => (
                                     <tr key={registro.id} className={`border-b border-gray-100 hover:bg-gray-50 ${registro.anulado ? 'bg-red-50 opacity-60' : ''}`}>
                                         <td className="py-3 px-2 text-sm text-gray-900">
                                             {formatFecha(registro.fecha_ingreso)}

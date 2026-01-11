@@ -287,8 +287,14 @@ export default function Reportes() {
                                                             day: 'numeric'
                                                         })}
                                                     </td>
-                                                    <td className="py-3 px-4 text-right font-semibold text-gray-900">
-                                                        {row.cantidad_lavados}
+                                                    <td className="py-3 px-4 text-right font-semibold">
+                                                        <Link
+                                                            href={`/historial?fecha=${row.fecha}`}
+                                                            className="text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                                            title="Ver detalle de registros de este día"
+                                                        >
+                                                            {row.cantidad_lavados}
+                                                        </Link>
                                                     </td>
                                                     <td className="py-3 px-4 text-right font-bold text-green-600">
                                                         ${row.importe_total.toLocaleString('es-AR')}
