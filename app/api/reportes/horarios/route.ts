@@ -44,8 +44,23 @@ export async function GET(request: Request) {
         // Procesar registros en JavaScript
         registros.rows.forEach((registro) => {
             const fechaIngreso = new Date(registro.fecha_ingreso);
-            const hora = fechaIngreso.getHours(); // 0-23
-            const diaSemana = fechaIngreso.getDay(); // 0=Domingo, 1=Lunes, ..., 6=Sábado
+            
+            // Obtener hora y día en zona horaria Argentina (UTC-3)
+            const partes = new Intl.DateTimeFormat('en-US', {
+                hour: 'numeric',
+                hour12: false,
+                weekday: 'short',
+                timeZone: 'America/Argentina/Buenos_Aires'
+            }).formatToParts(fechaIngreso);
+            
+            const hora = parseInt(partes.find(p => p.type === 'hour')?.value || '0');
+            const diaNombre = partes.find(p => p.type === 'weekday')?.value || 'Sun';
+            
+            // Mapear nombre de día a número: 0=Domingo, 1=Lunes, ..., 6=Sábado
+            const diasMap: {[key: string]: number} = {
+                'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6
+            };
+            const diaSemana = diasMap[diaNombre] || 0;
             
             reportePorHora[hora][diaSemana]++;
         });
