@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Car, AlertCircle, Ban } from 'lucide-react';
@@ -19,7 +19,7 @@ interface Registro {
     anulado?: boolean;
 }
 
-export default function Historial() {
+function HistorialContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [mounted, setMounted] = useState(false);
@@ -511,5 +511,17 @@ export default function Historial() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function Historial() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 flex items-center justify-center">
+                <div className="text-white text-xl">Cargando...</div>
+            </div>
+        }>
+            <HistorialContent />
+        </Suspense>
     );
 }
