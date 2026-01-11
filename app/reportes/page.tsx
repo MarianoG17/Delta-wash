@@ -3,12 +3,25 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign, Clock } from 'lucide-react';
 
 interface ReporteDia {
     fecha: string;
     cantidad: number;
     facturacion: number;
+}
+
+interface ReporteHorario {
+    hora: number;
+    horario: string;
+    domingo: number;
+    lunes: number;
+    martes: number;
+    miercoles: number;
+    jueves: number;
+    viernes: number;
+    sabado: number;
+    total: number;
 }
 
 interface Totales {
@@ -20,6 +33,7 @@ export default function Reportes() {
     const router = useRouter();
     const [userRole, setUserRole] = useState<string>('operador');
     const [mounted, setMounted] = useState(false);
+    const [tabActiva, setTabActiva] = useState<'diario' | 'horario'>('diario');
     
     // Fechas por defecto: últimos 30 días
     const hoy = new Date();
@@ -30,6 +44,7 @@ export default function Reportes() {
     const [fechaHasta, setFechaHasta] = useState(hoy.toISOString().split('T')[0]);
     
     const [reporte, setReporte] = useState<ReporteDia[]>([]);
+    const [reporteHorario, setReporteHorario] = useState<ReporteHorario[]>([]);
     const [totales, setTotales] = useState<Totales>({
         cantidad_total: 0,
         facturacion_total: 0
@@ -59,18 +74,29 @@ export default function Reportes() {
     const cargarReporte = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/reportes/ventas?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`);
-            const data = await res.json();
+            // Cargar reporte diario
+            const resVentas = await fetch(`/api/reportes/ventas?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`);
+            const dataVentas = await resVentas.json();
 
-            if (data.success) {
-                setReporte(data.reporte);
-                setTotales(data.totales);
+            if (dataVentas.success) {
+                setReporte(dataVentas.reporte);
+                setTotales(dataVentas.totales);
             } else {
-                alert('Error al cargar reporte: ' + data.message);
+                alert('Error al cargar reporte diario: ' + dataVentas.message);
+            }
+
+            // Cargar reporte de horarios
+            const resHorarios = await fetch(`/api/reportes/horarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`);
+            const dataHorarios = await resHorarios.json();
+
+            if (dataHorarios.success) {
+                setReporteHorario(dataHorarios.reporte);
+            } else {
+                alert('Error al cargar reporte de horarios: ' + dataHorarios.message);
             }
         } catch (error) {
-            console.error('Error cargando reporte:', error);
-            alert('Error al cargar reporte');
+            console.error('Error cargando reportes:', error);
+            alert('Error al cargar reportes');
         } finally {
             setLoading(false);
         }
@@ -163,12 +189,45 @@ export default function Reportes() {
                     </div>
                 </div>
 
-                {/* Tabla de reporte */}
-                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                    <div className="p-6">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                            Ventas por Día
-                        </h2>
+                {/* Tabs */}
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
+                    <div className="flex border-b border-gray-200">
+                        <button
+                            onClick={() => setTabActiva('diario')}
+                            className={`flex-1 px-6 py-4 font-semibold transition-colors ${
+                                tabActiva === 'diario'
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                        >
+                            <div className="flex items-center justify-center gap-2">
+                                <Calendar size={20} />
+                                <span>Reporte Diario</span>
+                            </div>
+                        </button>
+                        <button
+                            onClick={() => setTabActiva('horario')}
+                            className={`flex-1 px-6 py-4 font-semibold transition-colors ${
+                                tabActiva === 'horario'
+                                    ? 'bg-blue-500 text-white'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                        >
+                            <div className="flex items-center justify-center gap-2">
+                                <Clock size={20} />
+                                <span>Reporte por Horario</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Tabla de reporte diario */}
+                {tabActiva === 'diario' && (
+                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                        <div className="p-6">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                                Ventas por Día
+                            </h2>
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead>
@@ -209,8 +268,77 @@ export default function Reportes() {
                                 </tbody>
                             </table>
                         </div>
+                        </div>
                     </div>
-                </div>
+                )}
+
+                {/* Tabla de reporte por horario */}
+                {tabActiva === 'horario' && (
+                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                        <div className="p-6">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                                Cantidad de Autos por Horario y Día
+                            </h2>
+                            <p className="text-sm text-gray-600 mb-4">
+                                Muestra la cantidad de autos que ingresaron en cada franja horaria
+                            </p>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b-2 border-gray-200">
+                                            <th className="text-left py-3 px-2 font-semibold text-gray-700 sticky left-0 bg-white">Horario</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-gray-700">Lun</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-gray-700">Mar</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-gray-700">Mié</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-gray-700">Jue</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-gray-700">Vie</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-gray-700">Sáb</th>
+                                            <th className="text-center py-3 px-2 font-semibold text-blue-700 bg-blue-50">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {reporteHorario.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={8} className="text-center py-8 text-gray-500">
+                                                    {loading ? 'Cargando...' : 'No hay datos para el período seleccionado'}
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            reporteHorario.map((row, index) => (
+                                                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                                                    <td className="py-2 px-2 text-gray-900 font-medium sticky left-0 bg-white">
+                                                        {row.horario}
+                                                    </td>
+                                                    <td className="py-2 px-2 text-center text-gray-700">
+                                                        {row.lunes > 0 ? row.lunes : '-'}
+                                                    </td>
+                                                    <td className="py-2 px-2 text-center text-gray-700">
+                                                        {row.martes > 0 ? row.martes : '-'}
+                                                    </td>
+                                                    <td className="py-2 px-2 text-center text-gray-700">
+                                                        {row.miercoles > 0 ? row.miercoles : '-'}
+                                                    </td>
+                                                    <td className="py-2 px-2 text-center text-gray-700">
+                                                        {row.jueves > 0 ? row.jueves : '-'}
+                                                    </td>
+                                                    <td className="py-2 px-2 text-center text-gray-700">
+                                                        {row.viernes > 0 ? row.viernes : '-'}
+                                                    </td>
+                                                    <td className="py-2 px-2 text-center text-gray-700">
+                                                        {row.sabado > 0 ? row.sabado : '-'}
+                                                    </td>
+                                                    <td className="py-2 px-2 text-center font-bold text-blue-700 bg-blue-50">
+                                                        {row.total}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
