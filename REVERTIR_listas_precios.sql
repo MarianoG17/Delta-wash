@@ -9,10 +9,6 @@
 -- relacionados con listas de precios
 -- Solo ejecuta esto en el proyecto EQUIVOCADO
 
--- Eliminar columna de cuentas_corrientes (si existe)
-ALTER TABLE cuentas_corrientes 
-DROP COLUMN IF EXISTS lista_precio_id;
-
 -- Eliminar tabla de precios (primero porque tiene foreign key)
 DROP TABLE IF EXISTS precios CASCADE;
 
@@ -23,9 +19,9 @@ DROP TABLE IF EXISTS listas_precios CASCADE;
 SELECT 'Tablas de listas de precios eliminadas correctamente' as resultado;
 
 -- Verificar que no existen
-SELECT table_name 
-FROM information_schema.tables 
-WHERE table_schema = 'public' 
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
   AND table_name IN ('listas_precios', 'precios')
 ORDER BY table_name;
 
