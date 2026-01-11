@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Car, LogOut, History, Plus, Send, Users, Wallet, Ban } from 'lucide-react';
+import { Car, LogOut, History, Plus, Send, Users, Wallet, Ban, DollarSign } from 'lucide-react';
 
 interface Registro {
     id: number;
@@ -392,6 +392,13 @@ export default function Home() {
                                 >
                                     <Wallet size={18} />
                                     <span className="text-sm">Cuentas</span>
+                                </Link>
+                                <Link
+                                    href="/listas-precios"
+                                    className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all"
+                                >
+                                    <DollarSign size={18} />
+                                    <span className="text-sm">Precios</span>
                                 </Link>
                                 <Link
                                     href="/clientes"

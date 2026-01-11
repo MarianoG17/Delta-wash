@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, DollarSign, Plus, Edit, Trash2, Copy } from 'lucide-react';
+import { ArrowLeft, DollarSign, Plus, Edit, Trash2, Copy, TrendingUp } from 'lucide-react';
 
 interface Precio {
     id: number;
@@ -28,6 +28,9 @@ export default function ListasPrecios() {
     const [loading, setLoading] = useState(true);
     const [listaEditando, setListaEditando] = useState<number | null>(null);
     const [preciosEditando, setPreciosEditando] = useState<{ [key: string]: number }>({});
+    const [mostrarAumento, setMostrarAumento] = useState<number | null>(null);
+    const [porcentajeAumento, setPorcentajeAumento] = useState<string>('');
+    const [redondear, setRedondear] = useState<boolean>(true);
 
     const tiposVehiculo = [
         { value: 'auto', label: '🚗 Auto' },
@@ -172,6 +175,44 @@ export default function ListasPrecios() {
         setPreciosEditando({ ...preciosEditando, [key]: valor });
     };
 
+    const redondearPrecio = (precio: number): number => {
+        // Redondea a la centena más cercana (últimos 2 dígitos a 00)
+        // Ejemplo: 23470 -> 23500, 23420 -> 23400
+        return Math.round(precio / 100) * 100;
+    };
+
+    const aplicarAumento = (listaId: number) => {
+        const porcentaje = parseFloat(porcentajeAumento);
+        if (isNaN(porcentaje) || porcentaje === 0) {
+            alert('❌ Ingresa un porcentaje válido');
+            return;
+        }
+
+        const lista = listas.find(l => l.id === listaId);
+        if (!lista) return;
+
+        const nuevosPreciosEditando: { [key: string]: number } = {};
+        
+        lista.precios.forEach(precio => {
+            const key = `${precio.tipo_vehiculo}_${precio.tipo_servicio}`;
+            const precioActual = parseFloat(precio.precio.toString());
+            const aumento = precioActual * (porcentaje / 100);
+            let precioNuevo = precioActual + aumento;
+            
+            if (redondear) {
+                precioNuevo = redondearPrecio(precioNuevo);
+            }
+            
+            nuevosPreciosEditando[key] = precioNuevo;
+        });
+
+        setPreciosEditando(nuevosPreciosEditando);
+        setListaEditando(listaId);
+        setMostrarAumento(null);
+        setPorcentajeAumento('');
+        alert(`✅ Aumento del ${porcentaje}% aplicado${redondear ? ' (redondeado)' : ''}`);
+    };
+
     if (!mounted) return null;
 
     if (loading) {
@@ -255,6 +296,13 @@ export default function ListasPrecios() {
                                         </>
                                     ) : (
                                         <>
+                                            <button
+                                                onClick={() => setMostrarAumento(lista.id)}
+                                                className="p-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+                                                title="Aplicar aumento"
+                                            >
+                                                <TrendingUp size={18} />
+                                            </button>
                                             <button
                                                 onClick={() => iniciarEdicion(lista)}
                                                 className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
@@ -351,6 +399,98 @@ export default function ListasPrecios() {
                         </div>
                     ))}
                 </div>
+
+                {/* Modal de Aumento */}
+                {mostrarAumento && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
+                            <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                <TrendingUp className="text-orange-500" size={28} />
+                                Aplicar Aumento
+                            </h3>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Porcentaje de Aumento
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            value={porcentajeAumento}
+                                            onChange={(e) => setPorcentajeAumento(e.target.value)}
+                                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
+                                            placeholder="Ej: 10"
+                                            step="0.1"
+                                            autoFocus
+                                        />
+                                        <span className="text-gray-700 font-semibold">%</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Ingresa el porcentaje de aumento (puede ser decimal)
+                                    </p>
+                                </div>
+
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={redondear}
+                                            onChange={(e) => setRedondear(e.target.checked)}
+                                            className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                                        />
+                                        <span className="text-sm font-medium text-gray-900">
+                                            Redondear precios
+                                        </span>
+                                    </label>
+                                    <p className="text-xs text-gray-600 mt-1 ml-6">
+                                        Los precios se redondearán a la centena más cercana
+                                        <br />
+                                        <span className="text-blue-700 font-semibold">
+                                            Ejemplo: $23,470 → $23,500
+                                        </span>
+                                    </p>
+                                </div>
+
+                                {porcentajeAumento && !isNaN(parseFloat(porcentajeAumento)) && (
+                                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                        <p className="text-sm text-green-800">
+                                            <strong>Vista previa:</strong>
+                                        </p>
+                                        <p className="text-xs text-green-700 mt-1">
+                                            Un precio de $22,000 quedaría en{' '}
+                                            <strong>
+                                                ${redondear
+                                                    ? redondearPrecio(22000 * (1 + parseFloat(porcentajeAumento) / 100)).toLocaleString('es-AR')
+                                                    : (22000 * (1 + parseFloat(porcentajeAumento) / 100)).toLocaleString('es-AR', { maximumFractionDigits: 0 })
+                                                }
+                                            </strong>
+                                        </p>
+                                    </div>
+                                )}
+
+                                <div className="flex gap-2 pt-2">
+                                    <button
+                                        onClick={() => aplicarAumento(mostrarAumento)}
+                                        className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg transition-colors"
+                                    >
+                                        Aplicar Aumento
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setMostrarAumento(null);
+                                            setPorcentajeAumento('');
+                                            setRedondear(true);
+                                        }}
+                                        className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
