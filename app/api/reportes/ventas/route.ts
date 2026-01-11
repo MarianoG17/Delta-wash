@@ -47,10 +47,11 @@ export async function GET(request: Request) {
                     COUNT(*) as cantidad_lavados,
                     COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total
                 FROM registros_lavado
-                WHERE DATE(fecha_ingreso AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') >= ${fechaDesde}
-                  AND DATE(fecha_ingreso AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') <= ${fechaHasta}
+                WHERE DATE(fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') >= ${fechaDesde}
+                  AND DATE(fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') <= ${fechaHasta}
                   AND estado = 'entregado'
                   AND fecha_ingreso IS NOT NULL
+                  AND fecha_entregado IS NOT NULL
                   AND (anulado IS NULL OR anulado = FALSE)
                 GROUP BY
                     EXTRACT(HOUR FROM (fecha_ingreso AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')),
@@ -66,10 +67,11 @@ export async function GET(request: Request) {
                     COUNT(*) as cantidad_lavados,
                     COALESCE(SUM(CASE WHEN precio > 0 THEN precio ELSE 0 END), 0) as importe_total
                 FROM registros_lavado
-                WHERE DATE(fecha_listo AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') >= ${fechaDesde}
-                  AND DATE(fecha_listo AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') <= ${fechaHasta}
+                WHERE DATE(fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') >= ${fechaDesde}
+                  AND DATE(fecha_entregado AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires') <= ${fechaHasta}
                   AND estado = 'entregado'
                   AND fecha_listo IS NOT NULL
+                  AND fecha_entregado IS NOT NULL
                   AND (anulado IS NULL OR anulado = FALSE)
                 GROUP BY
                     EXTRACT(HOUR FROM (fecha_listo AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Buenos_Aires')),
