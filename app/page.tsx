@@ -275,13 +275,15 @@ export default function Home() {
 
     const registrarPago = async (id: number) => {
         const metodo = prompt('¿Cómo pagó el cliente?\n\n1 = Efectivo\n2 = Transferencia\n\nIngresa 1 o 2:');
-        
+
         if (metodo === null) return; // Usuario canceló
-        
+
+        const metodoTrim = metodo.trim(); // Limpiar espacios
         let metodoPago = '';
-        if (metodo === '1') {
+
+        if (metodoTrim === '1') {
             metodoPago = 'efectivo';
-        } else if (metodo === '2') {
+        } else if (metodoTrim === '2') {
             metodoPago = 'transferencia';
         } else {
             alert('❌ Opción inválida. Ingresa 1 o 2');
@@ -289,22 +291,35 @@ export default function Home() {
         }
 
         try {
+            console.log('Registrando pago:', { id, metodo_pago: metodoPago });
+
             const res = await fetch('/api/registros/registrar-pago', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id, metodo_pago: metodoPago }),
             });
 
+            console.log('Response status:', res.status);
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('Error response:', errorText);
+                alert(`❌ Error del servidor: ${res.status}`);
+                return;
+            }
+
             const data = await res.json();
+            console.log('Response data:', data);
 
             if (data.success) {
                 alert('✅ Pago registrado exitosamente');
                 cargarRegistrosEnProceso();
             } else {
-                alert('❌ ' + data.message);
+                alert('❌ ' + (data.message || 'Error desconocido'));
             }
         } catch (error) {
-            alert('❌ Error al registrar pago');
+            console.error('Error completo al registrar pago:', error);
+            alert('❌ Error al registrar pago: ' + (error instanceof Error ? error.message : 'Error desconocido'));
         }
     };
 
@@ -314,22 +329,35 @@ export default function Home() {
         }
 
         try {
+            console.log('Marcando como entregado:', { id });
+
             const res = await fetch('/api/registros/marcar-entregado', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id }),
             });
 
+            console.log('Response status:', res.status);
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('Error response:', errorText);
+                alert(`❌ Error del servidor: ${res.status}`);
+                return;
+            }
+
             const data = await res.json();
+            console.log('Response data:', data);
 
             if (data.success) {
                 alert('✅ Auto marcado como entregado');
                 cargarRegistrosEnProceso();
             } else {
-                alert('❌ Error al marcar como entregado');
+                alert('❌ Error al marcar como entregado: ' + (data.message || data.error || 'Error desconocido'));
             }
         } catch (error) {
-            alert('❌ Error al marcar como entregado');
+            console.error('Error completo al marcar como entregado:', error);
+            alert('❌ Error al marcar como entregado: ' + (error instanceof Error ? error.message : 'Error desconocido'));
         }
     };
 
@@ -359,7 +387,7 @@ export default function Home() {
 
     const anularRegistro = async (id: number) => {
         const motivo = prompt('⚠️ ¿Por qué se anula este registro?\n\nEl registro quedará marcado como anulado y NO se contará en estadísticas ni facturación.\nSi usó cuenta corriente, se revertirá el saldo.');
-        
+
         if (motivo === null) return; // Usuario canceló
 
         try {
@@ -759,8 +787,8 @@ export default function Home() {
                                                 <span className="font-semibold text-gray-900">
                                                     ${(
                                                         tipoVehiculo === 'camioneta' ? 5000 :
-                                                        tipoVehiculo === 'camioneta_xl' ? 4000 :
-                                                        2000
+                                                            tipoVehiculo === 'camioneta_xl' ? 4000 :
+                                                                2000
                                                     ).toLocaleString('es-AR')}
                                                 </span>
                                             </div>
@@ -771,10 +799,10 @@ export default function Home() {
                                                 <span className="font-semibold text-gray-900">
                                                     ${(
                                                         tipoVehiculo === 'auto' ? 20000 :
-                                                        tipoVehiculo === 'mono' ? 30000 :
-                                                        tipoVehiculo === 'camioneta' ? 35000 :
-                                                        tipoVehiculo === 'camioneta_xl' ? 40000 :
-                                                        0
+                                                            tipoVehiculo === 'mono' ? 30000 :
+                                                                tipoVehiculo === 'camioneta' ? 35000 :
+                                                                    tipoVehiculo === 'camioneta_xl' ? 40000 :
+                                                                        0
                                                     ).toLocaleString('es-AR')}
                                                 </span>
                                             </div>
