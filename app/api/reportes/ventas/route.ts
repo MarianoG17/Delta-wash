@@ -15,34 +15,37 @@ export async function GET(request: Request) {
         }
 
         // Traer TODOS los registros entregados en el rango (sin agrupar en SQL)
+        // Convertir fechaHasta a final del día para incluir todo el día completo
+        const fechaHastaFin = `${fechaHasta} 23:59:59`;
+
         const registros = await sql`
-            SELECT 
+            SELECT
                 fecha_entregado,
                 precio
             FROM registros_lavado
             WHERE estado = 'entregado'
               AND fecha_entregado IS NOT NULL
               AND fecha_entregado >= ${fechaDesde}
-              AND fecha_entregado <= ${fechaHasta}
+              AND fecha_entregado <= ${fechaHastaFin}
               AND (anulado IS NULL OR anulado = FALSE)
             ORDER BY fecha_entregado DESC
         `;
 
         // Agrupar en JavaScript por fecha (mismo formato que el historial)
         const reportePorDia: { [key: string]: { cantidad: number; facturacion: number } } = {};
-        
+
         registros.rows.forEach((registro) => {
             // Usar el mismo formato de fecha que el historial
             const fecha = new Date(registro.fecha_entregado);
             const fechaStr = fecha.toISOString().split('T')[0]; // YYYY-MM-DD
-            
+
             if (!reportePorDia[fechaStr]) {
                 reportePorDia[fechaStr] = {
                     cantidad: 0,
                     facturacion: 0
                 };
             }
-            
+
             reportePorDia[fechaStr].cantidad++;
             reportePorDia[fechaStr].facturacion += parseFloat(registro.precio) || 0;
         });

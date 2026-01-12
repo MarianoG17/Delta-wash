@@ -15,8 +15,11 @@ export async function GET(request: Request) {
         }
 
         // Traer TODOS los registros entregados en el rango con fecha_ingreso
+        // Convertir fechaHasta a final del día para incluir todo el día completo
+        const fechaHastaFin = `${fechaHasta} 23:59:59`;
+
         const registros = await sql`
-            SELECT 
+            SELECT
                 fecha_ingreso,
                 fecha_entregado
             FROM registros_lavado
@@ -24,7 +27,7 @@ export async function GET(request: Request) {
               AND fecha_ingreso IS NOT NULL
               AND fecha_entregado IS NOT NULL
               AND fecha_entregado >= ${fechaDesde}
-              AND fecha_entregado <= ${fechaHasta}
+              AND fecha_entregado <= ${fechaHastaFin}
               AND (anulado IS NULL OR anulado = FALSE)
         `;
 
@@ -32,7 +35,7 @@ export async function GET(request: Request) {
         // hora: 0-23
         // diaSemana: 0=Domingo, 1=Lunes, ..., 6=Sábado
         const reportePorHora: { [hora: number]: { [dia: number]: number } } = {};
-        
+
         // Inicializar estructura
         for (let h = 0; h < 24; h++) {
             reportePorHora[h] = {};
@@ -44,7 +47,7 @@ export async function GET(request: Request) {
         // Procesar registros en JavaScript
         registros.rows.forEach((registro) => {
             const fechaIngreso = new Date(registro.fecha_ingreso);
-            
+
             // Obtener hora y día en zona horaria Argentina (UTC-3)
             const partes = new Intl.DateTimeFormat('en-US', {
                 hour: 'numeric',
@@ -52,16 +55,16 @@ export async function GET(request: Request) {
                 weekday: 'short',
                 timeZone: 'America/Argentina/Buenos_Aires'
             }).formatToParts(fechaIngreso);
-            
+
             const hora = parseInt(partes.find(p => p.type === 'hour')?.value || '0');
             const diaNombre = partes.find(p => p.type === 'weekday')?.value || 'Sun';
-            
+
             // Mapear nombre de día a número: 0=Domingo, 1=Lunes, ..., 6=Sábado
-            const diasMap: {[key: string]: number} = {
+            const diasMap: { [key: string]: number } = {
                 'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6
             };
             const diaSemana = diasMap[diaNombre] || 0;
-            
+
             reportePorHora[hora][diaSemana]++;
         });
 
@@ -70,7 +73,7 @@ export async function GET(request: Request) {
         const reporte = [];
         for (let hora = 0; hora < 24; hora++) {
             const totalHora = Object.values(reportePorHora[hora]).reduce((sum, val) => sum + val, 0);
-            
+
             if (totalHora > 0) {
                 reporte.push({
                     hora: hora,
