@@ -48,6 +48,11 @@ export default function Home() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
 
+    // Estados para el modal de pago
+    const [showModalPago, setShowModalPago] = useState(false);
+    const [registroParaPago, setRegistroParaPago] = useState<number | null>(null);
+    const [metodoPagoModal, setMetodoPagoModal] = useState<string>('efectivo');
+
     // Registros en proceso y listos
     const [registrosEnProceso, setRegistrosEnProceso] = useState<Registro[]>([]);
     const [registrosListos, setRegistrosListos] = useState<Registro[]>([]);
@@ -273,30 +278,22 @@ export default function Home() {
         }
     };
 
-    const registrarPago = async (id: number) => {
-        const metodo = prompt('¿Cómo pagó el cliente?\n\n1 = Efectivo\n2 = Transferencia\n\nIngresa 1 o 2:');
+    const registrarPago = (id: number) => {
+        setRegistroParaPago(id);
+        setMetodoPagoModal('efectivo'); // Reiniciar a efectivo
+        setShowModalPago(true);
+    };
 
-        if (metodo === null) return; // Usuario canceló
-
-        const metodoTrim = metodo.trim(); // Limpiar espacios
-        let metodoPago = '';
-
-        if (metodoTrim === '1') {
-            metodoPago = 'efectivo';
-        } else if (metodoTrim === '2') {
-            metodoPago = 'transferencia';
-        } else {
-            alert('❌ Opción inválida. Ingresa 1 o 2');
-            return;
-        }
+    const confirmarPago = async () => {
+        if (!registroParaPago) return;
 
         try {
-            console.log('Registrando pago:', { id, metodo_pago: metodoPago });
+            console.log('Registrando pago:', { id: registroParaPago, metodo_pago: metodoPagoModal });
 
             const res = await fetch('/api/registros/registrar-pago', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, metodo_pago: metodoPago }),
+                body: JSON.stringify({ id: registroParaPago, metodo_pago: metodoPagoModal }),
             });
 
             console.log('Response status:', res.status);
@@ -313,6 +310,8 @@ export default function Home() {
 
             if (data.success) {
                 alert('✅ Pago registrado exitosamente');
+                setShowModalPago(false);
+                setRegistroParaPago(null);
                 cargarRegistrosEnProceso();
             } else {
                 alert('❌ ' + (data.message || 'Error desconocido'));
@@ -1087,6 +1086,69 @@ export default function Home() {
                         </div>
                     </div>
                 </div>
+
+                {/* Modal de Pago */}
+                {showModalPago && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+                            <h3 className="text-2xl font-bold text-gray-900 mb-4">💰 Registrar Pago</h3>
+
+                            <p className="text-sm text-gray-600 mb-6">
+                                Selecciona la forma de pago del cliente:
+                            </p>
+
+                            <div className="space-y-3 mb-6">
+                                <label className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                    <input
+                                        type="radio"
+                                        name="metodoPagoModal"
+                                        value="efectivo"
+                                        checked={metodoPagoModal === 'efectivo'}
+                                        onChange={(e) => setMetodoPagoModal(e.target.value)}
+                                        className="w-5 h-5 text-green-600 border-gray-300 focus:ring-green-500"
+                                    />
+                                    <div className="flex-1">
+                                        <span className="text-lg font-semibold text-gray-900">💵 Efectivo</span>
+                                        <p className="text-xs text-gray-500">Pago en efectivo</p>
+                                    </div>
+                                </label>
+
+                                <label className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                    <input
+                                        type="radio"
+                                        name="metodoPagoModal"
+                                        value="transferencia"
+                                        checked={metodoPagoModal === 'transferencia'}
+                                        onChange={(e) => setMetodoPagoModal(e.target.value)}
+                                        className="w-5 h-5 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                    />
+                                    <div className="flex-1">
+                                        <span className="text-lg font-semibold text-gray-900">🏦 Transferencia</span>
+                                        <p className="text-xs text-gray-500">Pago por transferencia bancaria</p>
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowModalPago(false);
+                                        setRegistroParaPago(null);
+                                    }}
+                                    className="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={confirmarPago}
+                                    className="flex-1 px-4 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors"
+                                >
+                                    Confirmar Pago
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

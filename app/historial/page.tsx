@@ -17,6 +17,10 @@ interface Registro {
     fecha_entregado: string | null;
     estado: string;
     anulado?: boolean;
+    precio?: number;
+    metodo_pago?: string;
+    pagado?: boolean;
+    usa_cuenta_corriente?: boolean;
 }
 
 function HistorialContent() {
@@ -41,13 +45,13 @@ function HistorialContent() {
                 const data = JSON.parse(session);
                 setUserId(data.id);
                 setUserRole(data.rol || 'operador');
-                
+
                 // Obtener fecha del parámetro URL si existe
                 const fechaParam = searchParams.get('fecha');
                 if (fechaParam) {
                     setFechaFiltro(fechaParam);
                 }
-                
+
                 cargarDatos();
             }
         }
@@ -93,7 +97,7 @@ function HistorialContent() {
 
     const anularRegistro = async (id: number) => {
         const motivo = prompt('⚠️ ¿Por qué se anula este registro?\n\nEl registro quedará marcado como anulado y NO se contará en estadísticas ni facturación.\nSi usó cuenta corriente, se revertirá el saldo.');
-        
+
         if (motivo === null) return; // Usuario canceló
 
         try {
@@ -160,19 +164,19 @@ function HistorialContent() {
     const enviarWhatsAppReactivacion = (cliente: any) => {
         const mensaje = `Hola ${cliente.nombre}! 👋 Hace tiempo que no te vemos por DeltaWash. ¿Tu ${cliente.marca_modelo} necesita un lavado? 🚗✨ Tenemos promociones especiales para clientes como vos. ¡Te esperamos!`;
         const mensajeCodificado = encodeURIComponent(mensaje);
-        
+
         let numeroFormateado = cliente.celular.replace(/\D/g, '');
         if (numeroFormateado.startsWith('11')) {
             numeroFormateado = `549${numeroFormateado}`;
         } else if (!numeroFormateado.startsWith('549')) {
             numeroFormateado = `549${numeroFormateado}`;
         }
-        
+
         const whatsappUrl = `https://wa.me/${numeroFormateado}?text=${mensajeCodificado}`;
-        
+
         // Detectar iOS para usar location.href en lugar de window.open
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-        
+
         if (isIOS) {
             window.location.href = whatsappUrl;
         } else {
@@ -418,6 +422,12 @@ function HistorialContent() {
                                         Tipo
                                     </th>
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
+                                        Importe
+                                    </th>
+                                    <th className="text-left py-3 px-2 font-semibold text-gray-700">
+                                        Forma de Pago
+                                    </th>
+                                    <th className="text-left py-3 px-2 font-semibold text-gray-700">
                                         Estado
                                     </th>
                                     {userRole === 'admin' && (
@@ -466,6 +476,32 @@ function HistorialContent() {
                                         <td className="py-3 px-2 text-sm text-gray-900">
                                             {registro.tipo_limpieza.replace(/_/g, ' ')}
                                         </td>
+                                        <td className="py-3 px-2 text-sm font-semibold text-blue-600">
+                                            {registro.precio ? `$${registro.precio.toLocaleString('es-AR')}` : '-'}
+                                        </td>
+                                        <td className="py-3 px-2 text-sm text-gray-900">
+                                            {registro.usa_cuenta_corriente ? (
+                                                <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">
+                                                    💳 Cta.Cte.
+                                                </span>
+                                            ) : registro.metodo_pago === 'efectivo' ? (
+                                                <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-medium">
+                                                    💵 Efectivo
+                                                </span>
+                                            ) : registro.metodo_pago === 'transferencia' ? (
+                                                <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
+                                                    🏦 Transferencia
+                                                </span>
+                                            ) : registro.pagado ? (
+                                                <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 font-medium">
+                                                    ✓ Pagado
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 font-medium">
+                                                    ⏳ Pendiente
+                                                </span>
+                                            )}
+                                        </td>
                                         <td className="py-3 px-2">
                                             {registro.anulado ? (
                                                 <span className="text-xs px-2 py-1 rounded-full font-medium bg-red-100 text-red-700">
@@ -473,14 +509,13 @@ function HistorialContent() {
                                                 </span>
                                             ) : (
                                                 <span
-                                                    className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                                        registro.estado === 'entregado'
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : registro.estado === 'listo'
-                                                                ? 'bg-orange-100 text-orange-700'
-                                                                : registro.estado === 'cancelado'
-                                                                    ? 'bg-red-100 text-red-700'
-                                                                    : 'bg-blue-100 text-blue-700'
+                                                    className={`text-xs px-2 py-1 rounded-full font-medium ${registro.estado === 'entregado'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : registro.estado === 'listo'
+                                                            ? 'bg-orange-100 text-orange-700'
+                                                            : registro.estado === 'cancelado'
+                                                                ? 'bg-red-100 text-red-700'
+                                                                : 'bg-blue-100 text-blue-700'
                                                         }`}
                                                 >
                                                     {registro.estado === 'entregado'
