@@ -340,11 +340,16 @@ export async function createAndSetupBranchForEmpresa(
     console.log(`[Setup] Iniciando creación de branch para: ${empresaSlug}`);
     const branchData = await createBranchForEmpresa(empresaSlug);
 
+    // DEBUG: Ver estructura de respuesta
+    console.log('[Setup] DEBUG - Respuesta de Neon:', JSON.stringify(branchData, null, 2));
+
     // Extraer información de conexión
     const connectionUri = branchData.connection_uris[0].connection_uri;
     const connectionUriPooler = branchData.connection_uris[0].connection_uri_pooler;
 
     console.log(`[Setup] Branch creado con ID: ${branchData.branch.id}`);
+    console.log(`[Setup] DEBUG - connectionUri: ${connectionUri?.substring(0, 50)}...`);
+    console.log(`[Setup] DEBUG - connectionUriPooler: ${connectionUriPooler?.substring(0, 50)}...`);
 
     // 2. Inicializar schema (usar pooler para createPool)
     console.log('[Setup] Inicializando schema en el nuevo branch...');
