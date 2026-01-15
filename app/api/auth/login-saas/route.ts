@@ -31,8 +31,8 @@ export async function POST(request: Request) {
     }
 
     // Conectar a BD Central
-    const centralDB = createPool({ 
-      connectionString: process.env.CENTRAL_DB_URL 
+    const centralDB = createPool({
+      connectionString: process.env.CENTRAL_DB_URL
     });
 
     // Buscar usuario por email con datos de la empresa
@@ -78,10 +78,22 @@ export async function POST(request: Request) {
     // Verificar que la empresa esté activa
     if (userData.empresa_estado !== 'activo') {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: 'Cuenta inactiva. Contactá a soporte.',
-          estado: userData.empresa_estado 
+          estado: userData.empresa_estado
+        },
+        { status: 403 }
+      );
+    }
+
+    // Verificar si la cuenta tiene branch_url configurada
+    if (!userData.branch_url || userData.branch_url.trim() === '') {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Tu cuenta fue creada pero aún no tiene base de datos asignada. Esto es normal en fase de desarrollo. Contactá a soporte.',
+          requiereConfiguracion: true
         },
         { status: 403 }
       );
@@ -90,13 +102,13 @@ export async function POST(request: Request) {
     // Verificar si la cuenta está vencida
     const fechaExpiracion = new Date(userData.fecha_expiracion);
     const hoy = new Date();
-    
+
     if (fechaExpiracion < hoy) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: 'Tu período de prueba ha expirado. Contactá a soporte para activar tu suscripción.',
-          vencido: true 
+          vencido: true
         },
         { status: 403 }
       );
@@ -174,8 +186,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error en login:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Error al iniciar sesión. Por favor intenta nuevamente.',
         error: error instanceof Error ? error.message : 'Error desconocido'
       },

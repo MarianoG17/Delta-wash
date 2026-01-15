@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createPool } from '@vercel/postgres';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { createAndSetupBranchForEmpresa } from '@/lib/neon-api';
 
 /**
  * API de Registro SaaS
@@ -77,10 +78,25 @@ export async function POST(request: Request) {
     // Encriptar contraseña
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Por ahora, usar la misma BD que DeltaWash (después se creará branch automático)
-    // En producción real, aquí se crearía un branch nuevo en Neon vía API
-    const branchName = finalSlug;
-    const branchUrl = process.env.POSTGRES_URL || ''; // Placeholder
+    // CREAR BRANCH AUTOMÁTICAMENTE EN NEON
+    console.log(`[Registro] Creando base de datos para: ${nombreEmpresa}`);
+    
+    let branchUrl = '';
+    let branchName = finalSlug;
+    
+    try {
+      // Intentar crear el branch en Neon
+      const branchInfo = await createAndSetupBranchForEmpresa(finalSlug);
+      branchUrl = branchInfo.connectionUriPooler; // Usar pooler para mejor rendimiento
+      branchName = branchInfo.branchName;
+      
+      console.log(`[Registro] ✅ Base de datos creada exitosamente: ${branchInfo.branchId}`);
+    } catch (neonError) {
+      // Si falla la creación del branch, loguear pero NO fallar el registro
+      console.error('[Registro] ⚠️ Error al crear branch en Neon:', neonError);
+      console.log('[Registro] La empresa se creará sin BD asignada (requiere configuración manual)');
+      // branchUrl queda vacío, empresa se crea pero no podrá usarse hasta configurar manualmente
+    }
 
     // Crear empresa en BD Central
     const empresaResult = await centralDB.sql`
@@ -180,14 +196,26 @@ export async function POST(request: Request) {
       { expiresIn: '7d' }
     );
 
+    // Preparar mensaje según si se creó la BD o no
+    const mensajeFinal = branchUrl
+      ? '¡Cuenta creada exitosamente! Tu base de datos está lista y podés comenzar a usar la aplicación.'
+      : '¡Cuenta creada! Sin embargo, hubo un problema al crear tu base de datos automáticamente. Un administrador deberá configurarla manualmente antes de que puedas ingresar.';
+
+    const advertencia = branchUrl
+      ? null
+      : 'Tu cuenta requiere configuración manual de la base de datos. Contactá a soporte.';
+
     // Retornar éxito con información de ambos usuarios
     return NextResponse.json({
       success: true,
-      message: '¡Cuenta creada exitosamente!',
+      message: mensajeFinal,
+      advertencia: advertencia,
+      bdCreada: !!branchUrl,
       empresa: {
         id: empresa.id,
         nombre: empresa.nombre,
-        slug: empresa.slug
+        slug: empresa.slug,
+        branchUrl: branchUrl || '(Pendiente de asignación)'
       },
       usuario: {
         id: usuario.id,
@@ -228,7 +256,8 @@ export async function POST(request: Request) {
         }
       },
       token,
-      trialDias: 15
+      trialDias: 15,
+      requiereConfiguracion: true
     });
 
   } catch (error) {
