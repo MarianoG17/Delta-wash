@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { getDBConnection } from '@/lib/db-saas';
+import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 
 export async function POST(request: Request) {
     try {
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
         const { cuenta_id, monto, descripcion, usuario_id } = await request.json();
 
         if (!cuenta_id || !monto) {
@@ -20,7 +25,7 @@ export async function POST(request: Request) {
         }
 
         // Obtener cuenta actual
-        const cuentaResult = await sql`
+        const cuentaResult = await db`
             SELECT * FROM cuentas_corrientes WHERE id = ${cuenta_id}
         `;
 
@@ -36,7 +41,7 @@ export async function POST(request: Request) {
         const saldoNuevo = saldoAnterior + parseFloat(monto);
 
         // Actualizar saldo de la cuenta
-        await sql`
+        await db`
             UPDATE cuentas_corrientes 
             SET saldo_actual = ${saldoNuevo},
                 activa = true
@@ -44,7 +49,7 @@ export async function POST(request: Request) {
         `;
 
         // Registrar movimiento
-        await sql`
+        await db`
             INSERT INTO movimientos_cuenta (
                 cuenta_id, tipo, monto, saldo_anterior, saldo_nuevo, descripcion, usuario_id
             ) VALUES (

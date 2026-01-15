@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { getDBConnection } from '@/lib/db-saas';
+import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 
 export async function GET(request: NextRequest) {
     try {
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
         const searchParams = request.nextUrl.searchParams;
         const fechaDesde = searchParams.get('fecha_desde');
         const fechaHasta = searchParams.get('fecha_hasta');
@@ -15,7 +20,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Query para obtener el reporte de caja diaria
-        const result = await query(`
+        const result = await db`
             SELECT 
                 DATE(fecha_entregado) as fecha,
                 
@@ -40,14 +45,14 @@ export async function GET(request: NextRequest) {
                 
             FROM registros_lavado
             WHERE fecha_entregado IS NOT NULL
-                AND DATE(fecha_entregado) >= $1
-                AND DATE(fecha_entregado) <= $2
+                AND DATE(fecha_entregado) >= ${fechaDesde}
+                AND DATE(fecha_entregado) <= ${fechaHasta}
             GROUP BY DATE(fecha_entregado)
             ORDER BY fecha DESC
-        `, [fechaDesde, fechaHasta]);
+        `;
 
         // Calcular totales generales
-        const totalesResult = await query(`
+        const totalesResult = await db`
             SELECT 
                 SUM(CASE WHEN metodo_pago = 'efectivo' THEN precio ELSE 0 END) as total_efectivo,
                 COUNT(CASE WHEN metodo_pago = 'efectivo' THEN 1 END) as total_cantidad_efectivo,
@@ -65,9 +70,9 @@ export async function GET(request: NextRequest) {
                 
             FROM registros_lavado
             WHERE fecha_entregado IS NOT NULL
-                AND DATE(fecha_entregado) >= $1
-                AND DATE(fecha_entregado) <= $2
-        `, [fechaDesde, fechaHasta]);
+                AND DATE(fecha_entregado) >= ${fechaDesde}
+                AND DATE(fecha_entregado) <= ${fechaHasta}
+        `;
 
         return NextResponse.json({
             success: true,

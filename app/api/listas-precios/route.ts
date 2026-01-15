@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { getDBConnection } from '@/lib/db-saas';
+import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 
 // GET: Obtener todas las listas de precios con sus precios
-export async function GET() {
+export async function GET(request: Request) {
     try {
-        const listas = await sql`
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
+        const listas = await db`
             SELECT * FROM listas_precios 
             ORDER BY es_default DESC, nombre ASC
         `;
@@ -12,7 +17,7 @@ export async function GET() {
         // Para cada lista, obtener sus precios
         const listasConPrecios = await Promise.all(
             listas.rows.map(async (lista) => {
-                const precios = await sql`
+                const precios = await db`
                     SELECT * FROM precios 
                     WHERE lista_id = ${lista.id}
                     ORDER BY tipo_vehiculo, tipo_servicio
@@ -40,6 +45,10 @@ export async function GET() {
 // POST: Crear nueva lista de precios
 export async function POST(request: Request) {
     try {
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
         const { nombre, descripcion, copiar_de_lista_id } = await request.json();
 
         if (!nombre) {
@@ -50,7 +59,7 @@ export async function POST(request: Request) {
         }
 
         // Crear la lista
-        const nuevaLista = await sql`
+        const nuevaLista = await db`
             INSERT INTO listas_precios (nombre, descripcion, activa, es_default)
             VALUES (${nombre}, ${descripcion || null}, true, false)
             RETURNING *
@@ -60,7 +69,7 @@ export async function POST(request: Request) {
 
         // Si se especifica copiar de otra lista, copiar los precios
         if (copiar_de_lista_id) {
-            await sql`
+            await db`
                 INSERT INTO precios (lista_id, tipo_vehiculo, tipo_servicio, precio)
                 SELECT ${listaId}, tipo_vehiculo, tipo_servicio, precio
                 FROM precios
@@ -68,7 +77,7 @@ export async function POST(request: Request) {
             `;
         } else {
             // Copiar de la lista por defecto
-            await sql`
+            await db`
                 INSERT INTO precios (lista_id, tipo_vehiculo, tipo_servicio, precio)
                 SELECT ${listaId}, tipo_vehiculo, tipo_servicio, precio
                 FROM precios
@@ -98,6 +107,10 @@ export async function POST(request: Request) {
 // PUT: Actualizar lista de precios
 export async function PUT(request: Request) {
     try {
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
         const { id, nombre, descripcion, activa } = await request.json();
 
         if (!id) {
@@ -107,7 +120,7 @@ export async function PUT(request: Request) {
             );
         }
 
-        await sql`
+        await db`
             UPDATE listas_precios
             SET nombre = ${nombre},
                 descripcion = ${descripcion || null},
@@ -132,6 +145,10 @@ export async function PUT(request: Request) {
 // DELETE: Eliminar lista de precios
 export async function DELETE(request: Request) {
     try {
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
 
@@ -143,7 +160,7 @@ export async function DELETE(request: Request) {
         }
 
         // Verificar que no sea la lista por defecto
-        const lista = await sql`
+        const lista = await db`
             SELECT es_default FROM listas_precios WHERE id = ${id}
         `;
 
@@ -155,7 +172,7 @@ export async function DELETE(request: Request) {
         }
 
         // Verificar que no haya clientes usando esta lista
-        const clientes = await sql`
+        const clientes = await db`
             SELECT COUNT(*) as total FROM cuentas_corrientes WHERE lista_precio_id = ${id}
         `;
 
@@ -166,7 +183,7 @@ export async function DELETE(request: Request) {
             );
         }
 
-        await sql`DELETE FROM listas_precios WHERE id = ${id}`;
+        await db`DELETE FROM listas_precios WHERE id = ${id}`;
 
         return NextResponse.json({
             success: true,

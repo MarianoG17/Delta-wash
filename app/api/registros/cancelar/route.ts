@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { getDBConnection } from '@/lib/db-saas';
+import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 
 export async function POST(request: Request) {
   try {
+    // Obtener conexión apropiada (DeltaWash o empresa específica)
+    const empresaId = await getEmpresaIdFromToken(request);
+    const db = await getDBConnection(empresaId);
+
     const { id, motivo } = await request.json();
 
     if (!id) {
@@ -13,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     // Actualizar el estado a cancelado
-    await sql`
+    await db`
       UPDATE registros_lavado 
       SET estado = 'cancelado',
           fecha_cancelado = CURRENT_TIMESTAMP,

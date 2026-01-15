@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { getDBConnection } from '@/lib/db-saas';
+import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 
 export async function GET(request: Request) {
     try {
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
         const { searchParams } = new URL(request.url);
         const listaId = searchParams.get('lista_id');
         const celular = searchParams.get('celular');
@@ -11,7 +16,7 @@ export async function GET(request: Request) {
 
         // Si se proporciona celular, buscar la lista asignada al cliente
         if (celular && !listaId) {
-            const cuenta = await sql`
+            const cuenta = await db`
                 SELECT lista_precio_id FROM cuentas_corrientes 
                 WHERE celular = ${celular}
             `;
@@ -23,7 +28,7 @@ export async function GET(request: Request) {
 
         // Si no se encontró lista, usar la por defecto
         if (!lista_precio_id) {
-            const listaDefault = await sql`
+            const listaDefault = await db`
                 SELECT id FROM listas_precios WHERE es_default = true LIMIT 1
             `;
             lista_precio_id = listaDefault.rows[0]?.id;
@@ -37,7 +42,7 @@ export async function GET(request: Request) {
         }
 
         // Obtener precios de la lista
-        const precios = await sql`
+        const precios = await db`
             SELECT * FROM precios 
             WHERE lista_id = ${lista_precio_id}
         `;

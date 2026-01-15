@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { getDBConnection } from '@/lib/db-saas';
+import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 
 export async function GET(request: Request) {
     try {
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
         const { searchParams } = new URL(request.url);
         const fechaDesde = searchParams.get('fecha_desde');
         const fechaHasta = searchParams.get('fecha_hasta');
@@ -18,7 +23,7 @@ export async function GET(request: Request) {
         // Convertir fechaHasta a final del día para incluir todo el día completo
         const fechaHastaFin = `${fechaHasta} 23:59:59`;
 
-        const registros = await sql`
+        const registros = await db`
             SELECT
                 fecha_ingreso,
                 fecha_entregado

@@ -1,28 +1,33 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { getDBConnection } from '@/lib/db-saas';
+import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 
 // Obtener todas las cuentas corrientes o buscar por celular
 export async function GET(request: Request) {
     try {
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
         const { searchParams } = new URL(request.url);
         const celular = searchParams.get('celular');
         const activas = searchParams.get('activas');
 
         let query;
         if (celular) {
-            query = sql`
+            query = db`
                 SELECT * FROM cuentas_corrientes 
                 WHERE celular = ${celular}
                 LIMIT 1
             `;
         } else if (activas === 'true') {
-            query = sql`
+            query = db`
                 SELECT * FROM cuentas_corrientes 
                 WHERE activa = true AND saldo_actual > 0
                 ORDER BY nombre_cliente ASC
             `;
         } else {
-            query = sql`
+            query = db`
                 SELECT * FROM cuentas_corrientes 
                 ORDER BY fecha_creacion DESC
             `;
@@ -54,6 +59,10 @@ export async function GET(request: Request) {
 // Crear nueva cuenta corriente
 export async function POST(request: Request) {
     try {
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
         const { nombre_cliente, celular, saldo_inicial, notas } = await request.json();
 
         if (!nombre_cliente || !celular || !saldo_inicial) {
@@ -71,7 +80,7 @@ export async function POST(request: Request) {
         }
 
         // Verificar si ya existe una cuenta con ese celular
-        const existente = await sql`
+        const existente = await db`
             SELECT id FROM cuentas_corrientes WHERE celular = ${celular}
         `;
 
@@ -83,7 +92,7 @@ export async function POST(request: Request) {
         }
 
         // Crear la cuenta
-        const result = await sql`
+        const result = await db`
             INSERT INTO cuentas_corrientes (
                 nombre_cliente, celular, saldo_inicial, saldo_actual, notas, activa
             ) VALUES (

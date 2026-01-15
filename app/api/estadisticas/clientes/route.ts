@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { getDBConnection } from '@/lib/db-saas';
+import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Obtener conexión apropiada (DeltaWash o empresa específica)
+    const empresaId = await getEmpresaIdFromToken(request);
+    const db = await getDBConnection(empresaId);
+
     // Obtener estadísticas de clientes en los últimos 30 días
     // Agrupar SOLO por celular para evitar duplicados por diferencias en nombres
     // EXCLUIR registros anulados
-    const result = await sql`
+    const result = await db`
           SELECT
             MAX(nombre_cliente) as nombre_cliente,
             celular,
@@ -22,7 +27,7 @@ export async function GET() {
         `;
 
     // También obtener estadísticas generales (EXCLUIR anulados)
-    const statsResult = await sql`
+    const statsResult = await db`
       SELECT
         COUNT(*) as total_registros_30dias,
         COUNT(DISTINCT celular) as clientes_unicos,

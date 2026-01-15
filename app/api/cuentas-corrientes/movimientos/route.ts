@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { getDBConnection } from '@/lib/db-saas';
+import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 
 export async function GET(request: Request) {
     try {
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
         const { searchParams } = new URL(request.url);
         const cuentaId = searchParams.get('cuenta_id');
 
@@ -14,7 +19,7 @@ export async function GET(request: Request) {
         }
 
         // Obtener información de la cuenta (sin JOIN con clientes)
-        const cuentaResult = await sql`
+        const cuentaResult = await db`
             SELECT *
             FROM cuentas_corrientes
             WHERE id = ${cuentaId}
@@ -32,7 +37,7 @@ export async function GET(request: Request) {
         // Intentar obtener movimientos (puede fallar si la tabla no existe)
         let movimientos = [];
         try {
-            const movimientosResult = await sql`
+            const movimientosResult = await db`
                 SELECT
                     mc.id,
                     mc.tipo,

@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { getDBConnection } from '@/lib/db-saas';
+import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
         // Obtener todas las tablas en el schema public
-        const tablasResult = await sql`
+        const tablasResult = await db`
             SELECT table_name 
             FROM information_schema.tables 
             WHERE table_schema = 'public'
@@ -12,7 +17,7 @@ export async function GET() {
         `;
 
         // Verificar específicamente si existe movimientos_cuenta
-        const movimientosExiste = await sql`
+        const movimientosExiste = await db`
             SELECT EXISTS (
                 SELECT FROM information_schema.tables 
                 WHERE table_schema = 'public' 
@@ -20,11 +25,12 @@ export async function GET() {
             ) as existe
         `;
 
-        // Obtener información de conexión (sin mostrar credenciales)
+        // Información de contexto (sin credenciales sensibles)
         const connectionInfo = {
-            database: process.env.POSTGRES_DATABASE || 'No configurado',
-            host: process.env.POSTGRES_HOST || 'No configurado',
-            user: process.env.POSTGRES_USER || 'No configurado'
+            tipo: empresaId ? 'Empresa SaaS' : 'DeltaWash Legacy',
+            empresa_id: empresaId || 'N/A',
+            database: empresaId ? 'Branch específico' : process.env.POSTGRES_DATABASE || 'No configurado',
+            host: process.env.POSTGRES_HOST || 'No configurado'
         };
 
         return NextResponse.json({
@@ -42,12 +48,7 @@ export async function GET() {
             { 
                 success: false, 
                 message: 'Error al obtener tablas',
-                error_detail: error.message || 'Error desconocido',
-                connection_info: {
-                    database: process.env.POSTGRES_DATABASE || 'No configurado',
-                    host: process.env.POSTGRES_HOST || 'No configurado',
-                    user: process.env.POSTGRES_USER || 'No configurado'
-                }
+                error_detail: error.message || 'Error desconocido'
             },
             { status: 500 }
         );

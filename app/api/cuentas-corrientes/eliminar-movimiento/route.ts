@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { getDBConnection } from '@/lib/db-saas';
+import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 
 export async function POST(request: Request) {
     try {
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
         const { movimiento_id } = await request.json();
 
         if (!movimiento_id) {
@@ -13,7 +18,7 @@ export async function POST(request: Request) {
         }
 
         // Obtener el movimiento para revertir el saldo
-        const movimientoResult = await sql`
+        const movimientoResult = await db`
             SELECT * FROM movimientos_cuenta
             WHERE id = ${movimiento_id}
         `;
@@ -32,7 +37,7 @@ export async function POST(request: Request) {
         // Si era un descuento, sumamos el monto
         const ajuste = movimiento.tipo === 'carga' ? -movimiento.monto : movimiento.monto;
 
-        await sql`
+        await db`
             UPDATE cuentas_corrientes
             SET saldo_actual = saldo_actual + ${ajuste},
                 fecha_actualizacion = NOW()
@@ -40,7 +45,7 @@ export async function POST(request: Request) {
         `;
 
         // Eliminar el movimiento
-        await sql`
+        await db`
             DELETE FROM movimientos_cuenta
             WHERE id = ${movimiento_id}
         `;

@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { getDBConnection } from '@/lib/db-saas';
+import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 import * as XLSX from 'xlsx';
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        // Obtener conexión apropiada (DeltaWash o empresa específica)
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
         // Obtener todos los registros
-        const result = await sql`
+        const result = await db`
       SELECT
         id,
         fecha_ingreso,
