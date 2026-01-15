@@ -128,6 +128,28 @@ export async function POST(request: Request) {
 
     const usuario = usuarioResult.rows[0];
 
+    // Crear usuarios de ejemplo para probar roles
+    // Usuario Operador de ejemplo
+    const passwordOperadorHash = await bcrypt.hash('demo123', 10);
+    const operadorResult = await centralDB.sql`
+      INSERT INTO usuarios_sistema (
+        empresa_id,
+        email,
+        password_hash,
+        nombre,
+        rol,
+        activo
+      ) VALUES (
+        ${empresa.id},
+        ${'operador@' + finalSlug + '.demo'},
+        ${passwordOperadorHash},
+        'Operador Demo',
+        'operador',
+        true
+      )
+      RETURNING id
+    `;
+
     // Registrar actividad
     await centralDB.sql`
       INSERT INTO actividad_sistema (
@@ -139,7 +161,7 @@ export async function POST(request: Request) {
         ${empresa.id},
         ${usuario.id},
         'registro',
-        'Nueva empresa registrada en el sistema SaaS'
+        'Nueva empresa registrada en el sistema SaaS con usuarios de prueba'
       )
     `;
 
@@ -158,7 +180,7 @@ export async function POST(request: Request) {
       { expiresIn: '7d' }
     );
 
-    // Retornar éxito
+    // Retornar éxito con información de ambos usuarios
     return NextResponse.json({
       success: true,
       message: '¡Cuenta creada exitosamente!',
@@ -170,7 +192,38 @@ export async function POST(request: Request) {
       usuario: {
         id: usuario.id,
         email: usuario.email,
-        nombre: usuario.nombre
+        nombre: usuario.nombre,
+        rol: 'admin'
+      },
+      usuariosPrueba: {
+        admin: {
+          email: email,
+          password: '(Tu contraseña)',
+          rol: 'admin',
+          permisos: [
+            'Ver reportes y estadísticas completas',
+            'Modificar precios y configuración',
+            'Gestionar usuarios del equipo',
+            'Acceso total al sistema'
+          ]
+        },
+        operador: {
+          email: 'operador@' + finalSlug + '.demo',
+          password: 'demo123',
+          rol: 'operador',
+          permisos: [
+            'Cargar y registrar vehículos',
+            'Cambiar estados de servicio',
+            'Enviar notificaciones WhatsApp',
+            'Ver historial'
+          ],
+          restricciones: [
+            '❌ No puede ver reportes de caja',
+            '❌ No puede modificar precios',
+            '❌ No puede eliminar registros',
+            '❌ No puede gestionar usuarios'
+          ]
+        }
       },
       token,
       trialDias: 15

@@ -8,6 +8,8 @@ export default function RegistroPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [registroData, setRegistroData] = useState<any>(null);
   const [formData, setFormData] = useState({
     nombreEmpresa: '',
     email: '',
@@ -54,11 +56,9 @@ export default function RegistroPage() {
         localStorage.setItem('userId', data.usuario.id);
         localStorage.setItem('userEmail', data.usuario.email);
         
-        // Mostrar mensaje de éxito
-        alert(`✅ ¡Cuenta creada exitosamente!\n\n🏢 Empresa: ${data.empresa.nombre}\n📧 Email: ${data.usuario.email}\n⏰ Trial: ${data.trialDias} días gratis\n\nSerás redirigido a tu panel de control...`);
-        
-        // Redirigir a la app principal (por ahora a home, después será /dashboard)
-        router.push('/');
+        // Mostrar modal de bienvenida con info de usuarios
+        setRegistroData(data);
+        setShowWelcome(true);
       } else {
         setError(data.message || 'Error al crear cuenta');
       }
@@ -223,6 +223,95 @@ export default function RegistroPage() {
           Al crear una cuenta, aceptás nuestros términos y condiciones
         </p>
       </div>
+
+      {/* Modal de Bienvenida con Info de Usuarios */}
+      {showWelcome && registroData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white rounded-t-2xl">
+              <h3 className="text-3xl font-bold mb-2">🎉 ¡Bienvenido a lavapp!</h3>
+              <p className="text-blue-100">Tu cuenta {registroData.empresa.nombre} está lista</p>
+            </div>
+            
+            <div className="p-6">
+              <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-6">
+                <p className="text-green-800 font-semibold mb-1">✅ Cuenta creada exitosamente</p>
+                <p className="text-green-700 text-sm">🎁 {registroData.trialDias} días de prueba gratis • Sin tarjeta de crédito</p>
+              </div>
+
+              <h4 className="text-xl font-bold text-gray-900 mb-4">👥 Usuarios de Prueba Creados</h4>
+              <p className="text-gray-600 mb-6">Creamos 2 usuarios para que pruebes el sistema multi-usuario:</p>
+
+              {/* Usuario Admin */}
+              <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-5 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h5 className="text-lg font-bold text-blue-900">👤 Admin (Dueño)</h5>
+                  <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold">TU USUARIO</span>
+                </div>
+                <div className="space-y-2 mb-4">
+                  <p className="text-sm"><strong className="text-gray-700">Email:</strong> <code className="bg-blue-100 px-2 py-1 rounded text-blue-900">{registroData.usuariosPrueba.admin.email}</code></p>
+                  <p className="text-sm"><strong className="text-gray-700">Password:</strong> <code className="bg-blue-100 px-2 py-1 rounded text-blue-900">{registroData.usuariosPrueba.admin.password}</code></p>
+                </div>
+                <div className="bg-white rounded-lg p-3">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">✅ Permisos:</p>
+                  <ul className="space-y-1 text-xs text-gray-600">
+                    {registroData.usuariosPrueba.admin.permisos.map((permiso: string, i: number) => (
+                      <li key={i} className="flex items-start">
+                        <span className="text-green-500 mr-1">✓</span>
+                        {permiso}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Usuario Operador */}
+              <div className="bg-orange-50 border-2 border-orange-300 rounded-xl p-5 mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h5 className="text-lg font-bold text-orange-900">👷 Operador (Lavador)</h5>
+                  <span className="bg-orange-600 text-white px-3 py-1 rounded-full text-xs font-bold">DEMO</span>
+                </div>
+                <div className="space-y-2 mb-4">
+                  <p className="text-sm"><strong className="text-gray-700">Email:</strong> <code className="bg-orange-100 px-2 py-1 rounded text-orange-900">{registroData.usuariosPrueba.operador.email}</code></p>
+                  <p className="text-sm"><strong className="text-gray-700">Password:</strong> <code className="bg-orange-100 px-2 py-1 rounded text-orange-900">{registroData.usuariosPrueba.operador.password}</code></p>
+                </div>
+                <div className="bg-white rounded-lg p-3 mb-3">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">✅ Puede hacer:</p>
+                  <ul className="space-y-1 text-xs text-gray-600">
+                    {registroData.usuariosPrueba.operador.permisos.map((permiso: string, i: number) => (
+                      <li key={i} className="flex items-start">
+                        <span className="text-green-500 mr-1">✓</span>
+                        {permiso}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-red-50 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-gray-700 mb-2">🚫 Restricciones:</p>
+                  <ul className="space-y-1 text-xs text-gray-600">
+                    {registroData.usuariosPrueba.operador.restricciones.map((restriccion: string, i: number) => (
+                      <li key={i}>{restriccion}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6">
+                <p className="text-sm text-yellow-800">
+                  💡 <strong>Tip:</strong> Probá iniciar sesión con cada usuario para ver las diferencias de permisos. El operador es ideal para tus empleados.
+                </p>
+              </div>
+
+              <button
+                onClick={() => router.push('/')}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-lg font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
+              >
+                Empezar a usar lavapp →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
