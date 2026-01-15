@@ -125,7 +125,7 @@ export async function executeSQLInBranch(
   // Nota: Neon no tiene endpoint directo para ejecutar SQL
   // Deberás usar el connection_uri para conectarte y ejecutar el schema
   // Esto se maneja en la función initializeBranchSchema
-  
+
   console.warn('[Neon API] executeSQLInBranch requiere conexión directa con Postgres');
 }
 
@@ -144,7 +144,7 @@ export async function initializeBranchSchema(
 
   // Importar el schema SQL
   const { createPool } = await import('@vercel/postgres');
-  
+
   const pool = createPool({ connectionString: connectionUri });
 
   try {
@@ -346,9 +346,9 @@ export async function createAndSetupBranchForEmpresa(
 
     console.log(`[Setup] Branch creado con ID: ${branchData.branch.id}`);
 
-    // 2. Inicializar schema
+    // 2. Inicializar schema (usar pooler para createPool)
     console.log('[Setup] Inicializando schema en el nuevo branch...');
-    await initializeBranchSchema(connectionUri);
+    await initializeBranchSchema(connectionUriPooler);
 
     console.log('[Setup] ✅ Branch completamente configurado');
 
