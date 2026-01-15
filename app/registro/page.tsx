@@ -310,7 +310,7 @@ export default function RegistroPage() {
               </div>
 
               <button
-                onClick={() => router.push('/')}
+                onClick={() => router.push('/login-saas')}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-lg font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
               >
                 Empezar a usar lavapp →
