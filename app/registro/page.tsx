@@ -239,8 +239,15 @@ export default function RegistroPage() {
                 <p className="text-green-700 text-sm">🎁 {registroData.trialDias} días de prueba gratis • Sin tarjeta de crédito</p>
               </div>
 
-              <h4 className="text-xl font-bold text-gray-900 mb-4">👥 Usuarios de Prueba Creados</h4>
-              <p className="text-gray-600 mb-6">Creamos 2 usuarios para que pruebes el sistema multi-usuario:</p>
+              <h4 className="text-xl font-bold text-gray-900 mb-4">👥 Usuarios Creados Automáticamente</h4>
+              <p className="text-gray-600 mb-4">
+                Para simplificar, <strong>ya creamos 2 usuarios</strong> listos para usar:
+              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+                <p className="text-sm text-blue-800">
+                  💡 <strong>Sin configuración adicional:</strong> Los usuarios ya están activos. Solo compartí las credenciales con tu empleado.
+                </p>
+              </div>
 
               {/* Usuario Admin */}
               <div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-5 mb-4">

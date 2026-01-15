@@ -215,10 +215,11 @@ export async function POST(request: Request) {
           permisos: [
             'Registrar y cargar vehículos',
             'Cambiar estados (En Proceso → Listo → Entregado)',
-            'Enviar notificaciones por WhatsApp',
-            'Ver historial de registros'
+            'Ver autos en pantalla principal solamente'
           ],
           restricciones: [
+            '❌ No puede ver Historial de registros',
+            '❌ No puede enviar WhatsApp',
             '❌ No puede acceder a Reportes',
             '❌ No puede modificar Listas de Precios',
             '❌ No puede gestionar Cuentas Corrientes',
