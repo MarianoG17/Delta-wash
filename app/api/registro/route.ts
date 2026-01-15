@@ -201,10 +201,11 @@ export async function POST(request: Request) {
           password: '(Tu contraseña)',
           rol: 'admin',
           permisos: [
-            'Ver reportes y estadísticas completas',
-            'Modificar precios y configuración',
-            'Gestionar usuarios del equipo',
-            'Acceso total al sistema'
+            'Acceso completo a Reportes y Estadísticas',
+            'Modificar Listas de Precios',
+            'Gestionar Cuentas Corrientes de clientes',
+            'Eliminar registros del sistema',
+            'Acceso a todas las funciones'
           ]
         },
         operador: {
@@ -212,16 +213,16 @@ export async function POST(request: Request) {
           password: 'demo123',
           rol: 'operador',
           permisos: [
-            'Cargar y registrar vehículos',
-            'Cambiar estados de servicio',
-            'Enviar notificaciones WhatsApp',
-            'Ver historial'
+            'Registrar y cargar vehículos',
+            'Cambiar estados (En Proceso → Listo → Entregado)',
+            'Enviar notificaciones por WhatsApp',
+            'Ver historial de registros'
           ],
           restricciones: [
-            '❌ No puede ver reportes de caja',
-            '❌ No puede modificar precios',
-            '❌ No puede eliminar registros',
-            '❌ No puede gestionar usuarios'
+            '❌ No puede acceder a Reportes',
+            '❌ No puede modificar Listas de Precios',
+            '❌ No puede gestionar Cuentas Corrientes',
+            '❌ No puede eliminar registros'
           ]
         }
       },
