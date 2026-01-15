@@ -77,6 +77,7 @@ export async function POST(request: Request) {
 
     // Verificar que la empresa esté activa
     if (userData.empresa_estado !== 'activo') {
+      console.log(`[Login SaaS] ❌ Empresa en estado: ${userData.empresa_estado}`);
       return NextResponse.json(
         {
           success: false,
@@ -88,16 +89,39 @@ export async function POST(request: Request) {
     }
 
     // Verificar si la cuenta tiene branch_url configurada
+    console.log(`[Login SaaS] Verificando branch_url...`);
+    console.log(`[Login SaaS] branch_url: ${userData.branch_url || '(vacío/null)'}`);
+
     if (!userData.branch_url || userData.branch_url.trim() === '') {
+      console.error('========================================');
+      console.error(`[Login SaaS] ❌❌❌ PROBLEMA ENCONTRADO ❌❌❌`);
+      console.error(`[Login SaaS] La empresa "${userData.empresa_nombre}" NO TIENE branch_url`);
+      console.error(`[Login SaaS] Esto significa que falló la creación del branch en Neon`);
+      console.error(`[Login SaaS] Empresa ID: ${userData.empresa_id}`);
+      console.error(`[Login SaaS] Slug: ${userData.empresa_slug}`);
+      console.error(`[Login SaaS] Branch Name: ${userData.branch_name || '(vacío)'}`);
+      console.error(`[Login SaaS] Branch URL: (VACÍO) <- ESTE ES EL PROBLEMA`);
+      console.error('========================================');
+
       return NextResponse.json(
         {
           success: false,
-          message: 'Tu cuenta fue creada pero aún no tiene base de datos asignada. Esto es normal en fase de desarrollo. Contactá a soporte.',
-          requiereConfiguracion: true
+          message: 'Tu cuenta fue creada pero hubo un problema al configurar tu base de datos. Por favor, contactá a soporte con este código de error.',
+          requiereConfiguracion: true,
+          errorCode: 'NO_BRANCH_URL',
+          debug: {
+            empresaId: userData.empresa_id,
+            empresaNombre: userData.empresa_nombre,
+            empresaSlug: userData.empresa_slug,
+            branchName: userData.branch_name || null,
+            explicacion: 'La creación del branch en Neon falló durante el registro. Revisar logs del endpoint /api/registro'
+          }
         },
         { status: 403 }
       );
     }
+
+    console.log(`[Login SaaS] ✅ branch_url configurada correctamente`);
 
     // Verificar si la cuenta está vencida
     const fechaExpiracion = new Date(userData.fecha_expiracion);
