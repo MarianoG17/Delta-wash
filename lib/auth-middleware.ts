@@ -31,28 +31,38 @@ export async function getEmpresaIdFromToken(request: Request): Promise<number | 
     
     // Sin header = DeltaWash legacy
     if (!authHeader) {
+      console.log('[Auth] Sin header de autorización → Modo Legacy (DeltaWash)');
       return undefined;
     }
     
     // Verificar formato Bearer
     if (!authHeader.startsWith('Bearer ')) {
+      console.log('[Auth] Header sin formato Bearer → Modo Legacy');
       return undefined;
     }
     
     // Extraer token
     const token = authHeader.substring(7);
+    console.log('[Auth] Token detectado, verificando JWT...');
     
     // Verificar JWT
     const jwtSecret = process.env.JWT_SECRET || 'default-secret-change-this';
     const decoded = jwt.verify(token, jwtSecret) as JWTPayload;
     
     // Retornar empresaId (puede ser undefined para tokens legacy)
+    if (decoded.empresaId) {
+      console.log(`[Auth] ✅ Token válido → Empresa ID: ${decoded.empresaId} (${decoded.empresaSlug || 'sin slug'})`);
+    } else {
+      console.log('[Auth] Token válido pero sin empresaId → Modo Legacy');
+    }
+    
     return decoded.empresaId;
     
   } catch (error) {
     // Token inválido o expirado = Tratar como DeltaWash
     // Esto garantiza que errores de autenticación caigan en comportamiento legacy
-    console.log('[Auth] Token inválido o no presente, usando modo legacy');
+    const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
+    console.log(`[Auth] ⚠️ Error al verificar token: ${errorMsg} → Modo Legacy`);
     return undefined;
   }
 }

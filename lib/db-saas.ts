@@ -221,70 +221,108 @@ export async function registrarEmpresa(datos: {
  */
 export async function getDBConnection(empresaId?: number): Promise<typeof sql> {
   try {
+    console.log('========================================');
+    console.log('[DB] 🔌 getDBConnection() iniciado');
+    console.log(`[DB] empresaId recibido: ${empresaId || '(undefined)'}`);
+    
     // NIVEL 1: Sin empresaId = DeltaWash legacy
     if (!empresaId) {
-      console.log('[DB] Sin empresaId, usando POSTGRES_URL (DeltaWash)');
+      console.log('[DB] ⚠️ Sin empresaId → Usando POSTGRES_URL (DeltaWash Legacy)');
+      console.log('[DB] Connection String: POSTGRES_URL (variable de entorno)');
+      console.log('========================================');
       return sql;
     }
 
     try {
       // NIVEL 2: Consultar BD Central para obtener branch_url
-      console.log(`[DB] Consultando branch_url para empresa ${empresaId}`);
+      console.log(`[DB] 🔍 Consultando BD Central para empresa ${empresaId}...`);
+      console.log(`[DB] CENTRAL_DB_URL: ${process.env.CENTRAL_DB_URL ? '✅ Configurada' : '❌ NO configurada'}`);
 
       const centralDB = createPool({
         connectionString: process.env.CENTRAL_DB_URL
       });
 
       const empresaResult = await centralDB.sql`
-        SELECT id, slug, branch_url, estado
+        SELECT id, slug, branch_url, estado, nombre
         FROM empresas
         WHERE id = ${empresaId}
       `;
 
+      console.log(`[DB] Resultados encontrados: ${empresaResult.rows.length}`);
+
       // Verificar que la empresa existe
       if (empresaResult.rows.length === 0) {
-        console.warn(`[DB] Empresa ${empresaId} no encontrada, usando POSTGRES_URL`);
+        console.warn(`[DB] ❌ Empresa ${empresaId} NO ENCONTRADA en BD Central`);
+        console.warn(`[DB] → Fallback a POSTGRES_URL (DeltaWash)`);
+        console.log('========================================');
         return sql;
       }
 
       const empresa = empresaResult.rows[0];
+      console.log(`[DB] ✅ Empresa encontrada:`);
+      console.log(`     - ID: ${empresa.id}`);
+      console.log(`     - Nombre: ${empresa.nombre}`);
+      console.log(`     - Slug: ${empresa.slug}`);
+      console.log(`     - Estado: ${empresa.estado}`);
+      console.log(`     - Branch URL: ${empresa.branch_url ? '✅ Tiene' : '❌ Vacío'}`);
 
       // Verificar que esté activa
       if (empresa.estado !== 'activo') {
-        console.warn(`[DB] Empresa ${empresaId} inactiva, usando POSTGRES_URL`);
+        console.warn(`[DB] ⚠️ Empresa ${empresaId} está ${empresa.estado.toUpperCase()}, no ACTIVA`);
+        console.warn(`[DB] → Fallback a POSTGRES_URL (DeltaWash)`);
+        console.log('========================================');
         return sql;
       }
 
       // NIVEL 3: Verificar que tenga branch_url
       if (!empresa.branch_url || empresa.branch_url.trim() === '') {
-        console.warn(`[DB] Empresa ${empresaId} sin branch_url, usando POSTGRES_URL`);
+        console.warn(`[DB] ❌ Empresa ${empresaId} SIN branch_url configurado`);
+        console.warn(`[DB] → Fallback a POSTGRES_URL (DeltaWash)`);
+        console.log('========================================');
         return sql;
       }
 
       try {
         // NIVEL 4: Crear pool con el branch_url específico
-        console.log(`[DB] Creando conexión al branch de empresa ${empresaId} (${empresa.slug})`);
+        console.log(`[DB] 🚀 Creando pool dinámico para empresa "${empresa.slug}"...`);
+        console.log(`[DB] Branch URL (primeros 50 chars): ${empresa.branch_url.substring(0, 50)}...`);
 
         const pool = createPool({
           connectionString: empresa.branch_url
         });
+
+        console.log(`[DB] ✅ Pool creado exitosamente para empresa ${empresaId}`);
+        console.log(`[DB] 🎯 Usando branch dedicado: ${empresa.slug}`);
+        console.log('========================================');
 
         // Retornar la función sql del pool
         // TypeScript: usamos 'as any' para compatibilidad de tipos
         return pool.sql as any;
 
       } catch (poolError) {
-        console.error(`[DB] Error al crear pool para empresa ${empresaId}:`, poolError);
+        console.error(`[DB] ❌ ERROR al crear pool para empresa ${empresaId}:`);
+        console.error(`[DB] Tipo de error: ${poolError instanceof Error ? poolError.constructor.name : typeof poolError}`);
+        console.error(`[DB] Mensaje: ${poolError instanceof Error ? poolError.message : JSON.stringify(poolError)}`);
+        console.error(`[DB] → Fallback a POSTGRES_URL (DeltaWash)`);
+        console.log('========================================');
         return sql; // Fallback a DeltaWash
       }
 
     } catch (queryError) {
-      console.error(`[DB] Error al consultar BD Central:`, queryError);
+      console.error(`[DB] ❌ ERROR al consultar BD Central:`);
+      console.error(`[DB] Tipo de error: ${queryError instanceof Error ? queryError.constructor.name : typeof queryError}`);
+      console.error(`[DB] Mensaje: ${queryError instanceof Error ? queryError.message : JSON.stringify(queryError)}`);
+      console.error(`[DB] → Fallback a POSTGRES_URL (DeltaWash)`);
+      console.log('========================================');
       return sql; // Fallback a DeltaWash
     }
 
   } catch (error) {
-    console.error('[DB] Error general en getDBConnection:', error);
+    console.error('[DB] ❌ ERROR GENERAL en getDBConnection():');
+    console.error(`[DB] Tipo: ${error instanceof Error ? error.constructor.name : typeof error}`);
+    console.error(`[DB] Mensaje: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
+    console.error(`[DB] → Fallback final a POSTGRES_URL (DeltaWash)`);
+    console.log('========================================');
     return sql; // Fallback final a DeltaWash
   }
 }

@@ -40,8 +40,8 @@ export async function POST(request: Request) {
     }
 
     // Conectar a BD Central
-    const centralDB = createPool({ 
-      connectionString: process.env.CENTRAL_DB_URL 
+    const centralDB = createPool({
+      connectionString: process.env.CENTRAL_DB_URL
     });
 
     // Verificar que el email no esté registrado
@@ -79,24 +79,59 @@ export async function POST(request: Request) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // CREAR BRANCH AUTOMÁTICAMENTE EN NEON
-    console.log(`[Registro] Creando base de datos para: ${nombreEmpresa}`);
-    
+    console.log('========================================');
+    console.log('[Registro] 🚀 INICIO: Creación de base de datos en Neon');
+    console.log(`[Registro] Empresa: ${nombreEmpresa}`);
+    console.log(`[Registro] Slug generado: ${finalSlug}`);
+    console.log(`[Registro] Email: ${email}`);
+
     let branchUrl = '';
     let branchName = finalSlug;
-    
+
     try {
+      console.log('[Registro] 📞 Llamando a createAndSetupBranchForEmpresa()...');
+      console.log(`[Registro] NEON_API_KEY: ${process.env.NEON_API_KEY ? '✅ Configurada (' + process.env.NEON_API_KEY.substring(0, 10) + '...)' : '❌ NO configurada'}`);
+      console.log(`[Registro] NEON_PROJECT_ID: ${process.env.NEON_PROJECT_ID ? '✅ Configurado (' + process.env.NEON_PROJECT_ID + ')' : '❌ NO configurado'}`);
+
       // Intentar crear el branch en Neon
       const branchInfo = await createAndSetupBranchForEmpresa(finalSlug);
+
+      console.log('[Registro] 📦 Respuesta recibida de createAndSetupBranchForEmpresa:');
+      console.log(`[Registro]   - branchId: ${branchInfo.branchId}`);
+      console.log(`[Registro]   - branchName: ${branchInfo.branchName}`);
+      console.log(`[Registro]   - connectionUri: ${branchInfo.connectionUri ? '✅ ' + branchInfo.connectionUri.substring(0, 50) + '...' : '❌ undefined'}`);
+      console.log(`[Registro]   - connectionUriPooler: ${branchInfo.connectionUriPooler ? '✅ ' + branchInfo.connectionUriPooler.substring(0, 50) + '...' : '❌ undefined'}`);
+
       branchUrl = branchInfo.connectionUriPooler; // Usar pooler para mejor rendimiento
       branchName = branchInfo.branchName;
-      
-      console.log(`[Registro] ✅ Base de datos creada exitosamente: ${branchInfo.branchId}`);
+
+      if (!branchUrl || branchUrl.trim() === '') {
+        console.error('[Registro] ❌ ERROR: connectionUriPooler está vacío o undefined');
+        console.error('[Registro] Esto significa que Neon API no devolvió la URL de conexión esperada');
+        throw new Error('connectionUriPooler vacío en respuesta de Neon');
+      }
+
+      console.log(`[Registro] ✅ Base de datos creada exitosamente!`);
+      console.log(`[Registro]   - Branch ID: ${branchInfo.branchId}`);
+      console.log(`[Registro]   - Branch Name: ${branchName}`);
+      console.log(`[Registro]   - URL guardada: ${branchUrl.substring(0, 60)}...`);
     } catch (neonError) {
       // Si falla la creación del branch, loguear pero NO fallar el registro
-      console.error('[Registro] ⚠️ Error al crear branch en Neon:', neonError);
-      console.log('[Registro] La empresa se creará sin BD asignada (requiere configuración manual)');
+      console.error('========================================');
+      console.error('[Registro] ❌ ERROR al crear branch en Neon:');
+      console.error(`[Registro] Tipo de error: ${neonError instanceof Error ? neonError.constructor.name : typeof neonError}`);
+      console.error(`[Registro] Mensaje: ${neonError instanceof Error ? neonError.message : JSON.stringify(neonError)}`);
+      if (neonError instanceof Error && neonError.stack) {
+        console.error(`[Registro] Stack trace (primeras 3 líneas):`);
+        const stackLines = neonError.stack.split('\n').slice(0, 3);
+        stackLines.forEach(line => console.error(`[Registro]   ${line}`));
+      }
+      console.log('[Registro] ⚠️ La empresa se creará sin BD asignada (requiere configuración manual)');
+      console.error('========================================');
       // branchUrl queda vacío, empresa se crea pero no podrá usarse hasta configurar manualmente
     }
+
+    console.log('========================================');
 
     // Crear empresa en BD Central
     const empresaResult = await centralDB.sql`
@@ -263,8 +298,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error en registro:', error);
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         message: 'Error al crear la cuenta. Por favor intenta nuevamente.',
         error: error instanceof Error ? error.message : 'Error desconocido'
       },
