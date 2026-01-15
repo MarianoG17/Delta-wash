@@ -19,43 +19,48 @@ export default function LoginSaaSPage() {
         setLoading(true);
 
         try {
-            // TODO: Implementar autenticación cuando el backend esté listo
-            // Por ahora, simulamos el login
-
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Simular delay de red
-
-            // Mock: verificar que tenga datos
-            if (formData.email && formData.password) {
-                alert(`✅ Login exitoso!\n\nEmail: ${formData.email}\n\nPróximamente accederás al dashboard.`);
-                // router.push('/saas/dashboard');
-                router.push('/home');
-            } else {
-                setError('Por favor completá todos los campos');
-            }
-
-            /*
-            // Implementación futura:
+            // Llamada a API real de login
             const response = await fetch('/api/auth/login-saas', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(formData)
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: formData.email,
+                    password: formData.password
+                })
             });
-      
-            if (response.ok) {
-              const data = await response.json();
-              // Guardar sesión
-              localStorage.setItem('empresaId', data.empresaId);
-              localStorage.setItem('empresaNombre', data.empresaNombre);
-              localStorage.setItem('userId', data.userId);
-              // Redirigir a dashboard
-              router.push('/saas/dashboard');
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Guardar token y datos de sesión en localStorage
+                localStorage.setItem('authToken', data.token);
+                localStorage.setItem('empresaId', data.empresa.id);
+                localStorage.setItem('empresaNombre', data.empresa.nombre);
+                localStorage.setItem('empresaSlug', data.empresa.slug);
+                localStorage.setItem('empresaPlan', data.empresa.plan);
+                localStorage.setItem('userId', data.usuario.id);
+                localStorage.setItem('userEmail', data.usuario.email);
+                localStorage.setItem('userNombre', data.usuario.nombre);
+                localStorage.setItem('userRol', data.usuario.rol);
+
+                // Mostrar mensaje de bienvenida
+                alert(`✅ ¡Bienvenido ${data.usuario.nombre}!\n\n🏢 ${data.empresa.nombre}\n📦 Plan: ${data.empresa.plan.toUpperCase()}\n⏰ Días restantes: ${data.empresa.diasRestantes}\n\nSerás redirigido a tu panel...`);
+
+                // Redirigir a la app principal (por ahora a home, después será /dashboard)
+                router.push('/');
             } else {
-              const error = await response.json();
-              setError(error.message || 'Email o contraseña incorrectos');
+                // Manejar diferentes tipos de error
+                if (data.vencido) {
+                    setError('❌ ' + data.message);
+                } else if (data.estado === 'suspendido') {
+                    setError('⚠️ ' + data.message);
+                } else {
+                    setError(data.message || 'Email o contraseña incorrectos');
+                }
             }
-            */
         } catch (err) {
-            setError('Error al iniciar sesión. Intenta nuevamente.');
+            console.error('Error en login:', err);
+            setError('Error al iniciar sesión. Verifica tu conexión e intenta nuevamente.');
         } finally {
             setLoading(false);
         }

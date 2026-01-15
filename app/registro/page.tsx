@@ -33,19 +33,7 @@ export default function RegistroPage() {
     setLoading(true);
 
     try {
-      // TODO: Implementar llamada a API cuando esté listo el backend
-      // Por ahora, simulamos el registro
-      
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simular delay de red
-      
-      // Mock: mostrar mensaje de éxito
-      alert(`✅ ¡Cuenta creada!\n\nEmpresa: ${formData.nombreEmpresa}\nEmail: ${formData.email}\n\nPróximamente podrás acceder al sistema.`);
-      
-      // Redirigir a home
-      router.push('/home');
-      
-      /*
-      // Implementación futura:
+      // Llamada a API real de registro
       const response = await fetch('/api/registro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -56,20 +44,27 @@ export default function RegistroPage() {
         })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        // Guardar sesión
-        localStorage.setItem('empresaId', data.empresaId);
-        localStorage.setItem('userId', data.userId);
-        // Redirigir a app
-        router.push('/saas/dashboard');
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Guardar token en localStorage
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('empresaId', data.empresa.id);
+        localStorage.setItem('empresaNombre', data.empresa.nombre);
+        localStorage.setItem('userId', data.usuario.id);
+        localStorage.setItem('userEmail', data.usuario.email);
+        
+        // Mostrar mensaje de éxito
+        alert(`✅ ¡Cuenta creada exitosamente!\n\n🏢 Empresa: ${data.empresa.nombre}\n📧 Email: ${data.usuario.email}\n⏰ Trial: ${data.trialDias} días gratis\n\nSerás redirigido a tu panel de control...`);
+        
+        // Redirigir a la app principal (por ahora a home, después será /dashboard)
+        router.push('/');
       } else {
-        const error = await response.json();
-        setError(error.message || 'Error al crear cuenta');
+        setError(data.message || 'Error al crear cuenta');
       }
-      */
     } catch (err) {
-      setError('Error al crear cuenta. Intenta nuevamente.');
+      console.error('Error en registro:', err);
+      setError('Error al crear cuenta. Verifica tu conexión e intenta nuevamente.');
     } finally {
       setLoading(false);
     }
