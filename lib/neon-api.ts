@@ -29,7 +29,13 @@ export interface CreateBranchResponse {
   endpoints: NeonEndpoint[];
   connection_uris: {
     connection_uri: string;
-    connection_uri_pooler: string;
+    connection_parameters: {
+      database: string;
+      password: string;
+      role: string;
+      host: string;
+      pooler_host: string;
+    };
   }[];
 }
 
@@ -142,14 +148,13 @@ export async function initializeBranchSchema(
 ): Promise<void> {
   console.log('[Neon API] Inicializando schema en nuevo branch');
 
-  // Importar el schema SQL
-  const { createPool } = await import('@vercel/postgres');
-
-  const pool = createPool({ connectionString: connectionUri });
+  // Usar neon driver directamente (soporta múltiples comandos SQL)
+  const { neon } = await import('@neondatabase/serverless');
+  const sql = neon(connectionUri);
 
   try {
     // Crear tablas necesarias
-    await pool.sql`
+    await sql`
       -- Tabla de usuarios locales de la empresa
       CREATE TABLE IF NOT EXISTS usuarios (
         id SERIAL PRIMARY KEY,
@@ -241,7 +246,7 @@ export async function initializeBranchSchema(
     `;
 
     // Insertar precios por defecto
-    await pool.sql`
+    await sql`
       INSERT INTO precios_servicios (tipo_vehiculo, tipo_lavado, precio) VALUES
         ('auto', 'simple', 8000),
         ('auto', 'simple_con_cera', 12000),
@@ -344,8 +349,12 @@ export async function createAndSetupBranchForEmpresa(
     console.log('[Setup] DEBUG - Respuesta de Neon:', JSON.stringify(branchData, null, 2));
 
     // Extraer información de conexión
-    const connectionUri = branchData.connection_uris[0].connection_uri;
-    const connectionUriPooler = branchData.connection_uris[0].connection_uri_pooler;
+    const connectionInfo = branchData.connection_uris[0];
+    const connectionUri = connectionInfo.connection_uri;
+    
+    // Construir la URL pooled a partir de los parámetros
+    const params = connectionInfo.connection_parameters;
+    const connectionUriPooler = `postgresql://${params.role}:${params.password}@${params.pooler_host}/${params.database}?sslmode=require`;
 
     console.log(`[Setup] Branch creado con ID: ${branchData.branch.id}`);
     console.log(`[Setup] DEBUG - connectionUri: ${connectionUri?.substring(0, 50)}...`);
