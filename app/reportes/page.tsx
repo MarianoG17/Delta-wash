@@ -111,8 +111,17 @@ export default function Reportes() {
     const cargarReporte = async () => {
         setLoading(true);
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             // Cargar reporte diario
-            const resVentas = await fetch(`/api/reportes/ventas?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`);
+            const resVentas = await fetch(`/api/reportes/ventas?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
             const dataVentas = await resVentas.json();
 
             if (dataVentas.success) {
@@ -123,7 +132,11 @@ export default function Reportes() {
             }
 
             // Cargar reporte de horarios
-            const resHorarios = await fetch(`/api/reportes/horarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`);
+            const resHorarios = await fetch(`/api/reportes/horarios?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
             const dataHorarios = await resHorarios.json();
 
             if (dataHorarios.success) {
@@ -133,7 +146,11 @@ export default function Reportes() {
             }
 
             // Cargar reporte de caja
-            const resCaja = await fetch(`/api/reportes/caja?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`);
+            const resCaja = await fetch(`/api/reportes/caja?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
             const dataCaja = await resCaja.json();
 
             if (dataCaja.success) {

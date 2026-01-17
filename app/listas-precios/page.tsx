@@ -69,7 +69,16 @@ export default function ListasPrecios() {
     const cargarListas = async () => {
         try {
             setLoading(true);
-            const res = await fetch('/api/listas-precios');
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/listas-precios', {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
             const data = await res.json();
             if (data.success) {
                 setListas(data.listas);
@@ -88,9 +97,17 @@ export default function ListasPrecios() {
         const descripcion = prompt('Descripción (opcional):');
 
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             const res = await fetch('/api/listas-precios', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
                 body: JSON.stringify({ nombre, descripcion }),
             });
 
@@ -112,8 +129,16 @@ export default function ListasPrecios() {
         }
 
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             const res = await fetch(`/api/listas-precios?id=${id}`, {
                 method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
             });
 
             const data = await res.json();
@@ -140,12 +165,20 @@ export default function ListasPrecios() {
 
     const guardarPrecios = async (listaId: number) => {
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             // Actualizar cada precio
             for (const [key, valor] of Object.entries(preciosEditando)) {
                 const [tipo_vehiculo, tipo_servicio] = key.split('_');
                 await fetch('/api/listas-precios/actualizar-precio', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
                     body: JSON.stringify({
                         lista_id: listaId,
                         tipo_vehiculo,
