@@ -283,12 +283,26 @@ export async function getDBConnection(empresaId?: number): Promise<typeof sql> {
       }
 
       try {
-        // NIVEL 4: Crear pool con el branch_url específico
+        // NIVEL 4: Convertir a URL pooled si es necesario
         console.log(`[DB] 🚀 Creando pool dinámico para empresa "${empresa.slug}"...`);
         console.log(`[DB] Branch URL (primeros 50 chars): ${empresa.branch_url.substring(0, 50)}...`);
 
+        // Neon requiere URLs pooled para createPool()
+        // Si la URL no tiene "-pooler", la convertimos
+        let pooledUrl = empresa.branch_url;
+        if (!pooledUrl.includes('-pooler')) {
+          // Buscar el endpoint: ep-xxxx.region.aws.neon.tech
+          // Convertir a: ep-xxxx-pooler.region.aws.neon.tech
+          pooledUrl = pooledUrl.replace(
+            /@([^.]+)\.([^.]+)\.aws\.neon\.tech/,
+            '@$1-pooler.$2.aws.neon.tech'
+          );
+          console.log(`[DB] ⚙️ URL convertida a pooled connection`);
+          console.log(`[DB] Pooled URL (primeros 50 chars): ${pooledUrl.substring(0, 50)}...`);
+        }
+
         const pool = createPool({
-          connectionString: empresa.branch_url
+          connectionString: pooledUrl
         });
 
         console.log(`[DB] ✅ Pool creado exitosamente para empresa ${empresaId}`);
