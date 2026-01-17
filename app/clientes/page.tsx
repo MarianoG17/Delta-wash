@@ -43,7 +43,17 @@ export default function Clientes() {
 
     const cargarDatos = async () => {
         try {
-            const res = await fetch('/api/estadisticas/clientes');
+            // Obtener token para autenticación
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/estadisticas/clientes', {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
             const data = await res.json();
             if (data.success) {
                 setClientes(data.clientes);

@@ -59,8 +59,18 @@ function HistorialContent() {
 
     const cargarDatos = async () => {
         try {
+            // Obtener token para autenticación
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             // Cargar todos los registros (incluyendo anulados para el historial)
-            const res = await fetch('/api/registros?incluir_anulados=true');
+            const res = await fetch('/api/registros?incluir_anulados=true', {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
             const data = await res.json();
             if (data.success) {
                 setRegistros(data.registros);
