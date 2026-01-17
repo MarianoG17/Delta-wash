@@ -35,10 +35,15 @@ export async function GET(request: Request) {
             success: true,
             listas: listasConPrecios
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error obteniendo listas de precios:', error);
         return NextResponse.json(
-            { success: false, message: 'Error del servidor' },
+            {
+                success: false,
+                message: 'Error del servidor',
+                error: error.message || 'Error desconocido',
+                details: error.toString()
+            },
             { status: 500 }
         );
     }
