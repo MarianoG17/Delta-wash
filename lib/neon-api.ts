@@ -148,14 +148,14 @@ export async function initializeBranchSchema(
 ): Promise<void> {
   console.log('[Neon API] Inicializando schema en nuevo branch');
 
-  // Usar neon driver directamente (soporta múltiples comandos SQL)
+  // Usar neon driver directamente
   const { neon } = await import('@neondatabase/serverless');
   const sql = neon(connectionUri);
 
   try {
-    // Crear tablas necesarias
+    // Ejecutar cada comando SQL por separado para evitar el error de múltiples comandos
+    console.log('[Neon API] Creando tabla usuarios...');
     await sql`
-      -- Tabla de usuarios locales de la empresa
       CREATE TABLE IF NOT EXISTS usuarios (
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
@@ -166,9 +166,11 @@ export async function initializeBranchSchema(
         activo BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
+      )
+    `;
 
-      -- Tabla de clientes
+    console.log('[Neon API] Creando tabla clientes...');
+    await sql`
       CREATE TABLE IF NOT EXISTS clientes (
         id SERIAL PRIMARY KEY,
         nombre VARCHAR(255) NOT NULL,
@@ -179,9 +181,11 @@ export async function initializeBranchSchema(
         tiene_cuenta_corriente BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
+      )
+    `;
 
-      -- Tabla de registros (autos lavados)
+    console.log('[Neon API] Creando tabla registros...');
+    await sql`
       CREATE TABLE IF NOT EXISTS registros (
         id SERIAL PRIMARY KEY,
         patente VARCHAR(50) NOT NULL,
@@ -200,9 +204,11 @@ export async function initializeBranchSchema(
         fecha_entregado TIMESTAMP,
         usuario_id INTEGER REFERENCES usuarios(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
+      )
+    `;
 
-      -- Tabla de precios por servicio
+    console.log('[Neon API] Creando tabla precios_servicios...');
+    await sql`
       CREATE TABLE IF NOT EXISTS precios_servicios (
         id SERIAL PRIMARY KEY,
         tipo_vehiculo VARCHAR(50) NOT NULL,
@@ -212,9 +218,11 @@ export async function initializeBranchSchema(
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(tipo_vehiculo, tipo_lavado)
-      );
+      )
+    `;
 
-      -- Tabla de cuentas corrientes
+    console.log('[Neon API] Creando tabla cuentas_corrientes...');
+    await sql`
       CREATE TABLE IF NOT EXISTS cuentas_corrientes (
         id SERIAL PRIMARY KEY,
         cliente_id INTEGER UNIQUE REFERENCES clientes(id),
@@ -223,9 +231,11 @@ export async function initializeBranchSchema(
         activa BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
+      )
+    `;
 
-      -- Tabla de movimientos de cuenta corriente
+    console.log('[Neon API] Creando tabla movimientos_cc...');
+    await sql`
       CREATE TABLE IF NOT EXISTS movimientos_cc (
         id SERIAL PRIMARY KEY,
         cuenta_corriente_id INTEGER REFERENCES cuentas_corrientes(id),
@@ -236,54 +246,94 @@ export async function initializeBranchSchema(
         saldo_nuevo DECIMAL(10,2),
         registro_id INTEGER REFERENCES registros(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-
-      -- Índices para mejor rendimiento
-      CREATE INDEX IF NOT EXISTS idx_registros_patente ON registros(patente);
-      CREATE INDEX IF NOT EXISTS idx_registros_fecha ON registros(fecha_ingreso);
-      CREATE INDEX IF NOT EXISTS idx_registros_estado ON registros(estado);
-      CREATE INDEX IF NOT EXISTS idx_clientes_nombre ON clientes(nombre);
+      )
     `;
 
-    // Insertar precios por defecto
+    console.log('[Neon API] Creando índices...');
+    await sql`CREATE INDEX IF NOT EXISTS idx_registros_patente ON registros(patente)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_registros_fecha ON registros(fecha_ingreso)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_registros_estado ON registros(estado)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_clientes_nombre ON clientes(nombre)`;
+
+    // ============================================
+    // NUEVO SISTEMA DE LISTAS DE PRECIOS
+    // ============================================
+    
+    console.log('[Neon API] Creando tabla listas_precios...');
     await sql`
-      INSERT INTO precios_servicios (tipo_vehiculo, tipo_lavado, precio) VALUES
-        ('auto', 'simple', 8000),
-        ('auto', 'simple_con_cera', 12000),
-        ('auto', 'completo', 15000),
-        ('auto', 'completo_con_cera', 20000),
-        ('auto', 'express', 6000),
-        ('auto', 'premium', 25000),
-        ('suv', 'simple', 10000),
-        ('suv', 'simple_con_cera', 15000),
-        ('suv', 'completo', 18000),
-        ('suv', 'completo_con_cera', 24000),
-        ('suv', 'express', 8000),
-        ('suv', 'premium', 30000),
-        ('camioneta', 'simple', 10000),
-        ('camioneta', 'simple_con_cera', 15000),
-        ('camioneta', 'completo', 18000),
-        ('camioneta', 'completo_con_cera', 24000),
-        ('camioneta', 'express', 8000),
-        ('camioneta', 'premium', 30000),
-        ('xl', 'simple', 12000),
-        ('xl', 'simple_con_cera', 18000),
-        ('xl', 'completo', 22000),
-        ('xl', 'completo_con_cera', 28000),
-        ('xl', 'express', 10000),
-        ('xl', 'premium', 35000),
-        ('moto', 'simple', 4000),
-        ('moto', 'simple_con_cera', 6000),
-        ('moto', 'completo', 7000),
-        ('moto', 'completo_con_cera', 9000),
-        ('moto', 'express', 3000),
-        ('moto', 'premium', 10000)
-      ON CONFLICT (tipo_vehiculo, tipo_lavado) DO NOTHING;
+      CREATE TABLE IF NOT EXISTS listas_precios (
+        id SERIAL PRIMARY KEY,
+        nombre VARCHAR(100) NOT NULL UNIQUE,
+        descripcion TEXT,
+        activa BOOLEAN DEFAULT TRUE,
+        es_default BOOLEAN DEFAULT FALSE,
+        fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
     `;
 
-    console.log('[Neon API] Schema inicializado exitosamente');
+    console.log('[Neon API] Creando tabla precios...');
+    await sql`
+      CREATE TABLE IF NOT EXISTS precios (
+        id SERIAL PRIMARY KEY,
+        lista_id INTEGER REFERENCES listas_precios(id) ON DELETE CASCADE,
+        tipo_vehiculo VARCHAR(50) NOT NULL,
+        tipo_servicio VARCHAR(50) NOT NULL,
+        precio DECIMAL(10,2) NOT NULL,
+        fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(lista_id, tipo_vehiculo, tipo_servicio)
+      )
+    `;
+
+    console.log('[Neon API] Agregando columna lista_precio_id a cuentas_corrientes...');
+    await sql`
+      ALTER TABLE cuentas_corrientes
+      ADD COLUMN IF NOT EXISTS lista_precio_id INTEGER REFERENCES listas_precios(id) ON DELETE SET NULL
+    `;
+
+    console.log('[Neon API] Creando índices de listas de precios...');
+    await sql`CREATE INDEX IF NOT EXISTS idx_precios_lista ON precios(lista_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_cuentas_lista_precio ON cuentas_corrientes(lista_precio_id)`;
+
+    console.log('[Neon API] Creando lista de precios por defecto...');
+    await sql`
+      INSERT INTO listas_precios (nombre, descripcion, activa, es_default)
+      VALUES ('Por Defecto', 'Lista de precios inicial - Configure sus precios desde la sección Listas de Precios', true, true)
+      ON CONFLICT (nombre) DO NOTHING
+    `;
+
+    console.log('[Neon API] Insertando precios en $0 (para que la empresa configure sus propios valores)...');
+    // Obtener el ID de la lista recién creada
+    const listaResult = await sql`SELECT id FROM listas_precios WHERE nombre = 'Por Defecto' LIMIT 1`;
+    const listaId = listaResult[0]?.id;
+
+    if (listaId) {
+      // Insertar todos los servicios con precio $0
+      // El administrador deberá configurar sus propios precios desde la interfaz
+      const tiposVehiculo = ['auto', 'mono', 'camioneta', 'camioneta_xl', 'moto'];
+      const tiposServicio = ['simple_exterior', 'simple', 'con_cera', 'pulido', 'limpieza_chasis', 'limpieza_motor'];
+
+      for (const vehiculo of tiposVehiculo) {
+        for (const servicio of tiposServicio) {
+          await sql`
+            INSERT INTO precios (lista_id, tipo_vehiculo, tipo_servicio, precio)
+            VALUES (${listaId}, ${vehiculo}, ${servicio}, 0)
+            ON CONFLICT (lista_id, tipo_vehiculo, tipo_servicio) DO NOTHING
+          `;
+        }
+      }
+      
+      console.log('[Neon API] ✅ Precios inicializados en $0 - La empresa debe configurar sus valores');
+    } else {
+      console.warn('[Neon API] ⚠️  No se pudo obtener ID de lista por defecto');
+    }
+
+    // Mantener la tabla vieja por compatibilidad pero SIN precios predefinidos
+    console.log('[Neon API] Tabla precios_servicios creada (sin precios predefinidos)');
+
+    console.log('[Neon API] ✅ Schema inicializado exitosamente');
   } catch (error) {
-    console.error('[Neon API] Error al inicializar schema:', error);
+    console.error('[Neon API] ❌ Error al inicializar schema:', error);
     throw error;
   }
 }

@@ -9,22 +9,24 @@ export async function GET(request: Request) {
         const empresaId = await getEmpresaIdFromToken(request);
         const db = await getDBConnection(empresaId);
 
-        const listas = await db`
-            SELECT * FROM listas_precios 
+        const listasResult = await db`
+            SELECT * FROM listas_precios
             ORDER BY es_default DESC, nombre ASC
         `;
+        const listas = Array.isArray(listasResult) ? listasResult : listasResult.rows || [];
 
         // Para cada lista, obtener sus precios
         const listasConPrecios = await Promise.all(
-            listas.rows.map(async (lista) => {
-                const precios = await db`
-                    SELECT * FROM precios 
+            listas.map(async (lista: any) => {
+                const preciosResult = await db`
+                    SELECT * FROM precios
                     WHERE lista_id = ${lista.id}
                     ORDER BY tipo_vehiculo, tipo_servicio
                 `;
+                const precios = Array.isArray(preciosResult) ? preciosResult : preciosResult.rows || [];
                 return {
                     ...lista,
-                    precios: precios.rows
+                    precios: precios
                 };
             })
         );
@@ -59,13 +61,14 @@ export async function POST(request: Request) {
         }
 
         // Crear la lista
-        const nuevaLista = await db`
+        const nuevaListaResult = await db`
             INSERT INTO listas_precios (nombre, descripcion, activa, es_default)
             VALUES (${nombre}, ${descripcion || null}, true, false)
             RETURNING *
         `;
+        const nuevaLista = Array.isArray(nuevaListaResult) ? nuevaListaResult : nuevaListaResult.rows || [];
 
-        const listaId = nuevaLista.rows[0].id;
+        const listaId = nuevaLista[0].id;
 
         // Si se especifica copiar de otra lista, copiar los precios
         if (copiar_de_lista_id) {
@@ -87,7 +90,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             success: true,
-            lista: nuevaLista.rows[0]
+            lista: nuevaLista[0]
         });
     } catch (error: any) {
         console.error('Error creando lista de precios:', error);
@@ -160,11 +163,12 @@ export async function DELETE(request: Request) {
         }
 
         // Verificar que no sea la lista por defecto
-        const lista = await db`
+        const listaResult = await db`
             SELECT es_default FROM listas_precios WHERE id = ${id}
         `;
+        const lista = Array.isArray(listaResult) ? listaResult : listaResult.rows || [];
 
-        if (lista.rows.length > 0 && lista.rows[0].es_default) {
+        if (lista.length > 0 && lista[0].es_default) {
             return NextResponse.json(
                 { success: false, message: 'No se puede eliminar la lista por defecto' },
                 { status: 400 }
@@ -172,13 +176,14 @@ export async function DELETE(request: Request) {
         }
 
         // Verificar que no haya clientes usando esta lista
-        const clientes = await db`
+        const clientesResult = await db`
             SELECT COUNT(*) as total FROM cuentas_corrientes WHERE lista_precio_id = ${id}
         `;
+        const clientes = Array.isArray(clientesResult) ? clientesResult : clientesResult.rows || [];
 
-        if (parseInt(clientes.rows[0].total) > 0) {
+        if (parseInt(clientes[0].total) > 0) {
             return NextResponse.json(
-                { success: false, message: `No se puede eliminar. Hay ${clientes.rows[0].total} cliente(s) usando esta lista` },
+                { success: false, message: `No se puede eliminar. Hay ${clientes[0].total} cliente(s) usando esta lista` },
                 { status: 400 }
             );
         }

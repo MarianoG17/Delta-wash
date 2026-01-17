@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, Car, AlertCircle, Ban } from 'lucide-react';
+import { getAuthUser, getLoginUrl } from '@/lib/auth-utils';
 
 interface Registro {
     id: number;
@@ -38,13 +39,12 @@ function HistorialContent() {
     useEffect(() => {
         setMounted(true);
         if (typeof window !== 'undefined') {
-            const session = localStorage.getItem('lavadero_user');
-            if (!session) {
-                router.push('/login');
+            const user = getAuthUser();
+            if (!user) {
+                router.push(getLoginUrl());
             } else {
-                const data = JSON.parse(session);
-                setUserId(data.id);
-                setUserRole(data.rol || 'operador');
+                setUserId(user.id);
+                setUserRole(user.rol);
 
                 // Obtener fecha del parámetro URL si existe
                 const fechaParam = searchParams.get('fecha');

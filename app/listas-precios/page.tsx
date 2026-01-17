@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, DollarSign, Plus, Edit, Trash2, Copy, TrendingUp } from 'lucide-react';
+import { getAuthUser, getLoginUrl } from '@/lib/auth-utils';
 
 interface Precio {
     id: number;
@@ -41,19 +42,22 @@ export default function ListasPrecios() {
     ];
 
     const tiposServicio = [
-        { value: 'simple', label: 'Simple' },
-        { value: 'con_cera', label: 'Con Cera (incremento)' }
+        { value: 'simple_exterior', label: 'Simple Exterior' },
+        { value: 'simple', label: 'Simple (completo)' },
+        { value: 'con_cera', label: 'Con Cera (incremento)' },
+        { value: 'pulido', label: 'Pulido' },
+        { value: 'limpieza_chasis', label: 'Limpieza de Chasis' },
+        { value: 'limpieza_motor', label: 'Limpieza de Motor' }
     ];
 
     useEffect(() => {
         setMounted(true);
         if (typeof window !== 'undefined') {
-            const session = localStorage.getItem('lavadero_user');
-            if (!session) {
-                router.push('/login');
+            const user = getAuthUser();
+            if (!user) {
+                router.push(getLoginUrl());
             } else {
-                const data = JSON.parse(session);
-                if (data.rol !== 'admin') {
+                if (user.rol !== 'admin') {
                     router.push('/');
                 } else {
                     cargarListas();
@@ -192,17 +196,17 @@ export default function ListasPrecios() {
         if (!lista) return;
 
         const nuevosPreciosEditando: { [key: string]: number } = {};
-        
+
         lista.precios.forEach(precio => {
             const key = `${precio.tipo_vehiculo}_${precio.tipo_servicio}`;
             const precioActual = parseFloat(precio.precio.toString());
             const aumento = precioActual * (porcentaje / 100);
             let precioNuevo = precioActual + aumento;
-            
+
             if (redondear) {
                 precioNuevo = redondearPrecio(precioNuevo);
             }
-            
+
             nuevosPreciosEditando[key] = precioNuevo;
         });
 
@@ -326,37 +330,58 @@ export default function ListasPrecios() {
 
                             {/* Tabla de Precios */}
                             <div className="overflow-x-auto">
-                                <table className="w-full">
+                                <table className="w-full text-sm">
                                     <thead>
                                         <tr className="border-b-2 border-gray-200">
-                                            <th className="text-left py-3 px-2 font-semibold text-gray-700">
-                                                Tipo de Vehículo
+                                            <th className="text-left py-3 px-2 font-semibold text-gray-700 sticky left-0 bg-white">
+                                                Vehículo
                                             </th>
-                                            <th className="text-right py-3 px-2 font-semibold text-gray-700">
-                                                Precio Base
+                                            <th className="text-right py-3 px-2 font-semibold text-gray-700 whitespace-nowrap">
+                                                Simple Exterior
                                             </th>
-                                            <th className="text-right py-3 px-2 font-semibold text-gray-700">
+                                            <th className="text-right py-3 px-2 font-semibold text-gray-700 whitespace-nowrap">
+                                                Simple
+                                            </th>
+                                            <th className="text-right py-3 px-2 font-semibold text-gray-700 whitespace-nowrap">
                                                 + Con Cera
                                             </th>
-                                            <th className="text-right py-3 px-2 font-semibold text-gray-700">
+                                            <th className="text-right py-3 px-2 font-semibold text-gray-700 whitespace-nowrap">
+                                                Pulido
+                                            </th>
+                                            <th className="text-right py-3 px-2 font-semibold text-gray-700 whitespace-nowrap">
                                                 Limpieza Chasis
                                             </th>
-                                            <th className="text-right py-3 px-2 font-semibold text-gray-700">
-                                                Total con Cera
+                                            <th className="text-right py-3 px-2 font-semibold text-gray-700 whitespace-nowrap">
+                                                Limpieza Motor
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {tiposVehiculo.map((tipo) => {
+                                            const precioExterior = getPrecio(lista, tipo.value, 'simple_exterior');
                                             const precioBase = getPrecio(lista, tipo.value, 'simple');
                                             const precioCera = getPrecio(lista, tipo.value, 'con_cera');
+                                            const precioPulido = getPrecio(lista, tipo.value, 'pulido');
                                             const precioChasis = getPrecio(lista, tipo.value, 'limpieza_chasis');
-                                            const total = precioBase + precioCera;
+                                            const precioMotor = getPrecio(lista, tipo.value, 'limpieza_motor');
 
                                             return (
-                                                <tr key={tipo.value} className="border-b border-gray-100">
-                                                    <td className="py-3 px-2 text-sm font-medium text-gray-900">
+                                                <tr key={tipo.value} className="border-b border-gray-100 hover:bg-gray-50">
+                                                    <td className="py-3 px-2 font-medium text-gray-900 sticky left-0 bg-white">
                                                         {tipo.label}
+                                                    </td>
+                                                    <td className="py-3 px-2 text-right">
+                                                        {listaEditando === lista.id ? (
+                                                            <input
+                                                                type="number"
+                                                                value={precioExterior}
+                                                                onChange={(e) => setPrecio(tipo.value, 'simple_exterior', parseFloat(e.target.value) || 0)}
+                                                                className="w-24 px-2 py-1 border border-gray-300 rounded text-right text-gray-900 text-sm"
+                                                                step="1000"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-gray-900">${precioExterior.toLocaleString('es-AR')}</span>
+                                                        )}
                                                     </td>
                                                     <td className="py-3 px-2 text-right">
                                                         {listaEditando === lista.id ? (
@@ -364,13 +389,11 @@ export default function ListasPrecios() {
                                                                 type="number"
                                                                 value={precioBase}
                                                                 onChange={(e) => setPrecio(tipo.value, 'simple', parseFloat(e.target.value) || 0)}
-                                                                className="w-32 px-2 py-1 border border-gray-300 rounded text-right text-gray-900"
+                                                                className="w-24 px-2 py-1 border border-gray-300 rounded text-right text-gray-900 text-sm"
                                                                 step="1000"
                                                             />
                                                         ) : (
-                                                            <span className="text-sm font-semibold text-gray-900">
-                                                                ${precioBase.toLocaleString('es-AR')}
-                                                            </span>
+                                                            <span className="font-semibold text-gray-900">${precioBase.toLocaleString('es-AR')}</span>
                                                         )}
                                                     </td>
                                                     <td className="py-3 px-2 text-right">
@@ -379,12 +402,12 @@ export default function ListasPrecios() {
                                                                 type="number"
                                                                 value={precioCera}
                                                                 onChange={(e) => setPrecio(tipo.value, 'con_cera', parseFloat(e.target.value) || 0)}
-                                                                className="w-32 px-2 py-1 border border-gray-300 rounded text-right text-gray-900"
+                                                                className="w-24 px-2 py-1 border border-gray-300 rounded text-right text-gray-900 text-sm"
                                                                 step="1000"
                                                                 disabled={tipo.value === 'moto'}
                                                             />
                                                         ) : (
-                                                            <span className="text-sm text-gray-700">
+                                                            <span className="text-gray-700">
                                                                 {tipo.value === 'moto' ? '-' : `$${precioCera.toLocaleString('es-AR')}`}
                                                             </span>
                                                         )}
@@ -393,22 +416,43 @@ export default function ListasPrecios() {
                                                         {listaEditando === lista.id ? (
                                                             <input
                                                                 type="number"
+                                                                value={precioPulido}
+                                                                onChange={(e) => setPrecio(tipo.value, 'pulido', parseFloat(e.target.value) || 0)}
+                                                                className="w-24 px-2 py-1 border border-gray-300 rounded text-right text-gray-900 text-sm"
+                                                                step="1000"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-gray-700">${precioPulido.toLocaleString('es-AR')}</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3 px-2 text-right">
+                                                        {listaEditando === lista.id ? (
+                                                            <input
+                                                                type="number"
                                                                 value={precioChasis}
                                                                 onChange={(e) => setPrecio(tipo.value, 'limpieza_chasis', parseFloat(e.target.value) || 0)}
-                                                                className="w-32 px-2 py-1 border border-gray-300 rounded text-right text-gray-900"
+                                                                className="w-24 px-2 py-1 border border-gray-300 rounded text-right text-gray-900 text-sm"
                                                                 step="1000"
                                                                 disabled={tipo.value === 'moto'}
                                                             />
                                                         ) : (
-                                                            <span className="text-sm text-gray-700">
+                                                            <span className="text-gray-700">
                                                                 {tipo.value === 'moto' ? '-' : `$${precioChasis.toLocaleString('es-AR')}`}
                                                             </span>
                                                         )}
                                                     </td>
                                                     <td className="py-3 px-2 text-right">
-                                                        <span className="text-sm font-bold text-blue-600">
-                                                            {tipo.value === 'moto' ? '-' : `$${total.toLocaleString('es-AR')}`}
-                                                        </span>
+                                                        {listaEditando === lista.id ? (
+                                                            <input
+                                                                type="number"
+                                                                value={precioMotor}
+                                                                onChange={(e) => setPrecio(tipo.value, 'limpieza_motor', parseFloat(e.target.value) || 0)}
+                                                                className="w-24 px-2 py-1 border border-gray-300 rounded text-right text-gray-900 text-sm"
+                                                                step="1000"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-gray-700">${precioMotor.toLocaleString('es-AR')}</span>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             );
@@ -428,7 +472,7 @@ export default function ListasPrecios() {
                                 <TrendingUp className="text-orange-500" size={28} />
                                 Aplicar Aumento
                             </h3>
-                            
+
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">

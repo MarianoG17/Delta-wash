@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Calendar, DollarSign, Clock, Wallet } from 'lucide-react';
+import { getAuthUser, getLoginUrl } from '@/lib/auth-utils';
 
 interface ReporteDia {
     fecha: string;
@@ -91,14 +92,13 @@ export default function Reportes() {
     useEffect(() => {
         setMounted(true);
         if (typeof window !== 'undefined') {
-            const session = localStorage.getItem('lavadero_user');
-            if (!session) {
-                router.push('/login');
+            const user = getAuthUser();
+            if (!user) {
+                router.push(getLoginUrl());
             } else {
-                const data = JSON.parse(session);
-                setUserRole(data.rol || 'operador');
+                setUserRole(user.rol);
 
-                if (data.rol !== 'admin') {
+                if (user.rol !== 'admin') {
                     alert('No tienes permisos para acceder a esta página');
                     router.push('/');
                 } else {

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Car, LogOut, History, Plus, Send, Users, Wallet, Ban, DollarSign, TrendingUp } from 'lucide-react';
+import { getAuthUser, clearAuth, getLoginUrl } from '@/lib/auth-utils';
 
 interface Registro {
     id: number;
@@ -29,6 +30,7 @@ export default function Home() {
     const [userId, setUserId] = useState<number | null>(null);
     const [userRole, setUserRole] = useState<string>('operador');
     const [mounted, setMounted] = useState(false);
+    const [preciosDinamicos, setPreciosDinamicos] = useState<any>(null);
 
     // Form states
     const [marca, setMarca] = useState('');
@@ -60,18 +62,32 @@ export default function Home() {
     useEffect(() => {
         setMounted(true);
         if (typeof window !== 'undefined') {
-            const session = localStorage.getItem('lavadero_user');
-            if (!session) {
-                router.push('/login');
+            const user = getAuthUser();
+            if (!user) {
+                router.push(getLoginUrl());
             } else {
-                const data = JSON.parse(session);
-                setUsername(data.nombre || data.username);
-                setUserId(data.id);
-                setUserRole(data.rol || 'operador');
+                console.log(`[App] Usuario ${user.isSaas ? 'SaaS' : 'DeltaWash legacy'} detectado`);
+                setUsername(user.nombre);
+                setUserId(user.id);
+                setUserRole(user.rol);
+                cargarPreciosDinamicos();
                 cargarRegistrosEnProceso();
             }
         }
     }, [router]);
+
+    const cargarPreciosDinamicos = async () => {
+        try {
+            const res = await fetch('/api/listas-precios/obtener-precios');
+            const data = await res.json();
+            if (data.success) {
+                setPreciosDinamicos(data.precios);
+            }
+        } catch (error) {
+            console.error('Error cargando precios:', error);
+            // Si falla, quedará null y usará los precios hardcodeados como fallback
+        }
+    };
 
     const cargarRegistrosEnProceso = async () => {
         try {
@@ -118,41 +134,31 @@ export default function Home() {
 
     // Función para calcular el precio según tipo de vehículo y lavado
     const calcularPrecio = (tipoVeh: string, tiposLav: string[]) => {
-        // Precios base por tipo de vehículo (lavado simple)
-        const preciosBase: { [key: string]: number } = {
-            'auto': 22000,
-            'mono': 30000,
-            'camioneta': 35000,
-            'camioneta_xl': 38000,
-            'moto': 15000
+        // Precios fallback por servicio y vehículo
+        const preciosFallback: { [servicio: string]: { [vehiculo: string]: number } } = {
+            'simple_exterior': { 'auto': 15000, 'mono': 20000, 'camioneta': 25000, 'camioneta_xl': 28000, 'moto': 10000 },
+            'simple': { 'auto': 22000, 'mono': 30000, 'camioneta': 35000, 'camioneta_xl': 38000, 'moto': 15000 },
+            'con_cera': { 'auto': 2000, 'mono': 2000, 'camioneta': 5000, 'camioneta_xl': 4000, 'moto': 0 },
+            'pulido': { 'auto': 35000, 'mono': 45000, 'camioneta': 50000, 'camioneta_xl': 55000, 'moto': 0 },
+            'limpieza_chasis': { 'auto': 20000, 'mono': 30000, 'camioneta': 35000, 'camioneta_xl': 40000, 'moto': 0 },
+            'limpieza_motor': { 'auto': 15000, 'mono': 20000, 'camioneta': 25000, 'camioneta_xl': 30000, 'moto': 10000 }
         };
 
-        // Incremento por "con_cera" según tipo de vehículo
-        const incrementoCera: { [key: string]: number } = {
-            'auto': 2000,
-            'mono': 2000,
-            'camioneta': 5000,
-            'camioneta_xl': 4000,
-            'moto': 0  // Moto no tiene opción de cera
-        };
+        let total = 0;
 
-        // Precio por "limpieza_chasis" según tipo de vehículo
-        const precioChasis: { [key: string]: number } = {
-            'auto': 20000,
-            'mono': 30000,
-            'camioneta': 35000,
-            'camioneta_xl': 40000,
-            'moto': 0  // Moto no tiene limpieza de chasis
-        };
+        // Calcular precio por cada servicio seleccionado
+        tiposLav.forEach(tipo => {
+            // Intentar primero desde precios dinámicos de la BD
+            if (preciosDinamicos && preciosDinamicos[tipoVeh] && preciosDinamicos[tipoVeh][tipo]) {
+                total += preciosDinamicos[tipoVeh][tipo];
+            }
+            // Si no existe en BD, usar fallback
+            else if (preciosFallback[tipo] && preciosFallback[tipo][tipoVeh] !== undefined) {
+                total += preciosFallback[tipo][tipoVeh];
+            }
+        });
 
-        const tieneConCera = tiposLav.includes('con_cera');
-        const tieneLimpiezaChasis = tiposLav.includes('limpieza_chasis');
-        const precioBase = preciosBase[tipoVeh] || 0;
-        const incremento = tieneConCera ? (incrementoCera[tipoVeh] || 0) : 0;
-        const incrementoChasis = tieneLimpiezaChasis ? (precioChasis[tipoVeh] || 0) : 0;
-        const precioFinal = precioBase + incremento + incrementoChasis;
-
-        return precioFinal;
+        return total;
     };
 
     // Recalcular precio cuando cambia el tipo de vehículo, tipos de limpieza o extras
@@ -443,10 +449,8 @@ export default function Home() {
     };
 
     const handleLogout = () => {
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('lavadero_user');
-        }
-        router.push('/login');
+        clearAuth();
+        router.push(getLoginUrl());
     };
 
     if (!mounted) {
@@ -496,6 +500,13 @@ export default function Home() {
                             >
                                 <DollarSign size={16} />
                                 <span>Precios</span>
+                            </Link>
+                            <Link
+                                href="/usuarios"
+                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
+                            >
+                                <Users size={16} />
+                                <span>Usuarios</span>
                             </Link>
                             <Link
                                 href="/clientes"

@@ -16,22 +16,24 @@ export async function GET(request: Request) {
 
         // Si se proporciona celular, buscar la lista asignada al cliente
         if (celular && !listaId) {
-            const cuenta = await db`
-                SELECT lista_precio_id FROM cuentas_corrientes 
+            const cuentaResult = await db`
+                SELECT lista_precio_id FROM cuentas_corrientes
                 WHERE celular = ${celular}
             `;
-            
-            if (cuenta.rows.length > 0 && cuenta.rows[0].lista_precio_id) {
-                lista_precio_id = cuenta.rows[0].lista_precio_id;
+            const cuenta = Array.isArray(cuentaResult) ? cuentaResult : cuentaResult.rows || [];
+
+            if (cuenta.length > 0 && cuenta[0].lista_precio_id) {
+                lista_precio_id = cuenta[0].lista_precio_id;
             }
         }
 
         // Si no se encontró lista, usar la por defecto
         if (!lista_precio_id) {
-            const listaDefault = await db`
+            const listaDefaultResult = await db`
                 SELECT id FROM listas_precios WHERE es_default = true LIMIT 1
             `;
-            lista_precio_id = listaDefault.rows[0]?.id;
+            const listaDefault = Array.isArray(listaDefaultResult) ? listaDefaultResult : listaDefaultResult.rows || [];
+            lista_precio_id = listaDefault[0]?.id;
         }
 
         if (!lista_precio_id) {
@@ -42,14 +44,15 @@ export async function GET(request: Request) {
         }
 
         // Obtener precios de la lista
-        const precios = await db`
-            SELECT * FROM precios 
+        const preciosResult = await db`
+            SELECT * FROM precios
             WHERE lista_id = ${lista_precio_id}
         `;
+        const precios = Array.isArray(preciosResult) ? preciosResult : preciosResult.rows || [];
 
         // Convertir a formato más fácil de usar
         const preciosMap: any = {};
-        precios.rows.forEach((precio: any) => {
+        precios.forEach((precio: any) => {
             if (!preciosMap[precio.tipo_vehiculo]) {
                 preciosMap[precio.tipo_vehiculo] = {};
             }

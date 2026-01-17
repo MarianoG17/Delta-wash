@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Wallet, ArrowLeft, Plus, DollarSign, FileText } from 'lucide-react';
+import { getAuthUser, getLoginUrl } from '@/lib/auth-utils';
 
 interface CuentaCorriente {
     id: number;
@@ -39,15 +40,14 @@ export default function CuentasCorrientesPage() {
     useEffect(() => {
         setMounted(true);
         if (typeof window !== 'undefined') {
-            const session = localStorage.getItem('lavadero_user');
-            if (!session) {
-                router.push('/login');
+            const user = getAuthUser();
+            if (!user) {
+                router.push(getLoginUrl());
             } else {
-                const data = JSON.parse(session);
-                setUserRole(data.rol || 'operador');
-                setUserId(data.id);
-                
-                if (data.rol !== 'admin') {
+                setUserRole(user.rol);
+                setUserId(user.id);
+
+                if (user.rol !== 'admin') {
                     router.push('/');
                 } else {
                     cargarCuentas();
@@ -192,13 +192,13 @@ export default function CuentasCorrientesPage() {
                                         onChange={async (e) => {
                                             const value = e.target.value;
                                             setCelular(value);
-                                            
+
                                             // Buscar si ya existe una cuenta con este celular
                                             if (value.length >= 8) {
                                                 try {
                                                     const res = await fetch(`/api/cuentas-corrientes?celular=${value}`);
                                                     const data = await res.json();
-                                                    
+
                                                     if (data.success && data.found) {
                                                         setMessage('⚠️ Ya existe una cuenta con este celular. Puedes cargarle saldo desde la lista.');
                                                         setNombreCliente(data.cuenta.nombre_cliente);

@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         // Convertir fechaHasta a final del día para incluir todo el día completo
         const fechaHastaFin = `${fechaHasta} 23:59:59`;
 
-        const registros = await db`
+        const result = await db`
             SELECT
                 fecha_entregado,
                 precio
@@ -36,10 +36,13 @@ export async function GET(request: Request) {
             ORDER BY fecha_entregado DESC
         `;
 
+        // Manejar diferencia entre pg (rows) y neon (array directo)
+        const registros = Array.isArray(result) ? result : result.rows || [];
+
         // Agrupar en JavaScript por fecha (mismo formato que el historial)
         const reportePorDia: { [key: string]: { cantidad: number; facturacion: number } } = {};
 
-        registros.rows.forEach((registro) => {
+        registros.forEach((registro: any) => {
             // Usar el mismo formato de fecha que el historial
             const fecha = new Date(registro.fecha_entregado);
             const fechaStr = fecha.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -75,7 +78,7 @@ export async function GET(request: Request) {
             reporte: reporte,
             totales: totales,
             debug: {
-                total_registros: registros.rows.length,
+                total_registros: registros.length,
                 fecha_desde: fechaDesde,
                 fecha_hasta: fechaHasta
             }

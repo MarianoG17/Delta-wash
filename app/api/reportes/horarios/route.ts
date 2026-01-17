@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         // Convertir fechaHasta a final del día para incluir todo el día completo
         const fechaHastaFin = `${fechaHasta} 23:59:59`;
 
-        const registros = await db`
+        const result = await db`
             SELECT
                 fecha_ingreso,
                 fecha_entregado
@@ -35,6 +35,9 @@ export async function GET(request: Request) {
               AND fecha_entregado <= ${fechaHastaFin}
               AND (anulado IS NULL OR anulado = FALSE)
         `;
+
+        // Manejar diferencia entre pg (rows) y neon (array directo)
+        const registros = Array.isArray(result) ? result : result.rows || [];
 
         // Estructura: reportePorHora[hora][diaSemana] = cantidad
         // hora: 0-23
@@ -50,7 +53,7 @@ export async function GET(request: Request) {
         }
 
         // Procesar registros en JavaScript
-        registros.rows.forEach((registro) => {
+        registros.forEach((registro: any) => {
             const fechaIngreso = new Date(registro.fecha_ingreso);
 
             // Obtener hora y día en zona horaria Argentina (UTC-3)
@@ -99,7 +102,7 @@ export async function GET(request: Request) {
             success: true,
             reporte: reporte,
             debug: {
-                total_registros: registros.rows.length,
+                total_registros: registros.length,
                 fecha_desde: fechaDesde,
                 fecha_hasta: fechaHasta
             }

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Wallet, TrendingUp, TrendingDown, Calendar, Trash2 } from 'lucide-react';
+import { getAuthUser, getLoginUrl } from '@/lib/auth-utils';
 
 interface Movimiento {
     id: number;
@@ -33,7 +34,7 @@ export default function MovimientosCuentaCorriente() {
     const router = useRouter();
     const params = useParams();
     const cuentaId = params.id as string;
-    
+
     const [cuenta, setCuenta] = useState<Cuenta | null>(null);
     const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
     const [loading, setLoading] = useState(true);
@@ -42,12 +43,11 @@ export default function MovimientosCuentaCorriente() {
     useEffect(() => {
         setMounted(true);
         if (typeof window !== 'undefined') {
-            const session = localStorage.getItem('lavadero_user');
-            if (!session) {
-                router.push('/login');
+            const user = getAuthUser();
+            if (!user) {
+                router.push(getLoginUrl());
             } else {
-                const data = JSON.parse(session);
-                if (data.rol !== 'admin') {
+                if (user.rol !== 'admin') {
                     router.push('/');
                 } else {
                     cargarMovimientos();
@@ -168,11 +168,10 @@ export default function MovimientosCuentaCorriente() {
                                     {movimientos.map((mov) => (
                                         <div
                                             key={mov.id}
-                                            className={`border rounded-lg p-4 ${
-                                                mov.tipo === 'carga' 
-                                                    ? 'border-green-200 bg-green-50' 
+                                            className={`border rounded-lg p-4 ${mov.tipo === 'carga'
+                                                    ? 'border-green-200 bg-green-50'
                                                     : 'border-blue-200 bg-blue-50'
-                                            }`}
+                                                }`}
                                         >
                                             <div className="flex justify-between items-start mb-2">
                                                 <div className="flex-1">
@@ -182,13 +181,12 @@ export default function MovimientosCuentaCorriente() {
                                                         ) : (
                                                             <TrendingDown className="text-blue-600" size={20} />
                                                         )}
-                                                        <span className={`font-bold ${
-                                                            mov.tipo === 'carga' ? 'text-green-700' : 'text-blue-700'
-                                                        }`}>
+                                                        <span className={`font-bold ${mov.tipo === 'carga' ? 'text-green-700' : 'text-blue-700'
+                                                            }`}>
                                                             {mov.tipo === 'carga' ? 'CARGA DE CRÉDITO' : 'LAVADO'}
                                                         </span>
                                                     </div>
-                                                    
+
                                                     {mov.tipo === 'descuento' && mov.patente && (
                                                         <div className="text-sm text-gray-700 ml-7">
                                                             <p className="font-semibold">
@@ -199,13 +197,13 @@ export default function MovimientosCuentaCorriente() {
                                                             </p>
                                                         </div>
                                                     )}
-                                                    
+
                                                     {mov.descripcion && (
                                                         <p className="text-sm text-gray-600 ml-7">
                                                             {mov.descripcion}
                                                         </p>
                                                     )}
-                                                    
+
                                                     {mov.usuario_nombre && (
                                                         <p className="text-xs text-gray-500 ml-7 mt-1">
                                                             Por: {mov.usuario_nombre}
@@ -215,9 +213,8 @@ export default function MovimientosCuentaCorriente() {
 
                                                 <div className="flex items-start gap-3">
                                                     <div className="text-right">
-                                                        <p className={`text-2xl font-bold ${
-                                                            mov.tipo === 'carga' ? 'text-green-600' : 'text-blue-600'
-                                                        }`}>
+                                                        <p className={`text-2xl font-bold ${mov.tipo === 'carga' ? 'text-green-600' : 'text-blue-600'
+                                                            }`}>
                                                             {mov.tipo === 'carga' ? '+' : '-'}${parseFloat(mov.monto.toString()).toLocaleString('es-AR')}
                                                         </p>
                                                         <div className="text-xs text-gray-600 mt-1">
@@ -225,7 +222,7 @@ export default function MovimientosCuentaCorriente() {
                                                             <p className="font-semibold">Nuevo: ${parseFloat(mov.saldo_nuevo.toString()).toLocaleString('es-AR')}</p>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     <button
                                                         onClick={() => eliminarMovimiento(mov.id)}
                                                         className="p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"

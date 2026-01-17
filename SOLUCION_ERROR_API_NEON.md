@@ -187,8 +187,8 @@ Ahora cuando un usuario se registra desde [`/registro`](app/registro/page.tsx):
 Asegurate de tener configuradas en `.env.local`:
 
 ```bash
-NEON_API_KEY="napi_8knk7pkuq6qe7p7hmhdhnpg6yywsa16l4p8epj9xk8ppdfzhepyz88yk00t882d8"
-NEON_PROJECT_ID="hidden-queen-29389003"
+NEON_API_KEY="napi_TU_API_KEY_DE_NEON"
+NEON_PROJECT_ID="tu-project-id"
 CENTRAL_DB_URL="postgresql://neondb_owner:xxx@ep-xxx-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require"
 ```
 

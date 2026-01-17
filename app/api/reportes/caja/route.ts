@@ -52,8 +52,8 @@ export async function GET(request: NextRequest) {
         `;
 
         // Calcular totales generales
-        const totalesResult = await db`
-            SELECT 
+        const totalesResultQuery = await db`
+            SELECT
                 SUM(CASE WHEN metodo_pago = 'efectivo' THEN precio ELSE 0 END) as total_efectivo,
                 COUNT(CASE WHEN metodo_pago = 'efectivo' THEN 1 END) as total_cantidad_efectivo,
                 
@@ -74,10 +74,14 @@ export async function GET(request: NextRequest) {
                 AND DATE(fecha_entregado) <= ${fechaHasta}
         `;
 
+        // Manejar diferencia entre pg (rows) y neon (array directo)
+        const reporte = Array.isArray(result) ? result : result.rows || [];
+        const totalesResult = Array.isArray(totalesResultQuery) ? totalesResultQuery : totalesResultQuery.rows || [];
+
         return NextResponse.json({
             success: true,
-            reporte: result.rows,
-            totales: totalesResult.rows[0]
+            reporte: reporte,
+            totales: totalesResult[0]
         });
 
     } catch (error) {
