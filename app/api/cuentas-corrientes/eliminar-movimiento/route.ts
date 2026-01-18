@@ -23,14 +23,16 @@ export async function POST(request: Request) {
             WHERE id = ${movimiento_id}
         `;
 
-        if (movimientoResult.rows.length === 0) {
+        const movimientoData = Array.isArray(movimientoResult) ? movimientoResult : movimientoResult.rows || [];
+
+        if (movimientoData.length === 0) {
             return NextResponse.json(
                 { success: false, message: 'Movimiento no encontrado' },
                 { status: 404 }
             );
         }
 
-        const movimiento = movimientoResult.rows[0];
+        const movimiento = movimientoData[0];
 
         // Revertir el saldo de la cuenta corriente
         // Si era una carga, restamos el monto

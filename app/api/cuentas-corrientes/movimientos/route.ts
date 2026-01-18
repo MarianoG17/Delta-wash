@@ -25,14 +25,16 @@ export async function GET(request: Request) {
             WHERE id = ${cuentaId}
         `;
 
-        if (cuentaResult.rows.length === 0) {
+        const cuentaData = Array.isArray(cuentaResult) ? cuentaResult : cuentaResult.rows || [];
+
+        if (cuentaData.length === 0) {
             return NextResponse.json(
                 { success: false, message: 'Cuenta corriente no encontrada' },
                 { status: 404 }
             );
         }
 
-        const cuenta = cuentaResult.rows[0];
+        const cuenta = cuentaData[0];
 
         // Intentar obtener movimientos (puede fallar si la tabla no existe)
         let movimientos = [];
@@ -57,7 +59,7 @@ export async function GET(request: Request) {
                 WHERE mc.cuenta_id = ${cuentaId}
                 ORDER BY mc.id DESC
             `;
-            movimientos = movimientosResult.rows;
+            movimientos = Array.isArray(movimientosResult) ? movimientosResult : movimientosResult.rows || [];
         } catch (movError: any) {
             console.error('Error obteniendo movimientos:', movError);
             // Si la tabla no existe, devolver array vacío con mensaje

@@ -29,14 +29,16 @@ export async function POST(request: Request) {
             SELECT * FROM cuentas_corrientes WHERE id = ${cuenta_id}
         `;
 
-        if (cuentaResult.rows.length === 0) {
+        const cuentaData = Array.isArray(cuentaResult) ? cuentaResult : cuentaResult.rows || [];
+
+        if (cuentaData.length === 0) {
             return NextResponse.json(
                 { success: false, message: 'Cuenta no encontrada' },
                 { status: 404 }
             );
         }
 
-        const cuenta = cuentaResult.rows[0];
+        const cuenta = cuentaData[0];
         const saldoAnterior = parseFloat(cuenta.saldo_actual);
         const saldoNuevo = saldoAnterior + parseFloat(monto);
 
