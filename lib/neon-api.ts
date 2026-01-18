@@ -162,64 +162,86 @@ export async function initializeBranchSchema(
     
     console.log('[Neon API] 🧹 Limpiando datos heredados del branch parent...');
     
+    // Primero verificar cuántos registros hay ANTES de limpiar
+    try {
+      const countResult = await sql`SELECT COUNT(*) as count FROM registros`;
+      const count = countResult[0]?.count || 0;
+      console.log(`[Neon API] 📊 Registros ANTES de limpiar: ${count}`);
+    } catch (e) {
+      console.log('[Neon API] ℹ️  No se pudo contar registros (tabla puede no existir)');
+    }
+    
     try {
       // Borrar en orden inverso a las foreign keys
-      await sql`DELETE FROM movimientos_cc`;
-      console.log('[Neon API]   ✓ movimientos_cc limpiado');
-    } catch (e) {
-      console.log('[Neon API]   ℹ️  Tabla movimientos_cc no existe aún');
+      const result = await sql`DELETE FROM movimientos_cc`;
+      console.log(`[Neon API]   ✓ movimientos_cc limpiado (${result.length || 0} filas)`);
+    } catch (e: any) {
+      console.log(`[Neon API]   ⚠️  Tabla movimientos_cc: ${e.message}`);
     }
     
     try {
-      await sql`DELETE FROM cuentas_corrientes`;
-      console.log('[Neon API]   ✓ cuentas_corrientes limpiado');
-    } catch (e) {
-      console.log('[Neon API]   ℹ️  Tabla cuentas_corrientes no existe aún');
+      const result = await sql`DELETE FROM cuentas_corrientes`;
+      console.log(`[Neon API]   ✓ cuentas_corrientes limpiado (${result.length || 0} filas)`);
+    } catch (e: any) {
+      console.log(`[Neon API]   ⚠️  Tabla cuentas_corrientes: ${e.message}`);
     }
     
     try {
-      await sql`DELETE FROM precios`;
-      console.log('[Neon API]   ✓ precios limpiado');
-    } catch (e) {
-      console.log('[Neon API]   ℹ️  Tabla precios no existe aún');
+      const result = await sql`DELETE FROM precios`;
+      console.log(`[Neon API]   ✓ precios limpiado (${result.length || 0} filas)`);
+    } catch (e: any) {
+      console.log(`[Neon API]   ⚠️  Tabla precios: ${e.message}`);
     }
     
     try {
-      await sql`DELETE FROM listas_precios`;
-      console.log('[Neon API]   ✓ listas_precios limpiado');
-    } catch (e) {
-      console.log('[Neon API]   ℹ️  Tabla listas_precios no existe aún');
+      const result = await sql`DELETE FROM listas_precios`;
+      console.log(`[Neon API]   ✓ listas_precios limpiado (${result.length || 0} filas)`);
+    } catch (e: any) {
+      console.log(`[Neon API]   ⚠️  Tabla listas_precios: ${e.message}`);
     }
     
     try {
-      await sql`DELETE FROM registros`;
-      console.log('[Neon API]   ✓ registros limpiado');
-    } catch (e) {
-      console.log('[Neon API]   ℹ️  Tabla registros no existe aún');
+      const result = await sql`DELETE FROM registros`;
+      console.log(`[Neon API]   ✓ registros limpiado (${result.length || 0} filas)`);
+    } catch (e: any) {
+      console.error(`[Neon API]   ❌ ERROR CRÍTICO al limpiar registros: ${e.message}`);
+      console.error('[Neon API]   Stack:', e.stack);
     }
     
     try {
-      await sql`DELETE FROM precios_servicios`;
-      console.log('[Neon API]   ✓ precios_servicios limpiado');
-    } catch (e) {
-      console.log('[Neon API]   ℹ️  Tabla precios_servicios no existe aún');
+      const result = await sql`DELETE FROM precios_servicios`;
+      console.log(`[Neon API]   ✓ precios_servicios limpiado (${result.length || 0} filas)`);
+    } catch (e: any) {
+      console.log(`[Neon API]   ⚠️  Tabla precios_servicios: ${e.message}`);
     }
     
     try {
-      await sql`DELETE FROM clientes`;
-      console.log('[Neon API]   ✓ clientes limpiado');
-    } catch (e) {
-      console.log('[Neon API]   ℹ️  Tabla clientes no existe aún');
+      const result = await sql`DELETE FROM clientes`;
+      console.log(`[Neon API]   ✓ clientes limpiado (${result.length || 0} filas)`);
+    } catch (e: any) {
+      console.log(`[Neon API]   ⚠️  Tabla clientes: ${e.message}`);
     }
     
     try {
-      await sql`DELETE FROM usuarios WHERE email != 'admin@inicial.com'`;
-      console.log('[Neon API]   ✓ usuarios limpiado (excepto admin inicial si existe)');
-    } catch (e) {
-      console.log('[Neon API]   ℹ️  Tabla usuarios no existe aún');
+      const result = await sql`DELETE FROM usuarios WHERE email != 'admin@inicial.com'`;
+      console.log(`[Neon API]   ✓ usuarios limpiado (${result.length || 0} filas)`);
+    } catch (e: any) {
+      console.log(`[Neon API]   ⚠️  Tabla usuarios: ${e.message}`);
     }
     
-    console.log('[Neon API] ✅ Datos heredados limpiados exitosamente');
+    // Verificar cuántos registros quedan DESPUÉS de limpiar
+    try {
+      const countResult = await sql`SELECT COUNT(*) as count FROM registros`;
+      const count = countResult[0]?.count || 0;
+      console.log(`[Neon API] 📊 Registros DESPUÉS de limpiar: ${count}`);
+      if (count > 0) {
+        console.error(`[Neon API] ❌❌❌ CRÍTICO: Quedan ${count} registros después de limpiar!`);
+      }
+    } catch (e) {
+      console.log('[Neon API] ℹ️  No se pudo contar registros después');
+    }
+    
+    console.log('[Neon API] ✅ Proceso de limpieza completado');
 
     // ============================================
     // CREAR SCHEMA (Si no existe)
