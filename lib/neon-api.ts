@@ -154,99 +154,10 @@ export async function initializeBranchSchema(
 
   try {
     // ============================================
-    // LIMPIAR DATOS HEREDADOS DEL BRANCH PARENT
+    // CREAR SCHEMA PRIMERO
     // ============================================
-    // Cuando se crea un branch sin especificar parent_id,
-    // Neon lo crea como copia del branch main.
-    // Debemos limpiar todos los datos antes de continuar.
+    console.log('[Neon API] 📋 Creando estructura de tablas...');
     
-    console.log('[Neon API] 🧹 Limpiando datos heredados del branch parent...');
-    
-    // Primero verificar cuántos registros hay ANTES de limpiar
-    try {
-      const countResult = await sql`SELECT COUNT(*) as count FROM registros`;
-      const count = countResult[0]?.count || 0;
-      console.log(`[Neon API] 📊 Registros ANTES de limpiar: ${count}`);
-    } catch (e) {
-      console.log('[Neon API] ℹ️  No se pudo contar registros (tabla puede no existir)');
-    }
-    
-    try {
-      // Borrar en orden inverso a las foreign keys
-      const result = await sql`DELETE FROM movimientos_cc`;
-      console.log(`[Neon API]   ✓ movimientos_cc limpiado (${result.length || 0} filas)`);
-    } catch (e: any) {
-      console.log(`[Neon API]   ⚠️  Tabla movimientos_cc: ${e.message}`);
-    }
-    
-    try {
-      const result = await sql`DELETE FROM cuentas_corrientes`;
-      console.log(`[Neon API]   ✓ cuentas_corrientes limpiado (${result.length || 0} filas)`);
-    } catch (e: any) {
-      console.log(`[Neon API]   ⚠️  Tabla cuentas_corrientes: ${e.message}`);
-    }
-    
-    try {
-      const result = await sql`DELETE FROM precios`;
-      console.log(`[Neon API]   ✓ precios limpiado (${result.length || 0} filas)`);
-    } catch (e: any) {
-      console.log(`[Neon API]   ⚠️  Tabla precios: ${e.message}`);
-    }
-    
-    try {
-      const result = await sql`DELETE FROM listas_precios`;
-      console.log(`[Neon API]   ✓ listas_precios limpiado (${result.length || 0} filas)`);
-    } catch (e: any) {
-      console.log(`[Neon API]   ⚠️  Tabla listas_precios: ${e.message}`);
-    }
-    
-    try {
-      const result = await sql`DELETE FROM registros`;
-      console.log(`[Neon API]   ✓ registros limpiado (${result.length || 0} filas)`);
-    } catch (e: any) {
-      console.error(`[Neon API]   ❌ ERROR CRÍTICO al limpiar registros: ${e.message}`);
-      console.error('[Neon API]   Stack:', e.stack);
-    }
-    
-    try {
-      const result = await sql`DELETE FROM precios_servicios`;
-      console.log(`[Neon API]   ✓ precios_servicios limpiado (${result.length || 0} filas)`);
-    } catch (e: any) {
-      console.log(`[Neon API]   ⚠️  Tabla precios_servicios: ${e.message}`);
-    }
-    
-    try {
-      const result = await sql`DELETE FROM clientes`;
-      console.log(`[Neon API]   ✓ clientes limpiado (${result.length || 0} filas)`);
-    } catch (e: any) {
-      console.log(`[Neon API]   ⚠️  Tabla clientes: ${e.message}`);
-    }
-    
-    try {
-      const result = await sql`DELETE FROM usuarios WHERE email != 'admin@inicial.com'`;
-      console.log(`[Neon API]   ✓ usuarios limpiado (${result.length || 0} filas)`);
-    } catch (e: any) {
-      console.log(`[Neon API]   ⚠️  Tabla usuarios: ${e.message}`);
-    }
-    
-    // Verificar cuántos registros quedan DESPUÉS de limpiar
-    try {
-      const countResult = await sql`SELECT COUNT(*) as count FROM registros`;
-      const count = countResult[0]?.count || 0;
-      console.log(`[Neon API] 📊 Registros DESPUÉS de limpiar: ${count}`);
-      if (count > 0) {
-        console.error(`[Neon API] ❌❌❌ CRÍTICO: Quedan ${count} registros después de limpiar!`);
-      }
-    } catch (e) {
-      console.log('[Neon API] ℹ️  No se pudo contar registros después');
-    }
-    
-    console.log('[Neon API] ✅ Proceso de limpieza completado');
-
-    // ============================================
-    // CREAR SCHEMA (Si no existe)
-    // ============================================
-    // Ejecutar cada comando SQL por separado para evitar el error de múltiples comandos
     console.log('[Neon API] Creando tabla usuarios...');
     await sql`
       CREATE TABLE IF NOT EXISTS usuarios (
@@ -388,6 +299,46 @@ export async function initializeBranchSchema(
     await sql`CREATE INDEX IF NOT EXISTS idx_precios_lista ON precios(lista_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_cuentas_lista_precio ON cuentas_corrientes(lista_precio_id)`;
 
+    console.log('[Neon API] ✅ Tablas creadas exitosamente');
+
+    // ============================================
+    // AHORA SÍ: LIMPIAR DATOS HEREDADOS
+    // ============================================
+    console.log('[Neon API] 🧹 Limpiando datos heredados del branch parent...');
+    
+    // Verificar cuántos registros hay ANTES de limpiar
+    const countBefore = await sql`SELECT COUNT(*) as count FROM registros`;
+    const countBeforeValue = countBefore[0]?.count || 0;
+    console.log(`[Neon API] 📊 Registros ANTES de limpiar: ${countBeforeValue}`);
+    
+    if (countBeforeValue > 0) {
+      // Borrar en orden inverso a las foreign keys
+      await sql`DELETE FROM movimientos_cc`;
+      await sql`DELETE FROM cuentas_corrientes`;
+      await sql`DELETE FROM precios`;
+      await sql`DELETE FROM listas_precios`;
+      await sql`DELETE FROM registros`;
+      await sql`DELETE FROM precios_servicios`;
+      await sql`DELETE FROM clientes`;
+      await sql`DELETE FROM usuarios WHERE email != 'admin@inicial.com'`;
+      
+      // Verificar cuántos quedan
+      const countAfter = await sql`SELECT COUNT(*) as count FROM registros`;
+      const countAfterValue = countAfter[0]?.count || 0;
+      console.log(`[Neon API] 📊 Registros DESPUÉS de limpiar: ${countAfterValue}`);
+      
+      if (countAfterValue > 0) {
+        console.error(`[Neon API] ❌ ERROR: Quedan ${countAfterValue} registros después de limpiar!`);
+      } else {
+        console.log('[Neon API] ✅ Datos heredados limpiados exitosamente');
+      }
+    } else {
+      console.log('[Neon API] ✅ Branch ya estaba vacío (no había datos para limpiar)');
+    }
+
+    // ============================================
+    // INSERTAR DATOS INICIALES
+    // ============================================
     console.log('[Neon API] Creando lista de precios por defecto...');
     await sql`
       INSERT INTO listas_precios (nombre, descripcion, activa, es_default)
@@ -402,7 +353,6 @@ export async function initializeBranchSchema(
 
     if (listaId) {
       // Insertar todos los servicios con precio $0
-      // El administrador deberá configurar sus propios precios desde la interfaz
       const tiposVehiculo = ['auto', 'mono', 'camioneta', 'camioneta_xl', 'moto'];
       const tiposServicio = ['simple_exterior', 'simple', 'con_cera', 'pulido', 'limpieza_chasis', 'limpieza_motor'];
 
@@ -420,9 +370,6 @@ export async function initializeBranchSchema(
     } else {
       console.warn('[Neon API] ⚠️  No se pudo obtener ID de lista por defecto');
     }
-
-    // Mantener la tabla vieja por compatibilidad pero SIN precios predefinidos
-    console.log('[Neon API] Tabla precios_servicios creada (sin precios predefinidos)');
 
     console.log('[Neon API] ✅ Schema inicializado exitosamente');
   } catch (error) {
