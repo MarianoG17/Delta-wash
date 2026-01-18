@@ -44,9 +44,12 @@ export async function GET(request: Request) {
 
         const result = await query;
 
+        // Manejar diferencias entre drivers (pg vs neon)
+        const registros = Array.isArray(result) ? result : result.rows || [];
+
         return NextResponse.json({
             success: true,
-            registros: result.rows,
+            registros: registros,
         });
     } catch (error) {
         console.error('Error obteniendo registros:', error);
@@ -91,14 +94,16 @@ export async function POST(request: Request) {
                 SELECT * FROM cuentas_corrientes WHERE id = ${cuenta_corriente_id}
             `;
 
-            if (cuentaResult.rows.length === 0) {
+            const cuentaData = Array.isArray(cuentaResult) ? cuentaResult : cuentaResult.rows || [];
+
+            if (cuentaData.length === 0) {
                 return NextResponse.json(
                     { success: false, message: 'Cuenta corriente no encontrada' },
                     { status: 404 }
                 );
             }
 
-            const cuenta = cuentaResult.rows[0];
+            const cuenta = cuentaData[0];
             const saldoActual = parseFloat(cuenta.saldo_actual);
             const precioServicio = parseFloat(precio) || 0;
 
@@ -121,7 +126,8 @@ export async function POST(request: Request) {
                 RETURNING *
             `;
 
-            const registroId = result.rows[0].id;
+            const resultData = Array.isArray(result) ? result : result.rows || [];
+            const registroId = resultData[0]?.id;
 
             // Actualizar saldo de cuenta corriente
             await db`
@@ -142,7 +148,7 @@ export async function POST(request: Request) {
 
             return NextResponse.json({
                 success: true,
-                registro: result.rows[0],
+                registro: resultData[0],
                 cuenta_corriente: {
                     saldo_anterior: saldoActual,
                     saldo_nuevo: nuevoSaldo,
@@ -172,9 +178,11 @@ export async function POST(request: Request) {
                 `;
             }
 
+            const normalResultData = Array.isArray(result) ? result : result.rows || [];
+
             return NextResponse.json({
                 success: true,
-                registro: result.rows[0],
+                registro: normalResultData[0],
             });
         }
     } catch (error) {
