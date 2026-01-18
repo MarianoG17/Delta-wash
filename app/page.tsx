@@ -191,6 +191,30 @@ export default function Home() {
         return total;
     };
 
+    // Función para obtener precio individual de UN solo servicio
+    const obtenerPrecioIndividual = (tipoVeh: string, tipoServicio: string): number => {
+        const preciosFallback: { [servicio: string]: { [vehiculo: string]: number } } = {
+            'simple_exterior': { 'auto': 15000, 'mono': 20000, 'camioneta': 25000, 'camioneta_xl': 28000, 'moto': 10000 },
+            'simple': { 'auto': 22000, 'mono': 30000, 'camioneta': 35000, 'camioneta_xl': 38000, 'moto': 15000 },
+            'con_cera': { 'auto': 2000, 'mono': 2000, 'camioneta': 5000, 'camioneta_xl': 4000, 'moto': 0 },
+            'pulido': { 'auto': 35000, 'mono': 45000, 'camioneta': 50000, 'camioneta_xl': 55000, 'moto': 0 },
+            'limpieza_chasis': { 'auto': 20000, 'mono': 30000, 'camioneta': 35000, 'camioneta_xl': 40000, 'moto': 0 },
+            'limpieza_motor': { 'auto': 15000, 'mono': 20000, 'camioneta': 25000, 'camioneta_xl': 30000, 'moto': 10000 }
+        };
+
+        // Precio desde BD
+        if (preciosDinamicos && preciosDinamicos[tipoVeh] && preciosDinamicos[tipoVeh][tipoServicio] !== undefined) {
+            return preciosDinamicos[tipoVeh][tipoServicio];
+        }
+
+        // Fallback
+        if (preciosFallback[tipoServicio] && preciosFallback[tipoServicio][tipoVeh] !== undefined) {
+            return preciosFallback[tipoServicio][tipoVeh];
+        }
+
+        return 0;
+    };
+
     // Recalcular precio cuando cambia el tipo de vehículo, tipos de limpieza o extras
     useEffect(() => {
         const precioBase = calcularPrecio(tipoVehiculo, tiposLimpieza);
@@ -809,48 +833,43 @@ export default function Home() {
 
                             {precio > 0 && (
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <p className="text-xs font-semibold text-blue-900 mb-3">📋 Resumen de Servicios:</p>
                                     <div className="space-y-2 mb-3">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-gray-700">
-                                                {tipoVehiculo === 'auto' && '🚗 Auto'}
-                                                {tipoVehiculo === 'mono' && '🚙 Mono (SUV)'}
-                                                {tipoVehiculo === 'camioneta' && '🚐 Camioneta'}
-                                                {tipoVehiculo === 'camioneta_xl' && '🚐 Camioneta XL'}
-                                                {tipoVehiculo === 'moto' && '🏍️ Moto'}
-                                            </span>
-                                            <span className="font-semibold text-gray-900">
-                                                ${calcularPrecio(tipoVehiculo, tiposLimpieza.filter(t => t !== 'con_cera' && t !== 'limpieza_chasis')).toLocaleString('es-AR')}
-                                            </span>
-                                        </div>
-                                        {tiposLimpieza.includes('con_cera') && tipoVehiculo !== 'moto' && (
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-gray-700">+ Con Cera</span>
-                                                <span className="font-semibold text-gray-900">
-                                                    ${(
-                                                        tipoVehiculo === 'camioneta' ? 5000 :
-                                                            tipoVehiculo === 'camioneta_xl' ? 4000 :
-                                                                2000
-                                                    ).toLocaleString('es-AR')}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {tiposLimpieza.includes('limpieza_chasis') && tipoVehiculo !== 'moto' && (
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-gray-700">+ Limpieza de Chasis</span>
-                                                <span className="font-semibold text-gray-900">
-                                                    ${(
-                                                        tipoVehiculo === 'auto' ? 20000 :
-                                                            tipoVehiculo === 'mono' ? 30000 :
-                                                                tipoVehiculo === 'camioneta' ? 35000 :
-                                                                    tipoVehiculo === 'camioneta_xl' ? 40000 :
-                                                                        0
-                                                    ).toLocaleString('es-AR')}
-                                                </span>
-                                            </div>
-                                        )}
+                                        {/* Mostrar cada servicio seleccionado con su precio individual */}
+                                        {tiposLimpieza.map((tipo) => {
+                                            const precioServicio = obtenerPrecioIndividual(tipoVehiculo, tipo);
+                                            if (precioServicio === 0) return null;
+
+                                            // Nombres legibles para cada servicio
+                                            const nombreServicio = {
+                                                'simple_exterior': 'Simple Exterior (solo por fuera)',
+                                                'simple': 'Simple (completo)',
+                                                'con_cera': 'Con Cera (incremento)',
+                                                'pulido': 'Pulido',
+                                                'limpieza_chasis': 'Limpieza de Chasis',
+                                                'limpieza_motor': 'Limpieza de Motor'
+                                            }[tipo] || tipo;
+
+                                            return (
+                                                <div key={tipo} className="flex justify-between text-sm items-center">
+                                                    <span className="text-gray-700 flex items-center gap-1">
+                                                        <span className="text-blue-500">•</span>
+                                                        {nombreServicio}
+                                                    </span>
+                                                    <span className="font-semibold text-gray-900">
+                                                        ${precioServicio.toLocaleString('es-AR')}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
+
+                                        {/* Extras */}
                                         {extrasValor && parseFloat(extrasValor) > 0 && (
-                                            <div className="flex justify-between text-sm">
-                                                <span className="text-gray-700">+ {extras || 'Extras'}</span>
+                                            <div className="flex justify-between text-sm items-center">
+                                                <span className="text-gray-700 flex items-center gap-1">
+                                                    <span className="text-blue-500">•</span>
+                                                    {extras || 'Extras'}
+                                                </span>
                                                 <span className="font-semibold text-gray-900">
                                                     ${parseFloat(extrasValor).toLocaleString('es-AR')}
                                                 </span>
