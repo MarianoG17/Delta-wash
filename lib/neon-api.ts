@@ -74,11 +74,11 @@ export async function createBranchForEmpresa(
 ): Promise<CreateBranchResponse> {
   validateNeonConfig();
 
-  // TEMPORAL: Hardcoded hasta resolver config de Vercel
-  const TEMPLATE_BRANCH_ID = process.env.NEON_TEMPLATE_BRANCH_ID || 'br-dawn-dream-ahfwrieh';
+  // HARDCODED: Template vacío garantizado (Vercel no lee env vars correctamente)
+  const TEMPLATE_BRANCH_ID = 'br-dawn-dream-ahfwrieh';
   
   console.log(`[Neon API] Creando branch: ${branchName}`);
-  console.log(`[Neon API] Parent: ${TEMPLATE_BRANCH_ID ? 'saas-template (vacío)' : 'main (con datos)'}`);
+  console.log(`[Neon API] 🎯 USANDO TEMPLATE VACÍO HARDCODED`);
   console.log(`[Neon API] Template ID: ${TEMPLATE_BRANCH_ID}`);
 
   const response = await fetch(
