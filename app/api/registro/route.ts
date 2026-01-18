@@ -201,6 +201,53 @@ export async function POST(request: Request) {
       RETURNING id
     `;
 
+    // CRÍTICO: Crear los usuarios en la tabla 'usuarios' del branch dedicado
+    // Esto sincroniza los IDs entre usuarios_sistema (BD Central) y usuarios (Branch)
+    if (branchUrl) {
+      console.log('[Registro] 👤 Creando usuarios en branch dedicado...');
+      try {
+        const { neon } = await import('@neondatabase/serverless');
+        const branchSql = neon(branchUrl);
+
+        // Insertar usuario admin en el branch con el mismo ID
+        await branchSql`
+          INSERT INTO usuarios (id, email, password_hash, nombre, rol, activo)
+          VALUES (
+            ${usuario.id},
+            ${usuario.email},
+            ${passwordHash},
+            ${usuario.nombre},
+            ${usuario.rol},
+            true
+          )
+          ON CONFLICT (id) DO NOTHING
+        `;
+
+        // Insertar usuario operador en el branch con el mismo ID
+        await branchSql`
+          INSERT INTO usuarios (id, email, password_hash, nombre, rol, activo)
+          VALUES (
+            ${operadorResult.rows[0].id},
+            ${'operador@' + finalSlug + '.demo'},
+            ${passwordOperadorHash},
+            'Operador Demo',
+            'operador',
+            true
+          )
+          ON CONFLICT (id) DO NOTHING
+        `;
+
+        // Actualizar secuencia de IDs para evitar conflictos futuros
+        const maxId = Math.max(usuario.id, operadorResult.rows[0].id);
+        await branchSql`SELECT setval('usuarios_id_seq', ${maxId})`;
+
+        console.log(`[Registro] ✅ Usuarios creados en branch (IDs: ${usuario.id}, ${operadorResult.rows[0].id})`);
+      } catch (userError) {
+        console.error('[Registro] ⚠️ Error al crear usuarios en branch:', userError);
+        // No fallar el registro por esto, solo logear
+      }
+    }
+
     // Registrar actividad
     await centralDB.sql`
       INSERT INTO actividad_sistema (
