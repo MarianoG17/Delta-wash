@@ -9,6 +9,7 @@
 
 import { sql } from '@vercel/postgres';
 import { createPool, VercelPool } from '@vercel/postgres';
+import { neon } from '@neondatabase/serverless';
 
 // ============================================
 // TIPO DE CONEXIÓN SQL
@@ -283,40 +284,24 @@ export async function getDBConnection(empresaId?: number): Promise<typeof sql> {
       }
 
       try {
-        // NIVEL 4: Convertir a URL pooled si es necesario
-        console.log(`[DB] 🚀 Creando pool dinámico para empresa "${empresa.slug}"...`);
+        // NIVEL 4: Crear conexión con Neon driver
+        console.log(`[DB] 🚀 Creando conexión Neon para empresa "${empresa.slug}"...`);
         console.log(`[DB] Branch URL (primeros 50 chars): ${empresa.branch_url.substring(0, 50)}...`);
 
-        // Neon requiere URLs pooled para createPool()
-        // Si la URL no tiene "-pooler", la convertimos
-        let pooledUrl = empresa.branch_url;
-        if (!pooledUrl.includes('-pooler')) {
-          // Buscar el endpoint: ep-xxxx.region.aws.neon.tech
-          // Convertir a: ep-xxxx-pooler.region.aws.neon.tech
-          pooledUrl = pooledUrl.replace(
-            /@([^.]+)\.([^.]+)\.aws\.neon\.tech/,
-            '@$1-pooler.$2.aws.neon.tech'
-          );
-          console.log(`[DB] ⚙️ URL convertida a pooled connection`);
-          console.log(`[DB] Pooled URL (primeros 50 chars): ${pooledUrl.substring(0, 50)}...`);
-        }
+        // Usar el driver nativo de Neon que soporta conexiones dinámicas
+        const neonSql = neon(empresa.branch_url);
 
-        const pool = createPool({
-          connectionString: pooledUrl
-        });
-
-        console.log(`[DB] ✅ Pool creado exitosamente para empresa ${empresaId}`);
+        console.log(`[DB] ✅ Conexión Neon creada exitosamente para empresa ${empresaId}`);
         console.log(`[DB] 🎯 Usando branch dedicado: ${empresa.slug}`);
         console.log('========================================');
 
-        // Retornar la función sql del pool
-        // TypeScript: usamos 'as any' para compatibilidad de tipos
-        return pool.sql as any;
+        // Retornar la función compatible con el interface de Vercel Postgres
+        return neonSql as any;
 
-      } catch (poolError) {
-        console.error(`[DB] ❌ ERROR al crear pool para empresa ${empresaId}:`);
-        console.error(`[DB] Tipo de error: ${poolError instanceof Error ? poolError.constructor.name : typeof poolError}`);
-        console.error(`[DB] Mensaje: ${poolError instanceof Error ? poolError.message : JSON.stringify(poolError)}`);
+      } catch (neonError) {
+        console.error(`[DB] ❌ ERROR al crear conexión Neon para empresa ${empresaId}:`);
+        console.error(`[DB] Tipo de error: ${neonError instanceof Error ? neonError.constructor.name : typeof neonError}`);
+        console.error(`[DB] Mensaje: ${neonError instanceof Error ? neonError.message : JSON.stringify(neonError)}`);
         console.error(`[DB] → Fallback a POSTGRES_URL (DeltaWash)`);
         console.log('========================================');
         return sql; // Fallback a DeltaWash
