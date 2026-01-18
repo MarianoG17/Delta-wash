@@ -172,7 +172,10 @@ export default function ListasPrecios() {
 
             // Actualizar cada precio
             for (const [key, valor] of Object.entries(preciosEditando)) {
-                const [tipo_vehiculo, tipo_servicio] = key.split('_');
+                // Fix: usar split con límite para manejar servicios con underscores
+                // Ejemplo: 'auto_simple_exterior' -> ['auto', 'simple_exterior']
+                const [tipo_vehiculo, ...resto] = key.split('_');
+                const tipo_servicio = resto.join('_');
                 await fetch('/api/listas-precios/actualizar-precio', {
                     method: 'POST',
                     headers: {
