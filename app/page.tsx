@@ -162,7 +162,7 @@ export default function Home() {
         if (!tiposLav || !Array.isArray(tiposLav) || tiposLav.length === 0) {
             return 0;
         }
-        
+
         // Precios fallback por servicio y vehículo
         const preciosFallback: { [servicio: string]: { [vehiculo: string]: number } } = {
             'simple_exterior': { 'auto': 15000, 'mono': 20000, 'camioneta': 25000, 'camioneta_xl': 28000, 'moto': 10000 },
@@ -980,24 +980,34 @@ export default function Home() {
                                                     )}
                                                 </div>
                                                 <div className="text-right">
-                                                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded block mb-1">
-                                                        {registro.tipo_limpieza.replace(/_/g, ' ')}
-                                                    </span>
                                                     {registro.precio && registro.precio > 0 && (
-                                                        <span className="text-sm font-bold text-blue-600">
+                                                        <span className="text-lg font-bold text-blue-600 block mb-2">
                                                             ${registro.precio.toLocaleString('es-AR')}
                                                         </span>
                                                     )}
                                                 </div>
                                             </div>
-                                            <p className="text-sm text-gray-600 mb-1">
+                                            <p className="text-sm text-gray-600 mb-2">
                                                 Cliente: {registro.nombre_cliente}
                                             </p>
-                                            {registro.extras && (
-                                                <p className="text-xs text-blue-600 mb-1">
-                                                    Extra: {registro.extras} (+${registro.extras_valor?.toLocaleString('es-AR')})
-                                                </p>
-                                            )}
+
+                                            {/* Desglose de servicios */}
+                                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                                                <p className="text-xs font-semibold text-blue-900 mb-2">📋 Servicios incluidos:</p>
+                                                {registro.tipo_limpieza.split(', ').map((servicio, idx) => (
+                                                    <div key={idx} className="text-xs text-blue-800 flex items-center gap-1">
+                                                        <span className="text-blue-500">•</span>
+                                                        <span className="capitalize">{servicio.replace(/_/g, ' ')}</span>
+                                                    </div>
+                                                ))}
+                                                {registro.extras && (
+                                                    <div className="text-xs text-blue-800 flex items-center gap-1 mt-1">
+                                                        <span className="text-blue-500">•</span>
+                                                        <span>{registro.extras} <span className="font-semibold">(+${registro.extras_valor?.toLocaleString('es-AR')})</span></span>
+                                                    </div>
+                                                )}
+                                            </div>
+
                                             <p className="text-xs text-gray-500 mb-3">
                                                 Ingreso: {new Date(registro.fecha_ingreso).toLocaleString('es-AR')}
                                             </p>
@@ -1082,17 +1092,26 @@ export default function Home() {
                                                     )}
                                                 </div>
                                             </div>
-                                            <p className="text-sm text-gray-600 mb-1">
+                                            <p className="text-sm text-gray-600 mb-2">
                                                 Cliente: {registro.nombre_cliente}
                                             </p>
-                                            {registro.extras && (
-                                                <p className="text-xs text-blue-600 mb-1">
-                                                    Extra: {registro.extras} (+${registro.extras_valor?.toLocaleString('es-AR')})
-                                                </p>
-                                            )}
-                                            <p className="text-xs text-gray-500 mb-3">
-                                                Tipo: {registro.tipo_limpieza.replace(/_/g, ' ')}
-                                            </p>
+
+                                            {/* Desglose de servicios */}
+                                            <div className="bg-orange-100 border border-orange-300 rounded-lg p-3 mb-3">
+                                                <p className="text-xs font-semibold text-orange-900 mb-2">📋 Servicios incluidos:</p>
+                                                {registro.tipo_limpieza.split(', ').map((servicio, idx) => (
+                                                    <div key={idx} className="text-xs text-orange-800 flex items-center gap-1">
+                                                        <span className="text-orange-500">•</span>
+                                                        <span className="capitalize">{servicio.replace(/_/g, ' ')}</span>
+                                                    </div>
+                                                ))}
+                                                {registro.extras && (
+                                                    <div className="text-xs text-orange-800 flex items-center gap-1 mt-1">
+                                                        <span className="text-orange-500">•</span>
+                                                        <span>{registro.extras} <span className="font-semibold">(+${registro.extras_valor?.toLocaleString('es-AR')})</span></span>
+                                                    </div>
+                                                )}
+                                            </div>
                                             <div className="flex flex-col gap-2">
                                                 <div className="flex gap-2">
                                                     {userRole === 'admin' && (
