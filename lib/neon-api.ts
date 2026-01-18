@@ -74,7 +74,10 @@ export async function createBranchForEmpresa(
 ): Promise<CreateBranchResponse> {
   validateNeonConfig();
 
+  const TEMPLATE_BRANCH_ID = process.env.NEON_TEMPLATE_BRANCH_ID;
+  
   console.log(`[Neon API] Creando branch: ${branchName}`);
+  console.log(`[Neon API] Parent: ${TEMPLATE_BRANCH_ID ? 'saas-template (vacío)' : 'main (con datos)'}`);
 
   const response = await fetch(
     `${NEON_API_BASE}/projects/${NEON_PROJECT_ID}/branches`,
@@ -88,6 +91,9 @@ export async function createBranchForEmpresa(
       body: JSON.stringify({
         branch: {
           name: branchName,
+          // Si existe TEMPLATE_BRANCH_ID, crear desde template vacío
+          // Si no existe, crear desde main (comportamiento anterior)
+          ...(TEMPLATE_BRANCH_ID && { parent_id: TEMPLATE_BRANCH_ID })
         },
         // Crear endpoint automáticamente para el branch
         endpoints: [
@@ -360,38 +366,35 @@ export async function initializeBranchSchema(
     console.log('[Neon API] ✅ Tablas creadas exitosamente');
 
     // ============================================
-    // AHORA SÍ: LIMPIAR DATOS HEREDADOS
+    // VERIFICAR DATOS (Schema Only no requiere limpieza)
     // ============================================
-    console.log('[Neon API] 🧹 Limpiando datos heredados del branch parent...');
-
-    // Verificar cuántos registros hay ANTES de limpiar
-    const countBefore = await sql`SELECT COUNT(*) as count FROM registros`;
-    const countBeforeValue = countBefore[0]?.count || 0;
-    console.log(`[Neon API] 📊 Registros ANTES de limpiar: ${countBeforeValue}`);
-
-    if (countBeforeValue > 0) {
-      // Borrar en orden inverso a las foreign keys
-      await sql`DELETE FROM movimientos_cc`;
-      await sql`DELETE FROM cuentas_corrientes`;
-      await sql`DELETE FROM precios`;
-      await sql`DELETE FROM listas_precios`;
-      await sql`DELETE FROM registros`;
-      await sql`DELETE FROM precios_servicios`;
-      await sql`DELETE FROM clientes`;
-      await sql`DELETE FROM usuarios WHERE email != 'admin@inicial.com'`;
-
-      // Verificar cuántos quedan
-      const countAfter = await sql`SELECT COUNT(*) as count FROM registros`;
-      const countAfterValue = countAfter[0]?.count || 0;
-      console.log(`[Neon API] 📊 Registros DESPUÉS de limpiar: ${countAfterValue}`);
-
-      if (countAfterValue > 0) {
-        console.error(`[Neon API] ❌ ERROR: Quedan ${countAfterValue} registros después de limpiar!`);
-      } else {
-        console.log('[Neon API] ✅ Datos heredados limpiados exitosamente');
-      }
+    const TEMPLATE_BRANCH_ID = process.env.NEON_TEMPLATE_BRANCH_ID;
+    
+    if (TEMPLATE_BRANCH_ID) {
+      console.log('[Neon API] ✅ Branch creado desde template Schema Only');
+      console.log('[Neon API] ℹ️  Sin datos heredados - Branch vacío garantizado');
     } else {
-      console.log('[Neon API] ✅ Branch ya estaba vacío (no había datos para limpiar)');
+      console.log('[Neon API] ⚠️  Branch creado desde branch con datos');
+      console.log('[Neon API] 🧹 Limpiando datos heredados...');
+      
+      // Solo si NO usamos template, limpiar datos
+      const countBefore = await sql`SELECT COUNT(*) as count FROM registros`;
+      const countBeforeValue = countBefore[0]?.count || 0;
+      console.log(`[Neon API] 📊 Registros encontrados: ${countBeforeValue}`);
+      
+      if (countBeforeValue > 0) {
+        await sql`DELETE FROM movimientos_cc`;
+        await sql`DELETE FROM cuentas_corrientes`;
+        await sql`DELETE FROM precios`;
+        await sql`DELETE FROM listas_precios`;
+        await sql`DELETE FROM registros`;
+        await sql`DELETE FROM precios_servicios`;
+        await sql`DELETE FROM clientes`;
+        await sql`DELETE FROM usuarios WHERE email != 'admin@inicial.com'`;
+        console.log('[Neon API] ✅ Datos limpiados');
+      } else {
+        console.log('[Neon API] ✅ Branch vacío');
+      }
     }
 
     // ============================================
