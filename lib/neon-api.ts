@@ -112,6 +112,64 @@ export async function createBranchForEmpresa(
 }
 
 // ============================================
+// ESPERAR A QUE BRANCH ESTÉ LISTO
+// ============================================
+
+/**
+ * Espera a que un branch esté completamente listo
+ * @param branchId - ID del branch
+ * @param maxWaitSeconds - Tiempo máximo de espera en segundos (default: 60)
+ */
+async function waitForBranchReady(branchId: string, maxWaitSeconds: number = 60): Promise<void> {
+  validateNeonConfig();
+
+  console.log(`[Neon API] ⏳ Esperando a que branch ${branchId} esté listo...`);
+
+  const startTime = Date.now();
+  let attempts = 0;
+
+  while (true) {
+    attempts++;
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+
+    if (elapsed > maxWaitSeconds) {
+      console.warn(`[Neon API] ⚠️  Timeout esperando branch (${maxWaitSeconds}s). Continuando de todas formas...`);
+      break;
+    }
+
+    try {
+      const response = await fetch(
+        `${NEON_API_BASE}/projects/${NEON_PROJECT_ID}/branches/${branchId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${NEON_API_KEY}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const state = data.branch.current_state;
+
+        console.log(`[Neon API] Intento ${attempts}: Estado=${state}, Transcurrido=${elapsed}s`);
+
+        if (state === 'ready') {
+          console.log(`[Neon API] ✅ Branch listo después de ${elapsed}s`);
+          // Esperar 2 segundos adicionales para asegurar que los datos estén completamente copiados
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          return;
+        }
+      }
+    } catch (error) {
+      console.warn(`[Neon API] Error consultando estado del branch:`, error);
+    }
+
+    // Esperar 2 segundos antes del siguiente intento
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+}
+
+// ============================================
 // EJECUTAR SQL EN UN BRANCH
 // ============================================
 
@@ -157,7 +215,7 @@ export async function initializeBranchSchema(
     // CREAR SCHEMA PRIMERO
     // ============================================
     console.log('[Neon API] 📋 Creando estructura de tablas...');
-    
+
     console.log('[Neon API] Creando tabla usuarios...');
     await sql`
       CREATE TABLE IF NOT EXISTS usuarios (
@@ -262,7 +320,7 @@ export async function initializeBranchSchema(
     // ============================================
     // NUEVO SISTEMA DE LISTAS DE PRECIOS
     // ============================================
-    
+
     console.log('[Neon API] Creando tabla listas_precios...');
     await sql`
       CREATE TABLE IF NOT EXISTS listas_precios (
@@ -305,12 +363,12 @@ export async function initializeBranchSchema(
     // AHORA SÍ: LIMPIAR DATOS HEREDADOS
     // ============================================
     console.log('[Neon API] 🧹 Limpiando datos heredados del branch parent...');
-    
+
     // Verificar cuántos registros hay ANTES de limpiar
     const countBefore = await sql`SELECT COUNT(*) as count FROM registros`;
     const countBeforeValue = countBefore[0]?.count || 0;
     console.log(`[Neon API] 📊 Registros ANTES de limpiar: ${countBeforeValue}`);
-    
+
     if (countBeforeValue > 0) {
       // Borrar en orden inverso a las foreign keys
       await sql`DELETE FROM movimientos_cc`;
@@ -321,12 +379,12 @@ export async function initializeBranchSchema(
       await sql`DELETE FROM precios_servicios`;
       await sql`DELETE FROM clientes`;
       await sql`DELETE FROM usuarios WHERE email != 'admin@inicial.com'`;
-      
+
       // Verificar cuántos quedan
       const countAfter = await sql`SELECT COUNT(*) as count FROM registros`;
       const countAfterValue = countAfter[0]?.count || 0;
       console.log(`[Neon API] 📊 Registros DESPUÉS de limpiar: ${countAfterValue}`);
-      
+
       if (countAfterValue > 0) {
         console.error(`[Neon API] ❌ ERROR: Quedan ${countAfterValue} registros después de limpiar!`);
       } else {
@@ -365,7 +423,7 @@ export async function initializeBranchSchema(
           `;
         }
       }
-      
+
       console.log('[Neon API] ✅ Precios inicializados en $0 - La empresa debe configurar sus valores');
     } else {
       console.warn('[Neon API] ⚠️  No se pudo obtener ID de lista por defecto');
@@ -438,10 +496,16 @@ export async function createAndSetupBranchForEmpresa(
     // DEBUG: Ver estructura de respuesta
     console.log('[Setup] DEBUG - Respuesta de Neon:', JSON.stringify(branchData, null, 2));
 
+    // 2. ESPERAR A QUE EL BRANCH ESTÉ COMPLETAMENTE LISTO
+    // Esto es CRÍTICO: Neon copia datos del parent en background
+    // Si no esperamos, limpiaremos antes de que se copien los datos
+    console.log('[Setup] 🔄 Esperando a que branch termine de inicializarse...');
+    await waitForBranchReady(branchData.branch.id, 90);
+
     // Extraer información de conexión
     const connectionInfo = branchData.connection_uris[0];
     const connectionUri = connectionInfo.connection_uri;
-    
+
     // Construir la URL pooled a partir de los parámetros
     const params = connectionInfo.connection_parameters;
     // Construir string de conexión dinámicamente (split para evitar detección de secrets)
@@ -452,7 +516,7 @@ export async function createAndSetupBranchForEmpresa(
     console.log(`[Setup] DEBUG - connectionUri obtenido`);
     console.log(`[Setup] DEBUG - connectionUriPooler construido`);
 
-    // 2. Inicializar schema (usar pooler para createPool)
+    // 3. Inicializar schema (usar pooler para createPool)
     console.log('[Setup] Inicializando schema en el nuevo branch...');
     await initializeBranchSchema(connectionUriPooler);
 
