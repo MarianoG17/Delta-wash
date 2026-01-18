@@ -37,10 +37,14 @@ export async function GET(request: Request) {
         AND (anulado IS NULL OR anulado = FALSE)
     `;
 
+    // Manejar diferencias entre drivers (pg vs neon)
+    const clientes = Array.isArray(result) ? result : result.rows || [];
+    const estadisticas = Array.isArray(statsResult) ? statsResult[0] : statsResult.rows?.[0] || {};
+
     return NextResponse.json({
       success: true,
-      clientes: result.rows,
-      estadisticas: statsResult.rows[0]
+      clientes: clientes,
+      estadisticas: estadisticas
     });
 
   } catch (error) {

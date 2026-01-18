@@ -35,17 +35,20 @@ export async function GET(request: Request) {
 
         const result = await query;
 
+        // Manejar diferencias entre drivers (pg vs neon)
+        const data = Array.isArray(result) ? result : result.rows || [];
+
         if (celular) {
             return NextResponse.json({
                 success: true,
-                cuenta: result.rows[0] || null,
-                found: result.rows.length > 0,
+                cuenta: data[0] || null,
+                found: data.length > 0,
             });
         }
 
         return NextResponse.json({
             success: true,
-            cuentas: result.rows,
+            cuentas: data,
         });
     } catch (error) {
         console.error('Error obteniendo cuentas corrientes:', error);
@@ -84,7 +87,9 @@ export async function POST(request: Request) {
             SELECT id FROM cuentas_corrientes WHERE celular = ${celular}
         `;
 
-        if (existente.rows.length > 0) {
+        const existenteData = Array.isArray(existente) ? existente : existente.rows || [];
+
+        if (existenteData.length > 0) {
             return NextResponse.json(
                 { success: false, message: 'Ya existe una cuenta corriente para este celular' },
                 { status: 400 }
@@ -101,9 +106,11 @@ export async function POST(request: Request) {
             RETURNING *
         `;
 
+        const resultData = Array.isArray(result) ? result : result.rows || [];
+
         return NextResponse.json({
             success: true,
-            cuenta: result.rows[0],
+            cuenta: resultData[0],
         });
     } catch (error) {
         console.error('Error creando cuenta corriente:', error);
