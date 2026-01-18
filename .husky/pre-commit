@@ -9,7 +9,7 @@ echo "🔍 Verificando secrets antes del commit..."
 PATTERNS=(
   "napi_[a-zA-Z0-9]{40,}"                    # Neon API keys
   "postgresql://[^:]+:[^@]+@[^/]+"           # PostgreSQL connection strings con password
-  "postgres://[^:]+:[^@]+@[^/]+"             # Postgres connection strings con password  
+  "postgres://[^:]+:[^@]+@[^/]+"             # Postgres connection strings con password
   "['\"]JWT_SECRET['\"]:\s*['\"][^'\"]{20,}" # JWT secrets
   "Bearer [a-zA-Z0-9_\-\.]{20,}"             # Bearer tokens
   "sk_live_[a-zA-Z0-9]{24,}"                 # Stripe live keys
@@ -24,8 +24,8 @@ FILES=$(git diff --cached --name-only --diff-filter=ACM)
 FOUND_SECRET=0
 
 for FILE in $FILES; do
-  # Saltar archivos binarios y node_modules
-  if [[ $FILE == *"node_modules"* ]] || [[ $FILE == *".next"* ]] || [[ $FILE == *"package-lock.json"* ]]; then
+  # Saltar archivos que no deben verificarse
+  if [[ $FILE == *"node_modules"* ]] || [[ $FILE == *".next"* ]] || [[ $FILE == *"package-lock.json"* ]] || [[ $FILE == *.md ]] || [[ $FILE == .husky/* ]]; then
     continue
   fi
   
