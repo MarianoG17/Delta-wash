@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuthUser, clearAuth } from '@/lib/auth-utils';
+import { getAuthUser, clearAuth, getLoginUrl } from '@/lib/auth-utils';
 
 interface Usuario {
   id: number;
@@ -28,7 +28,7 @@ export default function UsuariosPage() {
   useEffect(() => {
     const user = getAuthUser();
     if (!user) {
-      router.push('/login-saas');
+      router.push(getLoginUrl());
       return;
     }
 
