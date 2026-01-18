@@ -478,8 +478,9 @@ export default function Home() {
     };
 
     const handleLogout = () => {
+        const redirectUrl = getLoginUrl(true); // Detectar ANTES de limpiar
         clearAuth();
-        router.push(getLoginUrl());
+        router.push(redirectUrl);
     };
 
     if (!mounted) {

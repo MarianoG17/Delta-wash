@@ -89,9 +89,19 @@ export function clearAuth(): void {
 }
 
 /**
- * Obtiene la URL de login adecuada según el tipo de sesión
+ * Obtiene la URL de login/landing adecuada según el tipo de sesión
+ * @param afterLogout - Si es true, detecta el usuario ANTES de limpiar localStorage
  */
-export function getLoginUrl(): string {
+export function getLoginUrl(afterLogout: boolean = false): string {
+  if (afterLogout) {
+    // Detectar el usuario ANTES de que se limpie el localStorage
+    const user = getAuthUser();
+    // Si era usuario SaaS, ir a la landing page /home
+    // Si era DeltaWash legacy, ir a /login
+    return user?.isSaas ? '/home' : '/login';
+  }
+  
+  // Para redirecciones normales (sin logout)
   const authToken = localStorage.getItem('authToken');
   return authToken ? '/login-saas' : '/login';
 }

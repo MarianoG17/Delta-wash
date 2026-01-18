@@ -666,7 +666,7 @@ export default function HomePage() {
               </div>
               <div className="text-center mb-8">
                 <div className="text-5xl font-bold text-blue-600 mb-2">
-                  $25.000
+                  $40.000
                 </div>
                 <div className="text-xl text-gray-600">
                   por mes
@@ -727,7 +727,7 @@ export default function HomePage() {
               </div>
               <div className="text-center mb-8">
                 <div className="text-5xl font-bold text-purple-600 mb-2">
-                  $35.000
+                  $65.000
                 </div>
                 <div className="text-xl text-gray-600">
                   por mes
