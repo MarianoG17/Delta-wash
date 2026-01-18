@@ -78,7 +78,16 @@ export default function Home() {
 
     const cargarPreciosDinamicos = async () => {
         try {
-            const res = await fetch('/api/listas-precios/obtener-precios');
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/listas-precios/obtener-precios', {
+                headers: authToken ? {
+                    'Authorization': `Bearer ${authToken}`
+                } : {}
+            });
             const data = await res.json();
             if (data.success) {
                 setPreciosDinamicos(data.precios);
@@ -91,13 +100,22 @@ export default function Home() {
 
     const cargarRegistrosEnProceso = async () => {
         try {
-            const resEnProceso = await fetch('/api/registros?estado=en_proceso');
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const fetchOptions = authToken ? {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            } : {};
+
+            const resEnProceso = await fetch('/api/registros?estado=en_proceso', fetchOptions);
             const dataEnProceso = await resEnProceso.json();
             if (dataEnProceso.success) {
                 setRegistrosEnProceso(dataEnProceso.registros);
             }
 
-            const resListos = await fetch('/api/registros?estado=listo');
+            const resListos = await fetch('/api/registros?estado=listo', fetchOptions);
             const dataListos = await resListos.json();
             if (dataListos.success) {
                 setRegistrosListos(dataListos.registros);
