@@ -71,11 +71,17 @@ function capitalizarNombre(nombre: string): string {
 
 export async function POST(request: Request) {
     try {
+        console.log('[Registros POST] 🚀 Inicio de registro de auto');
+
         // Obtener conexión apropiada (DeltaWash o empresa específica)
         const empresaId = await getEmpresaIdFromToken(request);
+        console.log(`[Registros POST] EmpresaId obtenido: ${empresaId}`);
+
         const db = await getDBConnection(empresaId);
+        console.log('[Registros POST] Conexión DB obtenida exitosamente');
 
         const { marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, usa_cuenta_corriente, cuenta_corriente_id, pagado, metodo_pago } = await request.json();
+        console.log(`[Registros POST] Datos recibidos: Patente=${patente}, Cliente=${nombre_cliente}, Precio=${precio}`);
 
         if (!marca_modelo || !patente || !tipo_limpieza || !nombre_cliente || !celular) {
             return NextResponse.json(
@@ -186,9 +192,17 @@ export async function POST(request: Request) {
             });
         }
     } catch (error) {
-        console.error('Error creando registro:', error);
+        console.error('[Registros POST] ❌ ERROR COMPLETO:', error);
+        console.error('[Registros POST] Stack trace:', error instanceof Error ? error.stack : 'No stack');
+        console.error('[Registros POST] Mensaje:', error instanceof Error ? error.message : JSON.stringify(error));
+
         return NextResponse.json(
-            { success: false, message: 'Error del servidor' },
+            {
+                success: false,
+                message: 'Error del servidor',
+                error: error instanceof Error ? error.message : 'Error desconocido',
+                details: process.env.NODE_ENV === 'development' ? error : undefined
+            },
             { status: 500 }
         );
     }
