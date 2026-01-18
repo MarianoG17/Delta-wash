@@ -72,14 +72,21 @@ function HistorialContent() {
                 }
             });
             const data = await res.json();
-            if (data.success) {
+            
+            if (data.success && Array.isArray(data.registros)) {
                 setRegistros(data.registros);
                 // Para análisis de clientes sin visitar, excluir anulados
                 const registrosActivos = data.registros.filter((r: Registro) => !r.anulado);
                 analizarClientesSinVisitar(registrosActivos);
+            } else {
+                console.error('Error en respuesta de API:', data);
+                setRegistros([]);
+                setClientesSinVisitar([]);
             }
         } catch (error) {
             console.error('Error cargando datos:', error);
+            setRegistros([]);
+            setClientesSinVisitar([]);
         } finally {
             setLoading(false);
         }

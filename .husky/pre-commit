@@ -1,0 +1,56 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Pre-commit hook para detectar secrets antes de hacer commit
+
+echo "🔍 Verificando secrets antes del commit..."
+
+# Patrones de secrets a detectar
+PATTERNS=(
+  "napi_[a-zA-Z0-9]{40,}"                    # Neon API keys
+  "postgresql://[^:]+:[^@]+@[^/]+"           # PostgreSQL connection strings con password
+  "postgres://[^:]+:[^@]+@[^/]+"             # Postgres connection strings con password  
+  "['\"]JWT_SECRET['\"]:\s*['\"][^'\"]{20,}" # JWT secrets
+  "Bearer [a-zA-Z0-9_\-\.]{20,}"             # Bearer tokens
+  "sk_live_[a-zA-Z0-9]{24,}"                 # Stripe live keys
+  "sk_test_[a-zA-Z0-9]{24,}"                 # Stripe test keys
+  "AKIA[0-9A-Z]{16}"                         # AWS Access Key IDs
+)
+
+# Archivos a verificar (staged files)
+FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+# Flag para detectar si se encontraron secrets
+FOUND_SECRET=0
+
+for FILE in $FILES; do
+  # Saltar archivos binarios y node_modules
+  if [[ $FILE == *"node_modules"* ]] || [[ $FILE == *".next"* ]] || [[ $FILE == *"package-lock.json"* ]]; then
+    continue
+  fi
+  
+  # Verificar cada patrón
+  for PATTERN in "${PATTERNS[@]}"; do
+    if git show ":$FILE" | grep -qE "$PATTERN"; then
+      echo "❌ ALERTA: Posible secret detectado en $FILE"
+      echo "   Patrón: $PATTERN"
+      FOUND_SECRET=1
+    fi
+  done
+done
+
+if [ $FOUND_SECRET -eq 1 ]; then
+  echo ""
+  echo "🚫 COMMIT BLOQUEADO - Se detectaron posibles secrets"
+  echo ""
+  echo "📝 Soluciones:"
+  echo "1. Remover el secret del archivo"
+  echo "2. Usar variables de entorno (process.env.VARIABLE_NAME)"
+  echo "3. Agregar el archivo a .gitignore si contiene secrets"
+  echo "4. Si es un falso positivo, revisar manualmente"
+  echo ""
+  exit 1
+fi
+
+echo "✅ No se detectaron secrets - Commit permitido"
+exit 0

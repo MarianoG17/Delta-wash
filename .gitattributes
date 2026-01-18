@@ -1,0 +1,12 @@
+# Git Attributes para protección de secrets
+# Previene que archivos con secrets se suban accidentalmente
+
+# Archivos de configuración sensibles
+.env filter=git-secrets
+.env.local filter=git-secrets
+.env.*.local filter=git-secrets
+
+# Documentos que podrían contener keys
+*KEY*.md filter=git-secrets-docs
+*SECRET*.md filter=git-secrets-docs
+*PASSWORD*.md filter=git-secrets-docs
