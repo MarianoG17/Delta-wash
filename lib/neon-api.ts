@@ -74,8 +74,8 @@ export async function createBranchForEmpresa(
 ): Promise<CreateBranchResponse> {
   validateNeonConfig();
 
-  // HARDCODED: Template vacío garantizado (Vercel no lee env vars correctamente)
-  const TEMPLATE_BRANCH_ID = 'br-dawn-dream-ahfwrieh';
+  // HARDCODED: Branch "central" Schema-only en Neon (reemplaza template eliminado)
+  const TEMPLATE_BRANCH_ID = 'br-quiet-moon-ahudb5a2';
   
   console.log(`[Neon API] Creando branch: ${branchName}`);
   console.log(`[Neon API] 🎯 USANDO TEMPLATE VACÍO HARDCODED`);
@@ -371,7 +371,7 @@ export async function initializeBranchSchema(
     // VERIFICAR DATOS (Schema Only no requiere limpieza)
     // ============================================
     // HARDCODED: Mismo template ID que en createBranchForEmpresa (línea 78)
-    const TEMPLATE_BRANCH_ID = 'br-dawn-dream-ahfwrieh';
+    const TEMPLATE_BRANCH_ID = 'br-quiet-moon-ahudb5a2';
     
     // Template Schema Only garantiza branch vacío - No requiere limpieza
     console.log('[Neon API] ✅ Branch creado desde template Schema Only');
