@@ -74,10 +74,12 @@ export async function createBranchForEmpresa(
 ): Promise<CreateBranchResponse> {
   validateNeonConfig();
 
-  const TEMPLATE_BRANCH_ID = process.env.NEON_TEMPLATE_BRANCH_ID;
+  // TEMPORAL: Hardcoded hasta resolver config de Vercel
+  const TEMPLATE_BRANCH_ID = process.env.NEON_TEMPLATE_BRANCH_ID || 'br-dawn-dream-ahfwrieh';
   
   console.log(`[Neon API] Creando branch: ${branchName}`);
   console.log(`[Neon API] Parent: ${TEMPLATE_BRANCH_ID ? 'saas-template (vacío)' : 'main (con datos)'}`);
+  console.log(`[Neon API] Template ID: ${TEMPLATE_BRANCH_ID}`);
 
   const response = await fetch(
     `${NEON_API_BASE}/projects/${NEON_PROJECT_ID}/branches`,
