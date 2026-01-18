@@ -184,7 +184,7 @@ export default function Home() {
         const precioBase = calcularPrecio(tipoVehiculo, tiposLimpieza);
         const valorExtras = parseFloat(extrasValor) || 0;
         setPrecio(precioBase + valorExtras);
-    }, [tipoVehiculo, tiposLimpieza, extrasValor]);
+    }, [tipoVehiculo, tiposLimpieza, extrasValor, preciosDinamicos]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
