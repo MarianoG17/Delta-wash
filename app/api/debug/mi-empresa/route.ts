@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
     // Obtener información de la empresa
     const empresaResult = await centralDB.sql`
-      SELECT 
+      SELECT
         id,
         nombre,
         slug,
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
         branch_url,
         plan,
         estado,
-        fecha_registro,
+        created_at,
         fecha_expiracion
       FROM empresas
       WHERE id = ${empresaId}
@@ -79,7 +79,7 @@ export async function GET(request: Request) {
         slug: empresa.slug,
         plan: empresa.plan,
         estado: empresa.estado,
-        fecha_registro: empresa.fecha_registro,
+        created_at: empresa.created_at,
         fecha_expiracion: empresa.fecha_expiracion
       },
       branch: {
