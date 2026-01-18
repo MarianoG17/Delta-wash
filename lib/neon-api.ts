@@ -76,7 +76,7 @@ export async function createBranchForEmpresa(
 
   // HARDCODED: Branch "central" Schema-only en Neon (reemplaza template eliminado)
   const TEMPLATE_BRANCH_ID = 'br-quiet-moon-ahudb5a2';
-  
+
   console.log(`[Neon API] Creando branch: ${branchName}`);
   console.log(`[Neon API] 🎯 USANDO TEMPLATE VACÍO HARDCODED`);
   console.log(`[Neon API] Template ID: ${TEMPLATE_BRANCH_ID}`);
@@ -372,7 +372,7 @@ export async function initializeBranchSchema(
     // ============================================
     // HARDCODED: Mismo template ID que en createBranchForEmpresa (línea 78)
     const TEMPLATE_BRANCH_ID = 'br-quiet-moon-ahudb5a2';
-    
+
     // Template Schema Only garantiza branch vacío - No requiere limpieza
     console.log('[Neon API] ✅ Branch creado desde template Schema Only');
     console.log(`[Neon API] Template ID: ${TEMPLATE_BRANCH_ID}`);
@@ -382,6 +382,21 @@ export async function initializeBranchSchema(
     // ============================================
     // INSERTAR DATOS INICIALES
     // ============================================
+
+    // IMPORTANTE: Limpiar cualquier dato heredado del template
+    // Esto garantiza que cada empresa SaaS nueva parta SIEMPRE con datos limpios
+    console.log('[Neon API] 🧹 Limpiando datos heredados del template (si existen)...');
+    try {
+      // Eliminar precios primero (por foreign key)
+      await sql`DELETE FROM precios`;
+      // Eliminar listas de precios
+      await sql`DELETE FROM listas_precios`;
+      console.log('[Neon API] ✅ Datos heredados eliminados (si existían)');
+    } catch (cleanError) {
+      // Si falla la limpieza, solo logear (puede ser que ya estén vacías)
+      console.log('[Neon API] ℹ️  Limpieza completada (tablas ya estaban vacías)');
+    }
+
     console.log('[Neon API] Creando lista de precios por defecto...');
     await sql`
       INSERT INTO listas_precios (nombre, descripcion, activa, es_default)

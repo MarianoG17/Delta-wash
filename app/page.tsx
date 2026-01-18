@@ -178,10 +178,11 @@ export default function Home() {
         // Calcular precio por cada servicio seleccionado
         tiposLav.forEach(tipo => {
             // Intentar primero desde precios dinámicos de la BD
-            if (preciosDinamicos && preciosDinamicos[tipoVeh] && preciosDinamicos[tipoVeh][tipo]) {
+            // IMPORTANTE: Verificar con !== undefined para permitir precios en $0
+            if (preciosDinamicos && preciosDinamicos[tipoVeh] && preciosDinamicos[tipoVeh][tipo] !== undefined) {
                 total += preciosDinamicos[tipoVeh][tipo];
             }
-            // Si no existe en BD, usar fallback
+            // Si no existe en BD, usar fallback (solo para compatibilidad con datos antiguos)
             else if (preciosFallback[tipo] && preciosFallback[tipo][tipoVeh] !== undefined) {
                 total += preciosFallback[tipo][tipoVeh];
             }
