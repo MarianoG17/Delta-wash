@@ -111,17 +111,23 @@ export default function Home() {
 
             const resEnProceso = await fetch('/api/registros?estado=en_proceso', fetchOptions);
             const dataEnProceso = await resEnProceso.json();
-            if (dataEnProceso.success) {
+            if (dataEnProceso.success && Array.isArray(dataEnProceso.registros)) {
                 setRegistrosEnProceso(dataEnProceso.registros);
+            } else {
+                setRegistrosEnProceso([]);
             }
 
             const resListos = await fetch('/api/registros?estado=listo', fetchOptions);
             const dataListos = await resListos.json();
-            if (dataListos.success) {
+            if (dataListos.success && Array.isArray(dataListos.registros)) {
                 setRegistrosListos(dataListos.registros);
+            } else {
+                setRegistrosListos([]);
             }
         } catch (error) {
             console.error('Error cargando registros:', error);
+            setRegistrosEnProceso([]);
+            setRegistrosListos([]);
         }
     };
 
@@ -152,6 +158,11 @@ export default function Home() {
 
     // Función para calcular el precio según tipo de vehículo y lavado
     const calcularPrecio = (tipoVeh: string, tiposLav: string[]) => {
+        // Validación defensiva
+        if (!tiposLav || !Array.isArray(tiposLav) || tiposLav.length === 0) {
+            return 0;
+        }
+        
         // Precios fallback por servicio y vehículo
         const preciosFallback: { [servicio: string]: { [vehiculo: string]: number } } = {
             'simple_exterior': { 'auto': 15000, 'mono': 20000, 'camioneta': 25000, 'camioneta_xl': 28000, 'moto': 10000 },
