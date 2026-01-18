@@ -58,7 +58,16 @@ export default function CuentasCorrientesPage() {
 
     const cargarCuentas = async () => {
         try {
-            const res = await fetch('/api/cuentas-corrientes');
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/cuentas-corrientes', {
+                headers: authToken ? {
+                    'Authorization': `Bearer ${authToken}`
+                } : {}
+            });
             const data = await res.json();
             if (data.success) {
                 setCuentas(data.cuentas);
