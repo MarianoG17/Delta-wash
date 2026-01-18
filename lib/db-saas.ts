@@ -12,6 +12,22 @@ import { createPool, VercelPool } from '@vercel/postgres';
 import { neon } from '@neondatabase/serverless';
 
 // ============================================
+// POOL LEGACY DELTAWASH (Pooled Connection)
+// ============================================
+
+/**
+ * Pool para DeltaWash usando conexión POOLED
+ * Vercel requiere POSTGRES_PRISMA_URL para usar con sql()
+ * Esto NO cambia la base de datos, solo el tipo de conexión
+ */
+const deltaWashPool = createPool({
+  connectionString: process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL
+});
+
+// Exportar la función sql del pool para usar en queries
+const deltaWashSQL: SQLConnection = deltaWashPool.sql as SQLConnection;
+
+// ============================================
 // TIPO DE CONEXIÓN SQL
 // ============================================
 
@@ -33,8 +49,8 @@ export function getCentralDB(): SQLConnection {
   // const pool = createPool({ connectionString: process.env.CENTRAL_DB_URL });
   // return pool.sql;
 
-  // Por ahora, para desarrollo, usa la conexión principal
-  return sql;
+  // Por ahora, para desarrollo, usa la conexión principal (DeltaWash pooled)
+  return deltaWashSQL;
 }
 
 // ============================================
@@ -44,11 +60,15 @@ export function getCentralDB(): SQLConnection {
 /**
  * Conexión legacy para DeltaWash
  * Mantiene compatibilidad con el sistema actual
- * USA LA VARIABLE DE ENTORNO EXISTENTE (POSTGRES_URL)
+ * 
+ * IMPORTANTE: Vercel requiere URL POOLED para usar con sql()
+ * Por eso usamos POSTGRES_PRISMA_URL en lugar de POSTGRES_URL
+ * Ambas apuntan a la MISMA base de datos, solo cambia el tipo de conexión
  */
 export function getLegacyDB(): SQLConnection {
-  // Esta es la conexión actual que ya usás
-  return sql;
+  // Vercel requiere pooled connection para sql()
+  // Usar POSTGRES_PRISMA_URL (es la misma BD que POSTGRES_URL, pero pooled)
+  return deltaWashSQL;
 }
 
 // ============================================
@@ -225,7 +245,7 @@ export async function getDBConnection(empresaId?: number): Promise<typeof sql> {
     console.log('========================================');
     console.log('[DB] 🔌 getDBConnection() iniciado');
     console.log(`[DB] empresaId recibido: ${empresaId || '(undefined)'}`);
-    
+
     // NIVEL 1: Sin empresaId = DeltaWash legacy
     if (!empresaId) {
       console.log('[DB] ⚠️ Sin empresaId → Usando POSTGRES_URL (DeltaWash Legacy)');

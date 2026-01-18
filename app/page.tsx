@@ -140,7 +140,14 @@ export default function Home() {
         }
 
         try {
-            const res = await fetch(`/api/cuentas-corrientes?celular=${celularBuscar}`);
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch(`/api/cuentas-corrientes?celular=${celularBuscar}`, {
+                headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+            });
             const data = await res.json();
 
             if (data.success && data.found) {
@@ -234,9 +241,17 @@ export default function Home() {
         setMessage('');
 
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             const res = await fetch('/api/registros', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
                 body: JSON.stringify({
                     marca_modelo: `${marca} ${modelo}`.trim(),
                     patente: patente.toUpperCase(),
@@ -293,9 +308,17 @@ export default function Home() {
 
     const marcarComoListo = async (id: number) => {
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             const res = await fetch('/api/registros/marcar-listo', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
                 body: JSON.stringify({ id }),
             });
 
@@ -314,9 +337,17 @@ export default function Home() {
 
     const enviarWhatsApp = async (id: number) => {
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             const res = await fetch('/api/registros/enviar-whatsapp', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
                 body: JSON.stringify({ id }),
             });
 
@@ -350,9 +381,17 @@ export default function Home() {
         try {
             console.log('Registrando pago:', { id: registroParaPago, metodo_pago: metodoPagoModal });
 
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             const res = await fetch('/api/registros/registrar-pago', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
                 body: JSON.stringify({ id: registroParaPago, metodo_pago: metodoPagoModal }),
             });
 
@@ -390,9 +429,17 @@ export default function Home() {
         try {
             console.log('Marcando como entregado:', { id });
 
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             const res = await fetch('/api/registros/marcar-entregado', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
                 body: JSON.stringify({ id }),
             });
 
@@ -425,9 +472,17 @@ export default function Home() {
         if (motivo === null) return;
 
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             const res = await fetch('/api/registros/cancelar', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
                 body: JSON.stringify({ id, motivo }),
             });
 
@@ -450,9 +505,17 @@ export default function Home() {
         if (motivo === null) return; // Usuario canceló
 
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             const res = await fetch('/api/registros/anular', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
                 body: JSON.stringify({ id, motivo, usuario_id: userId }),
             });
 
@@ -479,9 +542,17 @@ export default function Home() {
         }
 
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             const res = await fetch('/api/registros/eliminar', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
                 body: JSON.stringify({ id }),
             });
 
@@ -604,7 +675,14 @@ export default function Home() {
 
                                         if (value.length >= 6) {
                                             try {
-                                                const res = await fetch(`/api/registros/buscar-patente?patente=${value}`);
+                                                const user = getAuthUser();
+                                                const authToken = user?.isSaas
+                                                    ? localStorage.getItem('authToken')
+                                                    : localStorage.getItem('lavadero_token');
+
+                                                const res = await fetch(`/api/registros/buscar-patente?patente=${value}`, {
+                                                    headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+                                                });
                                                 const data = await res.json();
 
                                                 if (data.found) {
