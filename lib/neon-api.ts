@@ -588,6 +588,38 @@ export async function sincronizarUsuariosEmpresa(
       // 2. Conectar al branch
       const branchSql = neonDriver(branchUrl);
 
+      // 2.5. VERIFICAR Y ACTUALIZAR SCHEMA DE TABLA usuarios SI ES NECESARIO
+      // Esto maneja branches creados con schema viejo que no tiene todas las columnas
+      try {
+        console.log('[Sync Usuarios] Verificando schema de tabla usuarios...');
+        
+        // Verificar si tiene la columna 'email' (indicador de schema nuevo)
+        const schemaCheck = await branchSql`
+          SELECT column_name
+          FROM information_schema.columns
+          WHERE table_name = 'usuarios' AND column_name = 'email'
+        `;
+        
+        if (schemaCheck.length === 0) {
+          console.log('[Sync Usuarios] ⚠️ Schema viejo detectado - Actualizando tabla usuarios...');
+          
+          // Agregar columnas faltantes
+          await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE`;
+          await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS password_hash TEXT`;
+          await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol VARCHAR(50) DEFAULT 'operador'`;
+          await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT true`;
+          await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`;
+          await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`;
+          
+          console.log('[Sync Usuarios] ✅ Schema actualizado correctamente');
+        } else {
+          console.log('[Sync Usuarios] ✅ Schema ya está actualizado');
+        }
+      } catch (schemaError: any) {
+        console.warn('[Sync Usuarios] ⚠️ Error verificando/actualizando schema:', schemaError.message);
+        // Continuar de todas formas - podría ser que ya esté bien
+      }
+
       // 3. Verificar usuarios existentes en branch
       const usuariosBranchResult = await branchSql`
         SELECT id FROM usuarios
