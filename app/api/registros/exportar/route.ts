@@ -26,8 +26,8 @@ export async function GET(request: Request) {
       ORDER BY fecha_ingreso DESC
     `;
 
-        // Fix: Driver neon retorna array directo, NO .rows
-        const registros = Array.isArray(result) ? result : [];
+        // Fix: Compatible con ambos drivers (neon retorna array, vercel postgres retorna .rows)
+        const registros = Array.isArray(result) ? result : (result.rows || []);
 
         // Preparar datos para Excel
         const data = registros.map(row => ({
