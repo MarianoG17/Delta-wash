@@ -1,6 +1,6 @@
 {
-  "name": "DeltaWash - Lavadero App",
-  "short_name": "DeltaWash",
+  "name": "Lavapp - Sistema de Gestión",
+  "short_name": "Lavapp",
   "description": "Sistema de gestión para lavadero de autos",
   "start_url": "/",
   "scope": "/",
