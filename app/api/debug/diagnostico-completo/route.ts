@@ -81,7 +81,7 @@ export async function GET(request: Request) {
                 totalRegistros: parseInt(String(totalRegistros)) || 0,
                 totalClientes: totalClientes || 0,
                 totalEntregados: parseInt(String(totalEntregados)) || 0,
-                muestraRegistros: muestra.map(r => ({
+                muestraRegistros: muestra.map((r: any) => ({
                     id: r.id,
                     patente: r.patente,
                     fecha: r.created_at,
