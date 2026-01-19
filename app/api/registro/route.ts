@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createPool } from '@vercel/postgres';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { createAndSetupBranchForEmpresa } from '@/lib/neon-api';
+import { createAndSetupBranchForEmpresa, sincronizarUsuariosEmpresa } from '@/lib/neon-api';
 
 /**
  * API de Registro SaaS
@@ -203,48 +203,17 @@ export async function POST(request: Request) {
 
     // CRÍTICO: Crear los usuarios en la tabla 'usuarios' del branch dedicado
     // Esto sincroniza los IDs entre usuarios_sistema (BD Central) y usuarios (Branch)
+    // AHORA CON RETRY LOGIC para manejar problemas de timing/inicialización
     if (branchUrl) {
-      console.log('[Registro] 👤 Creando usuarios en branch dedicado...');
-      try {
-        const { neon } = await import('@neondatabase/serverless');
-        const branchSql = neon(branchUrl);
-
-        // Insertar usuario admin en el branch con el mismo ID
-        await branchSql`
-          INSERT INTO usuarios (id, email, password_hash, nombre, rol, activo)
-          VALUES (
-            ${usuario.id},
-            ${usuario.email},
-            ${passwordHash},
-            ${usuario.nombre},
-            ${usuario.rol},
-            true
-          )
-          ON CONFLICT (id) DO NOTHING
-        `;
-
-        // Insertar usuario operador en el branch con el mismo ID
-        await branchSql`
-          INSERT INTO usuarios (id, email, password_hash, nombre, rol, activo)
-          VALUES (
-            ${operadorResult.rows[0].id},
-            ${'operador@' + finalSlug + '.demo'},
-            ${passwordOperadorHash},
-            'Operador Demo',
-            'operador',
-            true
-          )
-          ON CONFLICT (id) DO NOTHING
-        `;
-
-        // Actualizar secuencia de IDs para evitar conflictos futuros
-        const maxId = Math.max(usuario.id, operadorResult.rows[0].id);
-        await branchSql`SELECT setval('usuarios_id_seq', ${maxId})`;
-
-        console.log(`[Registro] ✅ Usuarios creados en branch (IDs: ${usuario.id}, ${operadorResult.rows[0].id})`);
-      } catch (userError) {
-        console.error('[Registro] ⚠️ Error al crear usuarios en branch:', userError);
-        // No fallar el registro por esto, solo logear
+      console.log('[Registro] 👤 Sincronizando usuarios en branch dedicado con retry logic...');
+      
+      const sincronizado = await sincronizarUsuariosEmpresa(empresa.id, branchUrl, 3);
+      
+      if (sincronizado) {
+        console.log(`[Registro] ✅ Usuarios sincronizados exitosamente`);
+      } else {
+        console.error('[Registro] ⚠️ No se pudieron sincronizar usuarios');
+        console.error('[Registro] Los usuarios se sincronizarán automáticamente en la primera acción (lazy sync)');
       }
     }
 

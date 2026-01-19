@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDBConnection } from '@/lib/db-saas';
 import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
+import { sincronizarUsuariosEmpresa } from '@/lib/neon-api';
 
 export async function GET(request: Request) {
     try {

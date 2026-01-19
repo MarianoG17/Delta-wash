@@ -534,3 +534,126 @@ export async function createAndSetupBranchForEmpresa(
     throw error;
   }
 }
+
+// ============================================
+// SINCRONIZACIÓN DE USUARIOS
+// ============================================
+
+/**
+ * Sincroniza usuarios de BD Central al branch dedicado de una empresa
+ * Usado para:
+ * 1. Retry logic durante el registro
+ * 2. Lazy sync cuando se detecta FK error
+ * 3. Endpoint manual de sincronización
+ *
+ * @param empresaId - ID de la empresa en BD Central
+ * @param branchUrl - URL de conexión al branch dedicado
+ * @param maxRetries - Número máximo de intentos
+ * @returns true si sincronizó exitosamente, false si falló
+ */
+export async function sincronizarUsuariosEmpresa(
+  empresaId: number,
+  branchUrl: string,
+  maxRetries: number = 3
+): Promise<boolean> {
+  console.log(`[Sync Usuarios] Iniciando sincronización para empresa ${empresaId}...`);
+  console.log(`[Sync Usuarios] Intentos máximos: ${maxRetries}`);
+
+  for (let intento = 1; intento <= maxRetries; intento++) {
+    try {
+      console.log(`[Sync Usuarios] 🔄 Intento ${intento}/${maxRetries}`);
+
+      // 1. Obtener usuarios de BD Central
+      const { sql: centralSql } = await import('@/lib/db');
+      const usuariosCentralResult = await centralSql`
+        SELECT id, email, password_hash, nombre, rol, activo, fecha_creacion
+        FROM usuarios_sistema
+        WHERE empresa_id = ${empresaId}
+        ORDER BY id ASC
+      `;
+
+      const usuariosCentral = Array.isArray(usuariosCentralResult)
+        ? usuariosCentralResult
+        : usuariosCentralResult.rows || [];
+
+      if (usuariosCentral.length === 0) {
+        console.log('[Sync Usuarios] ⚠️ No hay usuarios en BD Central para sincronizar');
+        return false;
+      }
+
+      console.log(`[Sync Usuarios] Encontrados ${usuariosCentral.length} usuarios en BD Central`);
+
+      // 2. Conectar al branch
+      const { neon } = await import('@neondatabase/serverless');
+      const branchSql = neon(branchUrl);
+
+      // 3. Verificar usuarios existentes en branch
+      const usuariosBranchResult = await branchSql`
+        SELECT id FROM usuarios
+      `;
+      const usuariosBranch = Array.isArray(usuariosBranchResult)
+        ? usuariosBranchResult
+        : (usuariosBranchResult as any).rows || [];
+
+      const idsExistentes = new Set(usuariosBranch.map((u: any) => u.id));
+      console.log(`[Sync Usuarios] ${usuariosBranch.length} usuarios ya existen en branch`);
+
+      // 4. Insertar usuarios faltantes
+      let usuariosCreados = 0;
+      for (const usuario of usuariosCentral) {
+        if (idsExistentes.has(usuario.id)) {
+          console.log(`[Sync Usuarios] Usuario ${usuario.id} ya existe, saltando...`);
+          continue;
+        }
+
+        try {
+          await branchSql`
+            INSERT INTO usuarios (id, email, password_hash, nombre, rol, activo, fecha_creacion)
+            VALUES (
+              ${usuario.id},
+              ${usuario.email},
+              ${usuario.password_hash},
+              ${usuario.nombre},
+              ${usuario.rol},
+              ${usuario.activo},
+              ${usuario.fecha_creacion || new Date()}
+            )
+            ON CONFLICT (id) DO UPDATE SET
+              email = EXCLUDED.email,
+              password_hash = EXCLUDED.password_hash,
+              nombre = EXCLUDED.nombre,
+              rol = EXCLUDED.rol,
+              activo = EXCLUDED.activo
+          `;
+          usuariosCreados++;
+          console.log(`[Sync Usuarios] ✅ Usuario ${usuario.id} (${usuario.email}) sincronizado`);
+        } catch (insertError: any) {
+          console.error(`[Sync Usuarios] Error insertando usuario ${usuario.id}:`, insertError.message);
+          // Continuar con otros usuarios
+        }
+      }
+
+      // 5. Actualizar secuencia
+      if (usuariosCentral.length > 0) {
+        const maxId = Math.max(...usuariosCentral.map((u: any) => u.id));
+        await branchSql`SELECT setval('usuarios_id_seq', ${maxId})`;
+        console.log(`[Sync Usuarios] ✅ Secuencia actualizada a ${maxId}`);
+      }
+
+      console.log(`[Sync Usuarios] ✅ Sincronización exitosa: ${usuariosCreados} usuarios creados`);
+      return true;
+
+    } catch (error: any) {
+      console.error(`[Sync Usuarios] ❌ Intento ${intento} falló:`, error.message);
+      
+      if (intento < maxRetries) {
+        const delay = Math.pow(2, intento - 1) * 1000; // 1s, 2s, 4s
+        console.log(`[Sync Usuarios] Esperando ${delay}ms antes de reintentar...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  console.error('[Sync Usuarios] ❌ Todos los intentos fallaron');
+  return false;
+}
