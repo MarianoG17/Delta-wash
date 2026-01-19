@@ -587,11 +587,12 @@ export async function sincronizarUsuariosEmpresa(
 
       // 2. Conectar al branch
       const branchSql = neonDriver(branchUrl);
+      console.log('[Sync Usuarios] 🔍 Branch conectado - Iniciando verificación de schema...');
 
       // 2.5. VERIFICAR Y ACTUALIZAR SCHEMA DE TABLA usuarios SI ES NECESARIO
       // Esto maneja branches creados con schema viejo que no tiene todas las columnas
       try {
-        console.log('[Sync Usuarios] Verificando schema de tabla usuarios...');
+        console.log('[Sync Usuarios] 📋 Verificando schema de tabla usuarios...');
         
         // Verificar si tiene la columna 'email' (indicador de schema nuevo)
         const schemaCheck = await branchSql`
@@ -600,23 +601,32 @@ export async function sincronizarUsuariosEmpresa(
           WHERE table_name = 'usuarios' AND column_name = 'email'
         `;
         
+        console.log(`[Sync Usuarios] Resultado schema check: ${schemaCheck.length} columnas encontradas`);
+        
         if (schemaCheck.length === 0) {
           console.log('[Sync Usuarios] ⚠️ Schema viejo detectado - Actualizando tabla usuarios...');
           
           // Agregar columnas faltantes
           await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE`;
+          console.log('[Sync Usuarios] ✓ Columna email agregada');
           await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS password_hash TEXT`;
+          console.log('[Sync Usuarios] ✓ Columna password_hash agregada');
           await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol VARCHAR(50) DEFAULT 'operador'`;
+          console.log('[Sync Usuarios] ✓ Columna rol agregada');
           await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT true`;
+          console.log('[Sync Usuarios] ✓ Columna activo agregada');
           await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`;
+          console.log('[Sync Usuarios] ✓ Columna created_at agregada');
           await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`;
+          console.log('[Sync Usuarios] ✓ Columna updated_at agregada');
           
           console.log('[Sync Usuarios] ✅ Schema actualizado correctamente');
         } else {
           console.log('[Sync Usuarios] ✅ Schema ya está actualizado');
         }
       } catch (schemaError: any) {
-        console.warn('[Sync Usuarios] ⚠️ Error verificando/actualizando schema:', schemaError.message);
+        console.error('[Sync Usuarios] ❌ ERROR verificando/actualizando schema:', schemaError.message);
+        console.error('[Sync Usuarios] Stack:', schemaError.stack);
         // Continuar de todas formas - podría ser que ya esté bien
       }
 
