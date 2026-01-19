@@ -200,13 +200,15 @@ export async function POST(request: Request) {
                     // Solo para usuarios SaaS (que tienen empresaId)
                     if (empresaId) {
                         try {
-                            // Obtener branchUrl de la empresa
-                            const { sql: centralSql } = await import('@/lib/db');
+                            // Obtener branchUrl de la empresa usando driver compatible con CENTRAL_DB_URL
+                            const { neon } = await import('@neondatabase/serverless');
+                            const centralSql = neon(process.env.CENTRAL_DB_URL!);
                             const empresaResult = await centralSql`
                                 SELECT branch_url FROM empresas WHERE id = ${empresaId}
                             `;
                             
-                            const empresaData = Array.isArray(empresaResult) ? empresaResult : empresaResult.rows || [];
+                            // Neon driver retorna array directamente (no tiene .rows)
+                            const empresaData = Array.isArray(empresaResult) ? empresaResult : [];
                             
                             if (empresaData.length > 0 && empresaData[0].branch_url) {
                                 const branchUrl = empresaData[0].branch_url;
