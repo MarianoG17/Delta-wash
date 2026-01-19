@@ -126,7 +126,7 @@ export async function POST(request: Request) {
         branchesEliminados: branchesEliminados.length,
         branchesRequierenEliminacionManual: branchesError.length
       },
-      empresasEliminadas: empresas.map(e => ({
+      empresasEliminadas: empresas.map((e: any) => ({
         nombre: e.nombre,
         slug: e.slug,
         branchName: e.branch_name

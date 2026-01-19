@@ -78,7 +78,7 @@ export async function POST(request: Request) {
         slug: empresa.slug,
         branchName: empresa.branch_name,
         usuariosEliminados: usuariosResult.rows.length,
-        emails: usuariosResult.rows.map(u => u.email)
+        emails: usuariosResult.rows.map((u: any) => u.email)
       },
       advertencia: '⚠️ IMPORTANTE: El branch en Neon NO fue eliminado. Deberás eliminarlo manualmente desde Neon Console si lo deseas.'
     });

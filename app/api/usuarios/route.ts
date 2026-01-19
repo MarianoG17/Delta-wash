@@ -37,7 +37,7 @@ export async function GET(request: Request) {
           created_at ASC
       `;
 
-      const usuarios = result.rows.map(u => ({
+      const usuarios = result.rows.map((u: any) => ({
         id: u.id,
         email: u.email,
         nombre: u.nombre,
@@ -98,7 +98,7 @@ export async function GET(request: Request) {
         created_at ASC
     `;
 
-    const usuarios = result.rows.map(u => ({
+    const usuarios = result.rows.map((u: any) => ({
       id: u.id,
       email: u.email,
       nombre: u.nombre,

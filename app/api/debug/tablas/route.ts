@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 
         return NextResponse.json({
             success: true,
-            tablas: tablasResult.rows.map(r => r.table_name),
+            tablas: tablasResult.rows.map((r: any) => r.table_name),
             total_tablas: tablasResult.rows.length,
             movimientos_cuenta_existe: movimientosExiste.rows[0].existe,
             connection_info: connectionInfo,

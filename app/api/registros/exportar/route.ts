@@ -30,7 +30,7 @@ export async function GET(request: Request) {
         const registros = Array.isArray(result) ? result : (result.rows || []);
 
         // Preparar datos para Excel
-        const data = registros.map(row => ({
+        const data = registros.map((row: any) => ({
             'ID': row.id,
             'Fecha Ingreso': row.fecha_ingreso ? new Date(row.fecha_ingreso).toLocaleString('es-AR') : '',
             'Fecha Listo': row.fecha_listo ? new Date(row.fecha_listo).toLocaleString('es-AR') : '',
