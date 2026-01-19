@@ -45,12 +45,16 @@ export default function UsuariosPage() {
   const cargarUsuarios = async () => {
     try {
       setLoading(true);
-      const authToken = localStorage.getItem('authToken');
+      const user = getAuthUser();
+      const authToken = user?.isSaas ? localStorage.getItem('authToken') : null;
+
+      const headers: Record<string, string> = {};
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
 
       const response = await fetch('/api/usuarios', {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
+        headers
       });
 
       const data = await response.json();
@@ -76,14 +80,20 @@ export default function UsuariosPage() {
     }
 
     try {
-      const authToken = localStorage.getItem('authToken');
+      const user = getAuthUser();
+      const authToken = user?.isSaas ? localStorage.getItem('authToken') : null;
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
 
       const response = await fetch('/api/usuarios', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
+        headers,
         body: JSON.stringify(nuevoUsuario)
       });
 
@@ -247,11 +257,10 @@ export default function UsuariosPage() {
                         <h3 className="text-xl font-bold text-gray-800">
                           {usuario.nombre}
                         </h3>
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          usuario.rol === 'admin'
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${usuario.rol === 'admin'
                             ? 'bg-purple-100 text-purple-800'
                             : 'bg-orange-100 text-orange-800'
-                        }`}>
+                          }`}>
                           {usuario.rol === 'admin' ? '👑 Admin' : '👤 Operador'}
                         </span>
                         {!usuario.activo && (

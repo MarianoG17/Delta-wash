@@ -1,33 +1,69 @@
 import { NextResponse } from 'next/server';
-import { createPool } from '@vercel/postgres';
+import { createPool, sql } from '@vercel/postgres';
 import bcrypt from 'bcryptjs';
 import { sincronizarUsuariosEmpresa } from '@/lib/neon-api';
 
 /**
  * API de Gestión de Usuarios
- * Permite al admin ver y gestionar usuarios de su empresa
+ * Compatible con DeltaWash Legacy y Sistema SaaS
  */
 
 // GET: Obtener todos los usuarios de la empresa
 export async function GET(request: Request) {
   try {
+    console.log('[Usuarios GET] 🚀 Inicio de consulta de usuarios');
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
 
+    // MODO LEGACY (DeltaWash sin token JWT)
     if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'No autenticado' },
-        { status: 401 }
-      );
+      console.log('[Usuarios GET] Modo Legacy - Consultando tabla usuarios en POSTGRES_URL');
+
+      // Consultar tabla 'usuarios' en la BD legacy
+      const result = await sql`
+        SELECT
+          id,
+          username as email,
+          nombre,
+          rol,
+          created_at
+        FROM usuarios
+        ORDER BY
+          CASE rol
+            WHEN 'admin' THEN 1
+            WHEN 'operador' THEN 2
+            ELSE 3
+          END,
+          created_at ASC
+      `;
+
+      const usuarios = result.rows.map(u => ({
+        id: u.id,
+        email: u.email,
+        nombre: u.nombre,
+        rol: u.rol,
+        activo: true, // Legacy no tiene campo activo
+        fechaCreacion: u.created_at
+      }));
+
+      console.log(`[Usuarios GET] ✅ ${usuarios.length} usuarios encontrados en sistema legacy`);
+
+      return NextResponse.json({
+        success: true,
+        usuarios
+      });
     }
 
-    // Decodificar token para obtener empresaId
+    // MODO SAAS (con token JWT)
+    console.log('[Usuarios GET] Modo SaaS - Decodificando token');
     const jwt = await import('jsonwebtoken');
     const jwtSecret = process.env.JWT_SECRET || 'default-secret-change-this';
     const decoded = jwt.verify(token, jwtSecret) as any;
 
     const empresaId = decoded.empresaId;
     const rolUsuario = decoded.rol;
+
+    console.log(`[Usuarios GET] EmpresaId: ${empresaId}, Rol: ${rolUsuario}`);
 
     // Solo admins pueden ver usuarios
     if (rolUsuario !== 'admin') {
@@ -44,7 +80,7 @@ export async function GET(request: Request) {
 
     // Obtener usuarios de la empresa
     const result = await centralDB.sql`
-      SELECT 
+      SELECT
         id,
         email,
         nombre,
@@ -53,11 +89,11 @@ export async function GET(request: Request) {
         created_at
       FROM usuarios_sistema
       WHERE empresa_id = ${empresaId}
-      ORDER BY 
-        CASE rol 
-          WHEN 'admin' THEN 1 
-          WHEN 'operador' THEN 2 
-          ELSE 3 
+      ORDER BY
+        CASE rol
+          WHEN 'admin' THEN 1
+          WHEN 'operador' THEN 2
+          ELSE 3
         END,
         created_at ASC
     `;
@@ -71,13 +107,15 @@ export async function GET(request: Request) {
       fechaCreacion: u.created_at
     }));
 
+    console.log(`[Usuarios GET] ✅ ${usuarios.length} usuarios encontrados en empresa ${empresaId}`);
+
     return NextResponse.json({
       success: true,
       usuarios
     });
 
   } catch (error) {
-    console.error('Error al obtener usuarios:', error);
+    console.error('[Usuarios GET] ❌ ERROR:', error);
     return NextResponse.json(
       {
         success: false,
@@ -92,35 +130,13 @@ export async function GET(request: Request) {
 // POST: Crear nuevo usuario
 export async function POST(request: Request) {
   try {
+    console.log('[Usuarios POST] 🚀 Inicio de creación de usuario');
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.replace('Bearer ', '');
 
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'No autenticado' },
-        { status: 401 }
-      );
-    }
-
-    // Decodificar token
-    const jwt = await import('jsonwebtoken');
-    const jwtSecret = process.env.JWT_SECRET || 'default-secret-change-this';
-    const decoded = jwt.verify(token, jwtSecret) as any;
-
-    const empresaId = decoded.empresaId;
-    const rolUsuario = decoded.rol;
-
-    // Solo admins pueden crear usuarios
-    if (rolUsuario !== 'admin') {
-      return NextResponse.json(
-        { success: false, message: 'Solo administradores pueden crear usuarios' },
-        { status: 403 }
-      );
-    }
-
     const { email, password, nombre, rol } = await request.json();
 
-    // Validaciones
+    // Validaciones comunes
     if (!email || !password || !nombre || !rol) {
       return NextResponse.json(
         { success: false, message: 'Todos los campos son requeridos' },
@@ -142,6 +158,76 @@ export async function POST(request: Request) {
       );
     }
 
+    // MODO LEGACY (DeltaWash sin token JWT)
+    if (!token) {
+      console.log('[Usuarios POST] Modo Legacy - Creando usuario en tabla usuarios');
+
+      // Verificar que el username (email en este caso) no exista
+      const existingUser = await sql`
+        SELECT id FROM usuarios WHERE username = ${email}
+      `;
+
+      if (existingUser.rows.length > 0) {
+        return NextResponse.json(
+          { success: false, message: 'Este usuario ya existe' },
+          { status: 400 }
+        );
+      }
+
+      // Encriptar contraseña
+      const passwordHash = await bcrypt.hash(password, 10);
+
+      // Crear usuario en tabla legacy
+      const result = await sql`
+        INSERT INTO usuarios (
+          username,
+          password,
+          nombre,
+          rol
+        ) VALUES (
+          ${email},
+          ${passwordHash},
+          ${nombre},
+          ${rol}
+        )
+        RETURNING id, username as email, nombre, rol, created_at
+      `;
+
+      const nuevoUsuario = result.rows[0];
+      console.log('[Usuarios POST] ✅ Usuario legacy creado exitosamente:', nuevoUsuario.email);
+
+      return NextResponse.json({
+        success: true,
+        message: 'Usuario creado exitosamente',
+        usuario: {
+          id: nuevoUsuario.id,
+          email: nuevoUsuario.email,
+          nombre: nuevoUsuario.nombre,
+          rol: nuevoUsuario.rol,
+          fechaCreacion: nuevoUsuario.created_at
+        }
+      });
+    }
+
+    // MODO SAAS (con token JWT)
+    console.log('[Usuarios POST] Modo SaaS - Decodificando token');
+    const jwt = await import('jsonwebtoken');
+    const jwtSecret = process.env.JWT_SECRET || 'default-secret-change-this';
+    const decoded = jwt.verify(token, jwtSecret) as any;
+
+    const empresaId = decoded.empresaId;
+    const rolUsuario = decoded.rol;
+
+    console.log(`[Usuarios POST] EmpresaId: ${empresaId}, Rol: ${rolUsuario}`);
+
+    // Solo admins pueden crear usuarios
+    if (rolUsuario !== 'admin') {
+      return NextResponse.json(
+        { success: false, message: 'Solo administradores pueden crear usuarios' },
+        { status: 403 }
+      );
+    }
+
     // Conectar a BD Central
     const centralDB = createPool({
       connectionString: process.env.CENTRAL_DB_URL
@@ -149,7 +235,7 @@ export async function POST(request: Request) {
 
     // Verificar que el email no exista
     const existingUser = await centralDB.sql`
-      SELECT id FROM usuarios_sistema 
+      SELECT id FROM usuarios_sistema
       WHERE email = ${email} AND empresa_id = ${empresaId}
     `;
 
@@ -186,33 +272,31 @@ export async function POST(request: Request) {
     const nuevoUsuario = result.rows[0];
 
     // SINCRONIZAR USUARIO AL BRANCH DEDICADO
-    // Obtener branch_url de la empresa para sincronizar usuarios
     console.log('[Usuarios POST] 🔄 Sincronizando nuevo usuario al branch dedicado...');
-    
+
     try {
       const empresaResult = await centralDB.sql`
         SELECT branch_url FROM empresas WHERE id = ${empresaId}
       `;
-      
+
       if (empresaResult.rows.length > 0 && empresaResult.rows[0].branch_url) {
         const branchUrl = empresaResult.rows[0].branch_url;
-        
-        // Sincronizar con 2 intentos (suficiente para usuario individual)
+
         const sincronizado = await sincronizarUsuariosEmpresa(empresaId, branchUrl, 2);
-        
+
         if (sincronizado) {
           console.log('[Usuarios POST] ✅ Usuario sincronizado exitosamente al branch');
         } else {
           console.warn('[Usuarios POST] ⚠️ No se pudo sincronizar usuario al branch');
-          console.warn('[Usuarios POST] El usuario se sincronizará automáticamente en el primer uso (lazy sync)');
         }
       } else {
         console.warn('[Usuarios POST] ⚠️ Empresa sin branch_url configurado');
       }
     } catch (syncError) {
-      // No fallar si la sincronización falla - lazy sync lo resolverá
       console.error('[Usuarios POST] Error en sincronización (no crítico):', syncError);
     }
+
+    console.log('[Usuarios POST] ✅ Usuario SaaS creado exitosamente:', nuevoUsuario.email);
 
     return NextResponse.json({
       success: true,
@@ -227,7 +311,7 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('Error al crear usuario:', error);
+    console.error('[Usuarios POST] ❌ ERROR:', error);
     return NextResponse.json(
       {
         success: false,
