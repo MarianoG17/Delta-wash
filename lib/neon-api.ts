@@ -625,6 +625,9 @@ export async function sincronizarUsuariosEmpresa(
           try {
             await branchSql`ALTER TABLE usuarios RENAME COLUMN password TO password_legacy`;
             console.log('[Sync Usuarios] ✓ Columna password renombrada a password_legacy');
+            // CRÍTICO: Hacer password_legacy NULLABLE (usuarios SaaS no lo tienen)
+            await branchSql`ALTER TABLE usuarios ALTER COLUMN password_legacy DROP NOT NULL`;
+            console.log('[Sync Usuarios] ✓ Columna password_legacy ahora es NULLABLE');
           } catch (e) {
             console.log('[Sync Usuarios] ℹ️  Columna password ya migrada o no existe');
           }
@@ -652,6 +655,11 @@ export async function sincronizarUsuariosEmpresa(
 
       // 4. Insertar usuarios faltantes
       let usuariosCreados = 0;
+      let usuariosFallidos = 0;
+      const usuariosPorCrear = usuariosCentral.filter(u => !idsExistentes.has(u.id));
+      
+      console.log(`[Sync Usuarios] Usuarios a crear: ${usuariosPorCrear.length}`);
+      
       for (const usuario of usuariosCentral) {
         if (idsExistentes.has(usuario.id)) {
           console.log(`[Sync Usuarios] Usuario ${usuario.id} ya existe, saltando...`);
@@ -680,8 +688,9 @@ export async function sincronizarUsuariosEmpresa(
           usuariosCreados++;
           console.log(`[Sync Usuarios] ✅ Usuario ${usuario.id} (${usuario.email}) sincronizado`);
         } catch (insertError: any) {
-          console.error(`[Sync Usuarios] Error insertando usuario ${usuario.id}:`, insertError.message);
-          // Continuar con otros usuarios
+          usuariosFallidos++;
+          console.error(`[Sync Usuarios] ❌ Error insertando usuario ${usuario.id}:`, insertError.message);
+          // NO continuar silenciosamente - este es un error crítico
         }
       }
 
@@ -692,7 +701,15 @@ export async function sincronizarUsuariosEmpresa(
         console.log(`[Sync Usuarios] ✅ Secuencia actualizada a ${maxId}`);
       }
 
-      console.log(`[Sync Usuarios] ✅ Sincronización exitosa: ${usuariosCreados} usuarios creados`);
+      // 6. VALIDAR RESULTADO DE SINCRONIZACIÓN
+      if (usuariosFallidos > 0) {
+        console.error(`[Sync Usuarios] ❌ Sincronización FALLIDA: ${usuariosFallidos} usuarios NO se pudieron crear`);
+        console.error(`[Sync Usuarios] Detalles: Creados=${usuariosCreados}, Fallidos=${usuariosFallidos}, Total requerido=${usuariosPorCrear.length}`);
+        // NO retornar true - forzar retry
+        throw new Error(`Falló sincronización: ${usuariosFallidos} usuarios no se crearon`);
+      }
+
+      console.log(`[Sync Usuarios] ✅ Sincronización exitosa: ${usuariosCreados} usuarios creados, 0 fallidos`);
       return true;
 
     } catch (error: any) {
