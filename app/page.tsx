@@ -31,6 +31,7 @@ export default function Home() {
     const [userRole, setUserRole] = useState<string>('operador');
     const [mounted, setMounted] = useState(false);
     const [preciosDinamicos, setPreciosDinamicos] = useState<any>(null);
+    const [empresaNombre, setEmpresaNombre] = useState<string>('DeltaWash');
 
     // Form states
     const [marca, setMarca] = useState('');
@@ -70,6 +71,15 @@ export default function Home() {
                 setUsername(user.nombre);
                 setUserId(user.id);
                 setUserRole(user.rol);
+                
+                // Cargar nombre de empresa (SaaS o DeltaWash)
+                if (user.isSaas) {
+                    const nombreEmpresa = localStorage.getItem('empresaNombre');
+                    if (nombreEmpresa) {
+                        setEmpresaNombre(nombreEmpresa);
+                    }
+                }
+                
                 cargarPreciosDinamicos();
                 cargarRegistrosEnProceso();
             }
@@ -597,7 +607,7 @@ export default function Home() {
                         <div className="text-white">
                             <div className="flex items-center gap-2 mb-2">
                                 <Car size={32} />
-                                <h1 className="text-3xl font-bold">DeltaWash</h1>
+                                <h1 className="text-3xl font-bold">{empresaNombre}</h1>
                             </div>
                             <p className="text-sm opacity-90">Bienvenido/a, {username}</p>
                         </div>

@@ -235,19 +235,45 @@ export default function ListasPrecios() {
         const lista = listas.find(l => l.id === listaId);
         if (!lista) return;
 
+        // Si no está editando, primero iniciar edición para cargar precios actuales de BD
+        if (listaEditando !== listaId) {
+            iniciarEdicion(lista);
+        }
+
+        // Ahora aplicar aumento sobre los precios actuales (ya sea de BD o de edición en curso)
         const nuevosPreciosEditando: { [key: string]: number } = {};
 
-        lista.precios.forEach(precio => {
-            const key = `${precio.tipo_vehiculo}_${precio.tipo_servicio}`;
-            const precioActual = parseFloat(precio.precio.toString());
-            const aumento = precioActual * (porcentaje / 100);
-            let precioNuevo = precioActual + aumento;
+        // Iterar sobre TODOS los vehículos y servicios posibles
+        tiposVehiculo.forEach(vehiculo => {
+            tiposServicio.forEach(servicio => {
+                const key = `${vehiculo.value}_${servicio.value}`;
+                
+                // Si ya estamos editando, partir de preciosEditando, sino de la BD
+                let precioActual = 0;
+                if (listaEditando === listaId) {
+                    precioActual = preciosEditando[key] || 0;
+                } else {
+                    // Buscar en la BD
+                    const precioEnBD = lista.precios.find(
+                        p => p.tipo_vehiculo === vehiculo.value && p.tipo_servicio === servicio.value
+                    );
+                    precioActual = precioEnBD ? parseFloat(precioEnBD.precio.toString()) : 0;
+                }
+                
+                // Solo incluir precios > 0 en el objeto (no sobrescribir con 0s)
+                if (precioActual > 0) {
+                    const aumento = precioActual * (porcentaje / 100);
+                    let precioNuevo = precioActual + aumento;
 
-            if (redondear) {
-                precioNuevo = redondearPrecio(precioNuevo);
-            }
+                    if (redondear) {
+                        precioNuevo = redondearPrecio(precioNuevo);
+                    }
 
-            nuevosPreciosEditando[key] = precioNuevo;
+                    nuevosPreciosEditando[key] = precioNuevo;
+                }
+                // Si precioActual es 0, NO lo incluimos en el objeto
+                // Así no se sobrescribirán precios existentes con 0
+            });
         });
 
         setPreciosEditando(nuevosPreciosEditando);
