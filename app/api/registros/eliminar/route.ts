@@ -18,21 +18,24 @@ export async function POST(request: Request) {
         }
 
         // Primero obtener el registro para verificar si usó cuenta corriente
-        const registroResult = await db`
+        const result = await db`
             SELECT r.*, cc.id as cuenta_corriente_id, cc.saldo_actual
             FROM registros_lavado r
             LEFT JOIN cuentas_corrientes cc ON r.cuenta_corriente_id = cc.id
             WHERE r.id = ${id}
         `;
 
-        if (registroResult.rows.length === 0) {
+        // Fix: Driver neon retorna array directo, NO .rows
+        const registros = Array.isArray(result) ? result : [];
+
+        if (registros.length === 0) {
             return NextResponse.json(
                 { success: false, message: 'Registro no encontrado' },
                 { status: 404 }
             );
         }
 
-        const registro = registroResult.rows[0];
+        const registro = registros[0];
 
         // Si el registro usó cuenta corriente, revertir el movimiento
         if (registro.cuenta_corriente_id && registro.precio) {

@@ -18,19 +18,22 @@ export async function POST(request: Request) {
         }
 
         // Obtener el registro para verificar si existe y si usó cuenta corriente
-        const registroResult = await db`
-            SELECT * FROM registros_lavado 
+        const result = await db`
+            SELECT * FROM registros_lavado
             WHERE id = ${id}
         `;
 
-        if (registroResult.rows.length === 0) {
+        // Fix: Driver neon retorna array directo, NO .rows
+        const registros = Array.isArray(result) ? result : [];
+
+        if (registros.length === 0) {
             return NextResponse.json(
                 { success: false, message: 'Registro no encontrado' },
                 { status: 404 }
             );
         }
 
-        const registro = registroResult.rows[0];
+        const registro = registros[0];
 
         // Verificar si ya está anulado
         if (registro.anulado) {

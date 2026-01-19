@@ -26,8 +26,11 @@ export async function GET(request: Request) {
       ORDER BY fecha_ingreso DESC
     `;
 
+        // Fix: Driver neon retorna array directo, NO .rows
+        const registros = Array.isArray(result) ? result : [];
+
         // Preparar datos para Excel
-        const data = result.rows.map(row => ({
+        const data = registros.map(row => ({
             'ID': row.id,
             'Fecha Ingreso': row.fecha_ingreso ? new Date(row.fecha_ingreso).toLocaleString('es-AR') : '',
             'Fecha Listo': row.fecha_listo ? new Date(row.fecha_listo).toLocaleString('es-AR') : '',

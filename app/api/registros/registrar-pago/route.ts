@@ -18,18 +18,21 @@ export async function POST(request: Request) {
         }
 
         // Obtener el registro
-        const registro = await db`
+        const result = await db`
             SELECT * FROM registros_lavado WHERE id = ${id}
         `;
 
-        if (registro.rows.length === 0) {
+        // Fix: Driver neon retorna array directo, NO .rows
+        const registros = Array.isArray(result) ? result : [];
+
+        if (registros.length === 0) {
             return NextResponse.json(
                 { success: false, message: 'Registro no encontrado' },
                 { status: 404 }
             );
         }
 
-        const reg = registro.rows[0];
+        const reg = registros[0];
 
         // Verificar que no esté ya pagado
         if (reg.pagado) {
