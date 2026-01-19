@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, DollarSign, Clock, Wallet } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign, Clock, Wallet, AlertCircle } from 'lucide-react';
 import { getAuthUser, getLoginUrl } from '@/lib/auth-utils';
 
 interface ReporteDia {
@@ -38,6 +38,15 @@ interface ReporteCaja {
     total_entregados: number;
 }
 
+interface ClienteInactivo {
+    nombre: string;
+    celular: string;
+    ultimaVisita: Date;
+    marca_modelo: string;
+    patente: string;
+    diasSinVisitar: number;
+}
+
 interface Totales {
     cantidad_total: number;
     facturacion_total: number;
@@ -59,7 +68,7 @@ export default function Reportes() {
     const router = useRouter();
     const [userRole, setUserRole] = useState<string>('operador');
     const [mounted, setMounted] = useState(false);
-    const [tabActiva, setTabActiva] = useState<'diario' | 'horario' | 'caja'>('diario');
+    const [tabActiva, setTabActiva] = useState<'diario' | 'horario' | 'caja' | 'clientes-inactivos'>('diario');
 
     // Fechas por defecto: últimos 30 días
     const hoy = new Date();
@@ -72,6 +81,7 @@ export default function Reportes() {
     const [reporte, setReporte] = useState<ReporteDia[]>([]);
     const [reporteHorario, setReporteHorario] = useState<ReporteHorario[]>([]);
     const [reporteCaja, setReporteCaja] = useState<ReporteCaja[]>([]);
+    const [clientesInactivos, setClientesInactivos] = useState<ClienteInactivo[]>([]);
     const [totales, setTotales] = useState<Totales>({
         cantidad_total: 0,
         facturacion_total: 0
@@ -158,6 +168,20 @@ export default function Reportes() {
                 setTotalesCaja(dataCaja.totales);
             } else {
                 alert('Error al cargar reporte de caja: ' + dataCaja.message);
+            }
+
+            // Cargar clientes inactivos (+15 días sin visitar)
+            const resClientes = await fetch('/api/reportes/clientes-inactivos', {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            const dataClientes = await resClientes.json();
+
+            if (dataClientes.success) {
+                setClientesInactivos(dataClientes.clientes);
+            } else {
+                console.error('Error al cargar clientes inactivos:', dataClientes.message);
             }
         } catch (error) {
             console.error('Error cargando reportes:', error);
@@ -291,6 +315,18 @@ export default function Reportes() {
                             <div className="flex items-center justify-center gap-2">
                                 <Clock size={20} />
                                 <span>Reporte por Horario</span>
+                            </div>
+                        </button>
+                        <button
+                            onClick={() => setTabActiva('clientes-inactivos')}
+                            className={`flex-1 px-6 py-4 font-semibold transition-colors ${tabActiva === 'clientes-inactivos'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                        >
+                            <div className="flex items-center justify-center gap-2">
+                                <AlertCircle size={20} />
+                                <span>Clientes Inactivos</span>
                             </div>
                         </button>
                     </div>
@@ -522,6 +558,139 @@ export default function Reportes() {
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Tabla de clientes inactivos */}
+                {tabActiva === 'clientes-inactivos' && (
+                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                        <div className="p-6">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                                Clientes Inactivos (+15 días sin visitar)
+                            </h2>
+                            <p className="text-sm text-gray-600 mb-6">
+                                Clientes que no han visitado el lavadero en más de 15 días. Usa WhatsApp para reactivarlos.
+                            </p>
+
+                            {/* Tarjeta resumen */}
+                            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-orange-900">
+                                            📊 Total clientes inactivos
+                                        </h3>
+                                        <p className="text-sm text-orange-700 mt-1">
+                                            Oportunidad de reactivación y fidelización
+                                        </p>
+                                    </div>
+                                    <div className="text-4xl font-bold text-orange-600">
+                                        {clientesInactivos.length}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Tabla de clientes */}
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b-2 border-gray-200">
+                                            <th className="text-left py-3 px-4 font-semibold text-gray-700">Cliente</th>
+                                            <th className="text-left py-3 px-4 font-semibold text-gray-700">Teléfono</th>
+                                            <th className="text-left py-3 px-4 font-semibold text-gray-700">Vehículo</th>
+                                            <th className="text-left py-3 px-4 font-semibold text-gray-700">Patente</th>
+                                            <th className="text-left py-3 px-4 font-semibold text-gray-700">Última Visita</th>
+                                            <th className="text-right py-3 px-4 font-semibold text-gray-700">Días sin visitar</th>
+                                            <th className="text-center py-3 px-4 font-semibold text-gray-700">Contactar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {clientesInactivos.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={7} className="text-center py-8 text-gray-500">
+                                                    {loading ? 'Cargando...' : '🎉 ¡Excelente! No hay clientes inactivos'}
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            clientesInactivos.map((cliente, index) => (
+                                                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                                                    <td className="py-3 px-4 text-gray-900 font-medium">
+                                                        {cliente.nombre}
+                                                    </td>
+                                                    <td className="py-3 px-4">
+                                                        <a
+                                                            href={`https://wa.me/549${cliente.celular.replace(/\D/g, '')}?text=${encodeURIComponent('¡Hola! Te extrañamos en el lavadero. ¿Qué tal si agendamos un turno? 🚗✨')}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="font-mono text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1"
+                                                            title="Enviar WhatsApp"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                                                            </svg>
+                                                            {cliente.celular}
+                                                        </a>
+                                                    </td>
+                                                    <td className="py-3 px-4 text-gray-900">
+                                                        {cliente.marca_modelo}
+                                                    </td>
+                                                    <td className="py-3 px-4 text-gray-900 font-mono">
+                                                        {cliente.patente}
+                                                    </td>
+                                                    <td className="py-3 px-4 text-gray-700">
+                                                        {new Date(cliente.ultimaVisita).toLocaleDateString('es-AR', {
+                                                            day: '2-digit',
+                                                            month: '2-digit',
+                                                            year: 'numeric'
+                                                        })}
+                                                    </td>
+                                                    <td className="py-3 px-4 text-right">
+                                                        <span className={`inline-block px-3 py-1 rounded-full font-semibold ${
+                                                            cliente.diasSinVisitar > 30
+                                                                ? 'bg-red-100 text-red-700'
+                                                                : 'bg-orange-100 text-orange-700'
+                                                        }`}>
+                                                            {cliente.diasSinVisitar} días
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-3 px-4 text-center">
+                                                        <a
+                                                            href={`https://wa.me/549${cliente.celular.replace(/\D/g, '')}?text=${encodeURIComponent(
+                                                                `¡Hola ${cliente.nombre}! 👋\n\n` +
+                                                                `Te extrañamos en el lavadero. Hace ${cliente.diasSinVisitar} días que no vienes con tu ${cliente.marca_modelo}.\n\n` +
+                                                                `¿Qué tal si agendamos un turno? Tenemos promociones especiales para clientes como vos. 🚗✨\n\n` +
+                                                                `¡Esperamos verte pronto!`
+                                                            )}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors"
+                                                            title="Enviar mensaje de reactivación"
+                                                        >
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                                                            </svg>
+                                                            Reactivar
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Info adicional */}
+                            {clientesInactivos.length > 0 && (
+                                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <h4 className="font-semibold text-blue-900 mb-2">💡 Consejos para reactivación:</h4>
+                                    <ul className="text-sm text-blue-800 space-y-1">
+                                        <li>• Personaliza el mensaje con el nombre y vehículo del cliente</li>
+                                        <li>• Ofrece promociones o descuentos especiales para su regreso</li>
+                                        <li>• Pregunta si tuvieron algún inconveniente en su última visita</li>
+                                        <li>• Recuérdales los beneficios de mantener su vehículo limpio</li>
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
