@@ -590,39 +590,48 @@ export async function sincronizarUsuariosEmpresa(
       console.log('[Sync Usuarios] 🔍 Branch conectado - Iniciando verificación de schema...');
 
       // 2.5. VERIFICAR Y ACTUALIZAR SCHEMA DE TABLA usuarios SI ES NECESARIO
-      // Esto maneja branches creados con schema viejo que no tiene todas las columnas
+      // Esto maneja branches creados con schema viejo (DeltaWash legacy) vs nuevo (SaaS)
       try {
         console.log('[Sync Usuarios] 📋 Verificando schema de tabla usuarios...');
         
-        // Verificar si tiene la columna 'email' (indicador de schema nuevo)
+        // Verificar si tiene la columna 'email' (indicador de schema nuevo SaaS)
         const schemaCheck = await branchSql`
           SELECT column_name
           FROM information_schema.columns
           WHERE table_name = 'usuarios' AND column_name = 'email'
         `;
         
-        console.log(`[Sync Usuarios] Resultado schema check: ${schemaCheck.length} columnas encontradas`);
+        console.log(`[Sync Usuarios] Resultado schema check: ${schemaCheck.length} columnas 'email' encontradas`);
         
         if (schemaCheck.length === 0) {
-          console.log('[Sync Usuarios] ⚠️ Schema viejo detectado - Actualizando tabla usuarios...');
+          // Schema legacy detectado (tiene 'username' en vez de 'email')
+          console.log('[Sync Usuarios] ⚠️ Schema LEGACY detectado - Migrando a schema SaaS...');
           
-          // Agregar columnas faltantes
+          // Hacer constraint de username NULLABLE (para permitir migración)
+          await branchSql`ALTER TABLE usuarios ALTER COLUMN username DROP NOT NULL`;
+          console.log('[Sync Usuarios] ✓ Constraint username removido');
+          
+          // Agregar columnas nuevas
           await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE`;
           console.log('[Sync Usuarios] ✓ Columna email agregada');
           await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS password_hash TEXT`;
           console.log('[Sync Usuarios] ✓ Columna password_hash agregada');
-          await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol VARCHAR(50) DEFAULT 'operador'`;
-          console.log('[Sync Usuarios] ✓ Columna rol agregada');
           await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT true`;
           console.log('[Sync Usuarios] ✓ Columna activo agregada');
-          await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`;
-          console.log('[Sync Usuarios] ✓ Columna created_at agregada');
           await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`;
           console.log('[Sync Usuarios] ✓ Columna updated_at agregada');
           
-          console.log('[Sync Usuarios] ✅ Schema actualizado correctamente');
+          // Renombrar password a password_legacy si existe
+          try {
+            await branchSql`ALTER TABLE usuarios RENAME COLUMN password TO password_legacy`;
+            console.log('[Sync Usuarios] ✓ Columna password renombrada a password_legacy');
+          } catch (e) {
+            console.log('[Sync Usuarios] ℹ️  Columna password ya migrada o no existe');
+          }
+          
+          console.log('[Sync Usuarios] ✅ Schema migrado de LEGACY a SaaS exitosamente');
         } else {
-          console.log('[Sync Usuarios] ✅ Schema ya está actualizado');
+          console.log('[Sync Usuarios] ✅ Schema SaaS ya está actualizado');
         }
       } catch (schemaError: any) {
         console.error('[Sync Usuarios] ❌ ERROR verificando/actualizando schema:', schemaError.message);
