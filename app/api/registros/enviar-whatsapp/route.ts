@@ -24,9 +24,9 @@ export async function POST(request: Request) {
       WHERE id = ${id}
     `;
 
-        // Acceso correcto - driver neon retorna array directo
-        const registros = Array.isArray(result) ? result : [];
-        
+        // Fix: Compatible con ambos drivers (neon retorna array, vercel postgres retorna .rows)
+        const registros = Array.isArray(result) ? result : (result.rows || []);
+
         if (registros.length === 0) {
             return NextResponse.json(
                 { error: 'Registro no encontrado' },
