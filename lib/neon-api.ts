@@ -568,7 +568,7 @@ export async function sincronizarUsuariosEmpresa(
       const centralSql = neonDriver(process.env.CENTRAL_DB_URL!);
       
       const usuariosCentralResult = await centralSql`
-        SELECT id, email, password_hash, nombre, rol, activo, created_at as fecha_creacion
+        SELECT id, email, password_hash, nombre, rol, activo, created_at
         FROM usuarios_sistema
         WHERE empresa_id = ${empresaId}
         ORDER BY id ASC
@@ -609,7 +609,7 @@ export async function sincronizarUsuariosEmpresa(
 
         try {
           await branchSql`
-            INSERT INTO usuarios (id, email, password_hash, nombre, rol, activo, fecha_creacion)
+            INSERT INTO usuarios (id, email, password_hash, nombre, rol, activo, created_at)
             VALUES (
               ${usuario.id},
               ${usuario.email},
@@ -617,7 +617,7 @@ export async function sincronizarUsuariosEmpresa(
               ${usuario.nombre},
               ${usuario.rol},
               ${usuario.activo},
-              ${usuario.fecha_creacion || new Date()}
+              ${usuario.created_at || new Date()}
             )
             ON CONFLICT (id) DO UPDATE SET
               email = EXCLUDED.email,
