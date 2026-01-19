@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS registros_lavado (
   id SERIAL PRIMARY KEY,
   marca_modelo VARCHAR(100) NOT NULL,
   patente VARCHAR(20) NOT NULL,
-  tipo_limpieza VARCHAR(50) NOT NULL,
+  tipo_limpieza VARCHAR(200) NOT NULL,  -- Aumentado de 50 a 200 para soportar múltiples servicios
   nombre_cliente VARCHAR(100) NOT NULL,
   celular VARCHAR(20) NOT NULL,
   fecha_ingreso TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

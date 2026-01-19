@@ -264,7 +264,7 @@ export async function initializeBranchSchema(
         color VARCHAR(50),
         cliente_id INTEGER REFERENCES clientes(id),
         tipo_vehiculo VARCHAR(50),
-        servicio VARCHAR(100),
+        servicio VARCHAR(200),
         precio DECIMAL(10,2),
         metodo_pago VARCHAR(50),
         estado VARCHAR(50) DEFAULT 'en_proceso',

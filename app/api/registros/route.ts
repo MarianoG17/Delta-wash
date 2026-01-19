@@ -164,33 +164,99 @@ export async function POST(request: Request) {
             });
         } else {
             // Registro normal sin cuenta corriente
-            let result;
-            if (pagado && metodo_pago) {
-                result = await db`
-                    INSERT INTO registros_lavado (
-                        marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado, usa_cuenta_corriente, pagado, metodo_pago, fecha_pago, monto_pagado
-                    ) VALUES (
-                        ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso', false, true, ${metodo_pago}, NOW(), ${precio || 0}
-                    )
-                    RETURNING *
-                `;
-            } else {
-                result = await db`
-                    INSERT INTO registros_lavado (
-                        marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado, usa_cuenta_corriente, pagado
-                    ) VALUES (
-                        ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso', false, false
-                    )
-                    RETURNING *
-                `;
+            try {
+                let result;
+                if (pagado && metodo_pago) {
+                    result = await db`
+                        INSERT INTO registros_lavado (
+                            marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado, usa_cuenta_corriente, pagado, metodo_pago, fecha_pago, monto_pagado
+                        ) VALUES (
+                            ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso', false, true, ${metodo_pago}, NOW(), ${precio || 0}
+                        )
+                        RETURNING *
+                    `;
+                } else {
+                    result = await db`
+                        INSERT INTO registros_lavado (
+                            marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado, usa_cuenta_corriente, pagado
+                        ) VALUES (
+                            ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso', false, false
+                        )
+                        RETURNING *
+                    `;
+                }
+
+                const normalResultData = Array.isArray(result) ? result : result.rows || [];
+
+                return NextResponse.json({
+                    success: true,
+                    registro: normalResultData[0],
+                });
+            } catch (insertError: any) {
+                // LAZY SYNC: Detectar error de Foreign Key (usuario no existe en branch)
+                if (insertError.code === '23503' && insertError.constraint?.includes('usuario')) {
+                    console.log('[Registros POST] 🔄 Detectado error FK de usuario - Activando Lazy Sync');
+                    
+                    // Solo para usuarios SaaS (que tienen empresaId)
+                    if (empresaId) {
+                        try {
+                            // Obtener branchUrl de la empresa
+                            const { sql: centralSql } = await import('@/lib/db');
+                            const empresaResult = await centralSql`
+                                SELECT branch_url FROM empresas WHERE id = ${empresaId}
+                            `;
+                            
+                            const empresaData = Array.isArray(empresaResult) ? empresaResult : empresaResult.rows || [];
+                            
+                            if (empresaData.length > 0 && empresaData[0].branch_url) {
+                                const branchUrl = empresaData[0].branch_url;
+                                console.log('[Registros POST] Sincronizando usuarios con 2 intentos...');
+                                
+                                const sincronizado = await sincronizarUsuariosEmpresa(empresaId, branchUrl, 2);
+                                
+                                if (sincronizado) {
+                                    console.log('[Registros POST] ✅ Lazy Sync exitoso - Reintentando INSERT');
+                                    
+                                    // Reintentar el INSERT
+                                    let resultRetry;
+                                    if (pagado && metodo_pago) {
+                                        resultRetry = await db`
+                                            INSERT INTO registros_lavado (
+                                                marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado, usa_cuenta_corriente, pagado, metodo_pago, fecha_pago, monto_pagado
+                                            ) VALUES (
+                                                ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso', false, true, ${metodo_pago}, NOW(), ${precio || 0}
+                                            )
+                                            RETURNING *
+                                        `;
+                                    } else {
+                                        resultRetry = await db`
+                                            INSERT INTO registros_lavado (
+                                                marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, estado, usa_cuenta_corriente, pagado
+                                            ) VALUES (
+                                                ${marca_modelo}, ${patente.toUpperCase()}, ${tipo_vehiculo || 'auto'}, ${tipo_limpieza}, ${nombreNormalizado}, ${celular}, ${extras || null}, ${extras_valor || 0}, ${precio || 0}, ${usuario_id}, 'en_proceso', false, false
+                                            )
+                                            RETURNING *
+                                        `;
+                                    }
+                                    
+                                    const retryResultData = Array.isArray(resultRetry) ? resultRetry : resultRetry.rows || [];
+                                    
+                                    return NextResponse.json({
+                                        success: true,
+                                        registro: retryResultData[0],
+                                        lazy_sync_applied: true
+                                    });
+                                }
+                            }
+                        } catch (syncError) {
+                            console.error('[Registros POST] Error en Lazy Sync:', syncError);
+                        }
+                    }
+                }
+                
+                // Si no se pudo resolver con Lazy Sync, lanzar el error original
+                throw insertError;
             }
-
-            const normalResultData = Array.isArray(result) ? result : result.rows || [];
-
-            return NextResponse.json({
-                success: true,
-                registro: normalResultData[0],
-            });
         }
     } catch (error) {
         console.error('[Registros POST] ❌ ERROR COMPLETO:', error);
