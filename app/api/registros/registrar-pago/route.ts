@@ -22,8 +22,8 @@ export async function POST(request: Request) {
             SELECT * FROM registros_lavado WHERE id = ${id}
         `;
 
-        // Fix: Driver neon retorna array directo, NO .rows
-        const registros = Array.isArray(result) ? result : [];
+        // Fix: Driver neon retorna array directo, driver pg retorna {rows: [...]}
+        const registros = Array.isArray(result) ? result : result.rows || [];
 
         if (registros.length === 0) {
             return NextResponse.json(

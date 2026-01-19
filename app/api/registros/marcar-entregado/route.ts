@@ -24,7 +24,7 @@ export async function POST(request: Request) {
             WHERE id = ${id}
         `;
 
-        const registros = Array.isArray(registroCheck) ? registroCheck : [];
+        const registros = Array.isArray(registroCheck) ? registroCheck : registroCheck.rows || [];
         
         if (registros.length === 0) {
             return NextResponse.json(
