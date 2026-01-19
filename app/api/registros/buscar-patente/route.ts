@@ -27,13 +27,16 @@ export async function GET(request: Request) {
       LIMIT 1
     `;
 
-        if (result.rows.length === 0) {
+        // Manejar diferencias entre drivers (pg vs neon)
+        const registros = Array.isArray(result) ? result : result.rows || [];
+
+        if (registros.length === 0) {
             return NextResponse.json({
                 found: false
             });
         }
 
-        const registro = result.rows[0];
+        const registro = registros[0];
 
         // Separar marca_modelo en marca y modelo
         const marcaModelo = registro.marca_modelo.split(' ');
