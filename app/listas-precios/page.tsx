@@ -178,8 +178,12 @@ export default function ListasPrecios() {
                 let tipo_vehiculo = '';
                 let tipo_servicio = '';
                 
+                // IMPORTANTE: Ordenar de más largo a más corto para evitar matches incorrectos
+                // Ejemplo: 'camioneta_xl' debe verificarse ANTES que 'camioneta'
+                const vehiculosOrdenados = [...tiposVehiculo].sort((a, b) => b.value.length - a.value.length);
+                
                 // Buscar qué tipo de vehículo coincide con el inicio del key
-                for (const vehiculo of tiposVehiculo) {
+                for (const vehiculo of vehiculosOrdenados) {
                     if (key.startsWith(vehiculo.value + '_')) {
                         tipo_vehiculo = vehiculo.value;
                         // El servicio es lo que queda después de quitar el vehículo y el '_'
@@ -193,6 +197,8 @@ export default function ListasPrecios() {
                     console.error(`No se pudo parsear el key: ${key}`);
                     continue;
                 }
+                
+                console.log(`Guardando: ${key} → vehiculo=${tipo_vehiculo}, servicio=${tipo_servicio}, precio=${valor}`);
                 
                 await fetch('/api/listas-precios/actualizar-precio', {
                     method: 'POST',
