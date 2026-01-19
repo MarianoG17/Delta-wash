@@ -103,7 +103,7 @@ export default function AdminEmpresasPage() {
               <p className="text-gray-600 mt-1">Panel de administración - Sistema SaaS</p>
             </div>
             <Link
-              href="/home"
+              href="/"
               className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
             >
               ← Volver al Home

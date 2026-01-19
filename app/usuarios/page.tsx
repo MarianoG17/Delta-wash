@@ -135,7 +135,7 @@ export default function UsuariosPage() {
               </p>
             </div>
             <button
-              onClick={() => router.push('/home')}
+              onClick={() => router.push('/')}
               className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
             >
               ← Volver
