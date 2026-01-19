@@ -563,18 +563,20 @@ export async function sincronizarUsuariosEmpresa(
     try {
       console.log(`[Sync Usuarios] 🔄 Intento ${intento}/${maxRetries}`);
 
-      // 1. Obtener usuarios de BD Central
-      const { sql: centralSql } = await import('@/lib/db');
-      const usuariosCentralResult = await centralSql`
-        SELECT id, email, password_hash, nombre, rol, activo, fecha_creacion
+      // 1. Obtener usuarios de BD Central usando createPool
+      const { createPool } = await import('@vercel/postgres');
+      const centralDB = createPool({
+        connectionString: process.env.CENTRAL_DB_URL
+      });
+      
+      const usuariosCentralResult = await centralDB.sql`
+        SELECT id, email, password_hash, nombre, rol, activo, created_at as fecha_creacion
         FROM usuarios_sistema
         WHERE empresa_id = ${empresaId}
         ORDER BY id ASC
       `;
 
-      const usuariosCentral = Array.isArray(usuariosCentralResult)
-        ? usuariosCentralResult
-        : usuariosCentralResult.rows || [];
+      const usuariosCentral = usuariosCentralResult.rows || [];
 
       if (usuariosCentral.length === 0) {
         console.log('[Sync Usuarios] ⚠️ No hay usuarios en BD Central para sincronizar');
