@@ -72,12 +72,16 @@ export default function Home() {
                 setUserId(user.id);
                 setUserRole(user.rol);
                 
-                // Cargar nombre de empresa (SaaS o DeltaWash)
+                // Cargar nombre de empresa según tipo de usuario
                 if (user.isSaas) {
+                    // Usuario SaaS: cargar nombre de empresa desde localStorage
                     const nombreEmpresa = localStorage.getItem('empresaNombre');
                     if (nombreEmpresa) {
                         setEmpresaNombre(nombreEmpresa);
                     }
+                } else {
+                    // Usuario Legacy: siempre mostrar "DeltaWash"
+                    setEmpresaNombre('DeltaWash');
                 }
                 
                 cargarPreciosDinamicos();
