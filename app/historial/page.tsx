@@ -188,29 +188,6 @@ function HistorialContent() {
         setClientesSinVisitar(sinVisitar);
     };
 
-    const enviarWhatsAppReactivacion = (cliente: any) => {
-        const mensaje = `Hola ${cliente.nombre}! 👋 Hace tiempo que no te vemos por DeltaWash. ¿Tu ${cliente.marca_modelo} necesita un lavado? 🚗✨ Tenemos promociones especiales para clientes como vos. ¡Te esperamos!`;
-        const mensajeCodificado = encodeURIComponent(mensaje);
-
-        let numeroFormateado = cliente.celular.replace(/\D/g, '');
-        if (numeroFormateado.startsWith('11')) {
-            numeroFormateado = `549${numeroFormateado}`;
-        } else if (!numeroFormateado.startsWith('549')) {
-            numeroFormateado = `549${numeroFormateado}`;
-        }
-
-        const whatsappUrl = `https://wa.me/${numeroFormateado}?text=${mensajeCodificado}`;
-
-        // Detectar iOS para usar location.href en lugar de window.open
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-        if (isIOS) {
-            window.location.href = whatsappUrl;
-        } else {
-            window.open(whatsappUrl, '_blank');
-        }
-    };
-
     const formatFecha = (fecha: string) => {
         const date = new Date(fecha);
         return date.toLocaleString('es-AR', {
@@ -236,12 +213,6 @@ function HistorialContent() {
             return `${horas}h ${minutos}m`;
         }
         return `${minutos}m`;
-    };
-
-    const getDiasDesdeVisita = (fecha: Date) => {
-        const hoy = new Date();
-        const diff = hoy.getTime() - fecha.getTime();
-        return Math.floor(diff / (1000 * 60 * 60 * 24));
     };
 
     if (!mounted) {
