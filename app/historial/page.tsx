@@ -118,9 +118,17 @@ function HistorialContent() {
         if (motivo === null) return; // Usuario canceló
 
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
             const res = await fetch('/api/registros/anular', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
                 body: JSON.stringify({ id, motivo, usuario_id: userId }),
             });
 
