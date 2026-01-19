@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createPool } from '@vercel/postgres';
 import bcrypt from 'bcryptjs';
+import { sincronizarUsuariosEmpresa } from '@/lib/neon-api';
 
 /**
  * API de Gestión de Usuarios
@@ -183,6 +184,35 @@ export async function POST(request: Request) {
     `;
 
     const nuevoUsuario = result.rows[0];
+
+    // SINCRONIZAR USUARIO AL BRANCH DEDICADO
+    // Obtener branch_url de la empresa para sincronizar usuarios
+    console.log('[Usuarios POST] 🔄 Sincronizando nuevo usuario al branch dedicado...');
+    
+    try {
+      const empresaResult = await centralDB.sql`
+        SELECT branch_url FROM empresas WHERE id = ${empresaId}
+      `;
+      
+      if (empresaResult.rows.length > 0 && empresaResult.rows[0].branch_url) {
+        const branchUrl = empresaResult.rows[0].branch_url;
+        
+        // Sincronizar con 2 intentos (suficiente para usuario individual)
+        const sincronizado = await sincronizarUsuariosEmpresa(empresaId, branchUrl, 2);
+        
+        if (sincronizado) {
+          console.log('[Usuarios POST] ✅ Usuario sincronizado exitosamente al branch');
+        } else {
+          console.warn('[Usuarios POST] ⚠️ No se pudo sincronizar usuario al branch');
+          console.warn('[Usuarios POST] El usuario se sincronizará automáticamente en el primer uso (lazy sync)');
+        }
+      } else {
+        console.warn('[Usuarios POST] ⚠️ Empresa sin branch_url configurado');
+      }
+    } catch (syncError) {
+      // No fallar si la sincronización falla - lazy sync lo resolverá
+      console.error('[Usuarios POST] Error en sincronización (no crítico):', syncError);
+    }
 
     return NextResponse.json({
       success: true,
