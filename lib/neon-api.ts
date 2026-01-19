@@ -563,20 +563,20 @@ export async function sincronizarUsuariosEmpresa(
     try {
       console.log(`[Sync Usuarios] 🔄 Intento ${intento}/${maxRetries}`);
 
-      // 1. Obtener usuarios de BD Central usando createPool
-      const { createPool } = await import('@vercel/postgres');
-      const centralDB = createPool({
-        connectionString: process.env.CENTRAL_DB_URL
-      });
+      // 1. Obtener usuarios de BD Central usando driver Neon (compatible con conexiones directas)
+      const { neon: neonDriver } = await import('@neondatabase/serverless');
+      const centralSql = neonDriver(process.env.CENTRAL_DB_URL!);
       
-      const usuariosCentralResult = await centralDB.sql`
+      const usuariosCentralResult = await centralSql`
         SELECT id, email, password_hash, nombre, rol, activo, created_at as fecha_creacion
         FROM usuarios_sistema
         WHERE empresa_id = ${empresaId}
         ORDER BY id ASC
       `;
 
-      const usuariosCentral = usuariosCentralResult.rows || [];
+      const usuariosCentral = Array.isArray(usuariosCentralResult)
+        ? usuariosCentralResult
+        : [];
 
       if (usuariosCentral.length === 0) {
         console.log('[Sync Usuarios] ⚠️ No hay usuarios en BD Central para sincronizar');
@@ -586,8 +586,7 @@ export async function sincronizarUsuariosEmpresa(
       console.log(`[Sync Usuarios] Encontrados ${usuariosCentral.length} usuarios en BD Central`);
 
       // 2. Conectar al branch
-      const { neon } = await import('@neondatabase/serverless');
-      const branchSql = neon(branchUrl);
+      const branchSql = neonDriver(branchUrl);
 
       // 3. Verificar usuarios existentes en branch
       const usuariosBranchResult = await branchSql`
