@@ -20,8 +20,9 @@ export async function POST(request: Request) {
 
     console.log(`[Sincronizar Usuarios] Iniciando para empresa ${empresaId}...`);
 
-    // Obtener conexión a la BD Central
-    const centralSql = (await import('@/lib/db')).sql;
+    // Obtener conexión a la BD Central usando driver compatible con CENTRAL_DB_URL
+    const { neon } = await import('@neondatabase/serverless');
+    const centralSql = neon(process.env.CENTRAL_DB_URL!);
 
     // Obtener todos los usuarios de esta empresa en BD Central
     const resultCentral = await centralSql`
@@ -31,8 +32,8 @@ export async function POST(request: Request) {
       ORDER BY id ASC
     `;
 
-    // Manejar resultado de QueryResult
-    const usuariosCentral = Array.isArray(resultCentral) ? resultCentral : resultCentral.rows || [];
+    // Neon driver retorna array directamente (no tiene .rows)
+    const usuariosCentral = Array.isArray(resultCentral) ? resultCentral : [];
 
     if (usuariosCentral.length === 0) {
       return NextResponse.json({
