@@ -59,7 +59,19 @@ export default function MovimientosCuentaCorriente() {
     const cargarMovimientos = async () => {
         try {
             setLoading(true);
-            const res = await fetch(`/api/cuentas-corrientes/movimientos?cuenta_id=${cuentaId}`);
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const headers: HeadersInit = {};
+            if (authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+
+            const res = await fetch(`/api/cuentas-corrientes/movimientos?cuenta_id=${cuentaId}`, {
+                headers
+            });
             const data = await res.json();
 
             if (data.success) {
@@ -83,9 +95,19 @@ export default function MovimientosCuentaCorriente() {
         }
 
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const headers: HeadersInit = { 'Content-Type': 'application/json' };
+            if (authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+
             const res = await fetch('/api/cuentas-corrientes/eliminar-movimiento', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ movimiento_id: movimientoId }),
             });
 
