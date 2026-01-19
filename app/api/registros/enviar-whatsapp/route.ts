@@ -24,14 +24,25 @@ export async function POST(request: Request) {
       WHERE id = ${id}
     `;
 
-        if (result.rows.length === 0) {
+        // Acceso correcto - driver neon retorna array directo
+        const registros = Array.isArray(result) ? result : [];
+        
+        if (registros.length === 0) {
             return NextResponse.json(
                 { error: 'Registro no encontrado' },
                 { status: 404 }
             );
         }
 
-        const registro = result.rows[0];
+        const registro = registros[0];
+
+        // Validar que el registro tenga celular
+        if (!registro.celular) {
+            return NextResponse.json(
+                { error: 'El registro no tiene número de celular' },
+                { status: 400 }
+            );
+        }
 
         // Formatear el número de teléfono para WhatsApp
         let numeroFormateado = registro.celular.replace(/\D/g, '');

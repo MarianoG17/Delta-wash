@@ -445,13 +445,6 @@ export default function Home() {
 
             console.log('Response status:', res.status);
 
-            if (!res.ok) {
-                const errorText = await res.text();
-                console.error('Error response:', errorText);
-                alert(`❌ Error del servidor: ${res.status}`);
-                return;
-            }
-
             const data = await res.json();
             console.log('Response data:', data);
 
@@ -459,7 +452,19 @@ export default function Home() {
                 alert('✅ Auto marcado como entregado');
                 cargarRegistrosEnProceso();
             } else {
-                alert('❌ Error al marcar como entregado: ' + (data.message || data.error || 'Error desconocido'));
+                // Manejar error de pago pendiente
+                if (data.error === 'pago_pendiente') {
+                    const confirmarRegistroPago = confirm(
+                        '⚠️ PAGO PENDIENTE\n\n' +
+                        data.message + '\n\n' +
+                        '¿Deseas registrar el pago ahora?'
+                    );
+                    if (confirmarRegistroPago) {
+                        registrarPago(id);
+                    }
+                } else {
+                    alert('❌ Error al marcar como entregado: ' + (data.message || data.error || 'Error desconocido'));
+                }
             }
         } catch (error) {
             console.error('Error completo al marcar como entregado:', error);

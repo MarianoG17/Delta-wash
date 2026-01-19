@@ -17,9 +17,36 @@ export async function POST(request: Request) {
             );
         }
 
+        // VALIDAR PAGO ANTES DE MARCAR ENTREGADO
+        const registroCheck = await db`
+            SELECT pagado, usa_cuenta_corriente
+            FROM registros_lavado
+            WHERE id = ${id}
+        `;
+
+        const registros = Array.isArray(registroCheck) ? registroCheck : [];
+        
+        if (registros.length === 0) {
+            return NextResponse.json(
+                { error: 'Registro no encontrado' },
+                { status: 404 }
+            );
+        }
+
+        const registro = registros[0];
+
+        // Si NO está pagado Y NO usa cuenta corriente → ERROR
+        if (!registro.pagado && !registro.usa_cuenta_corriente) {
+            return NextResponse.json({
+                success: false,
+                error: 'pago_pendiente',
+                message: 'El cliente no ha pagado. Debe registrar el pago antes de entregar el vehículo.'
+            }, { status: 400 });
+        }
+
         // Actualizar el estado a entregado
         await db`
-      UPDATE registros_lavado 
+      UPDATE registros_lavado
       SET estado = 'entregado',
           fecha_entregado = CURRENT_TIMESTAMP
       WHERE id = ${id}
