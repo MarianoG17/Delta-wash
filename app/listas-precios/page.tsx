@@ -174,10 +174,26 @@ export default function ListasPrecios() {
 
             // Actualizar cada precio
             for (const [key, valor] of Object.entries(preciosEditando)) {
-                // Fix: usar split con límite para manejar servicios con underscores
-                // Ejemplo: 'auto_simple_exterior' -> ['auto', 'simple_exterior']
-                const [tipo_vehiculo, ...resto] = key.split('_');
-                const tipo_servicio = resto.join('_');
+                // Parsear el key correctamente buscando coincidencia con valores conocidos
+                let tipo_vehiculo = '';
+                let tipo_servicio = '';
+                
+                // Buscar qué tipo de vehículo coincide con el inicio del key
+                for (const vehiculo of tiposVehiculo) {
+                    if (key.startsWith(vehiculo.value + '_')) {
+                        tipo_vehiculo = vehiculo.value;
+                        // El servicio es lo que queda después de quitar el vehículo y el '_'
+                        tipo_servicio = key.substring(vehiculo.value.length + 1);
+                        break;
+                    }
+                }
+                
+                // Validar que se encontraron ambos valores
+                if (!tipo_vehiculo || !tipo_servicio) {
+                    console.error(`No se pudo parsear el key: ${key}`);
+                    continue;
+                }
+                
                 await fetch('/api/listas-precios/actualizar-precio', {
                     method: 'POST',
                     headers: {
@@ -220,6 +236,10 @@ export default function ListasPrecios() {
     };
 
     const redondearPrecio = (precio: number): number => {
+        // Si el precio es menor a 50, no redondear (evita que queden en 0)
+        if (precio < 50) {
+            return Math.round(precio); // Redondear al entero más cercano
+        }
         // Redondea a la centena más cercana (últimos 2 dígitos a 00)
         // Ejemplo: 23470 -> 23500, 23420 -> 23400
         return Math.round(precio / 100) * 100;
@@ -235,30 +255,27 @@ export default function ListasPrecios() {
         const lista = listas.find(l => l.id === listaId);
         if (!lista) return;
 
-        // Si no está editando, primero iniciar edición para cargar precios actuales de BD
-        if (listaEditando !== listaId) {
-            iniciarEdicion(lista);
-        }
-
-        // Ahora aplicar aumento sobre los precios actuales (ya sea de BD o de edición en curso)
         const nuevosPreciosEditando: { [key: string]: number } = {};
+
+        // Determinar la fuente de precios según si está editando o no
+        let preciosBase: { [key: string]: number } = {};
+        
+        if (listaEditando === listaId) {
+            // Ya está editando: usar preciosEditando actual
+            preciosBase = { ...preciosEditando };
+        } else {
+            // No está editando: cargar todos los precios desde la BD
+            lista.precios.forEach(precio => {
+                const key = `${precio.tipo_vehiculo}_${precio.tipo_servicio}`;
+                preciosBase[key] = parseFloat(precio.precio.toString());
+            });
+        }
 
         // Iterar sobre TODOS los vehículos y servicios posibles
         tiposVehiculo.forEach(vehiculo => {
             tiposServicio.forEach(servicio => {
                 const key = `${vehiculo.value}_${servicio.value}`;
-                
-                // Si ya estamos editando, partir de preciosEditando, sino de la BD
-                let precioActual = 0;
-                if (listaEditando === listaId) {
-                    precioActual = preciosEditando[key] || 0;
-                } else {
-                    // Buscar en la BD
-                    const precioEnBD = lista.precios.find(
-                        p => p.tipo_vehiculo === vehiculo.value && p.tipo_servicio === servicio.value
-                    );
-                    precioActual = precioEnBD ? parseFloat(precioEnBD.precio.toString()) : 0;
-                }
+                const precioActual = preciosBase[key] || 0;
                 
                 // Solo incluir precios > 0 en el objeto (no sobrescribir con 0s)
                 if (precioActual > 0) {
