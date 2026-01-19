@@ -197,18 +197,26 @@ export default function MovimientosCuentaCorriente() {
                                         >
                                             <div className="flex justify-between items-start mb-2">
                                                 <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        {mov.tipo === 'carga' ? (
-                                                            <TrendingUp className="text-green-600" size={20} />
-                                                        ) : (
-                                                            <TrendingDown className="text-blue-600" size={20} />
-                                                        )}
-                                                        <span className={`font-bold ${mov.tipo === 'carga' ? 'text-green-700' : 'text-blue-700'
-                                                            }`}>
-                                                            {mov.tipo === 'carga' ? 'CARGA DE CRÉDITO' : 'LAVADO'}
-                                                        </span>
+                                                    {/* Header con tipo y fecha */}
+                                                    <div className="flex items-center justify-between gap-2 mb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            {mov.tipo === 'carga' ? (
+                                                                <TrendingUp className="text-green-600" size={20} />
+                                                            ) : (
+                                                                <TrendingDown className="text-blue-600" size={20} />
+                                                            )}
+                                                            <span className={`font-bold ${mov.tipo === 'carga' ? 'text-green-700' : 'text-blue-700'
+                                                                }`}>
+                                                                {mov.tipo === 'carga' ? 'CARGA DE CRÉDITO' : 'LAVADO'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1 text-sm text-gray-600">
+                                                            <Calendar size={14} />
+                                                            <span>{new Date(mov.fecha_movimiento).toLocaleString('es-AR')}</span>
+                                                        </div>
                                                     </div>
 
+                                                    {/* Info específica según tipo */}
                                                     {mov.tipo === 'descuento' && mov.patente && (
                                                         <div className="text-sm text-gray-700 ml-7">
                                                             <p className="font-semibold">
@@ -220,15 +228,15 @@ export default function MovimientosCuentaCorriente() {
                                                         </div>
                                                     )}
 
-                                                    {mov.descripcion && (
-                                                        <p className="text-sm text-gray-600 ml-7">
-                                                            {mov.descripcion}
+                                                    {mov.tipo === 'carga' && mov.descripcion && (
+                                                        <p className="text-sm text-gray-700 ml-7 font-medium">
+                                                            💰 {mov.descripcion}
                                                         </p>
                                                     )}
 
                                                     {mov.usuario_nombre && (
                                                         <p className="text-xs text-gray-500 ml-7 mt-1">
-                                                            Por: {mov.usuario_nombre}
+                                                            👤 Realizado por: <span className="font-semibold">{mov.usuario_nombre}</span>
                                                         </p>
                                                     )}
                                                 </div>
@@ -253,11 +261,6 @@ export default function MovimientosCuentaCorriente() {
                                                         <Trash2 size={18} />
                                                     </button>
                                                 </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-1 text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
-                                                <Calendar size={12} />
-                                                <span>{new Date(mov.fecha_movimiento).toLocaleString('es-AR')}</span>
                                             </div>
                                         </div>
                                     ))}
