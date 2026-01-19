@@ -35,6 +35,7 @@ function HistorialContent() {
     const [userId, setUserId] = useState<number | null>(null);
     const [userRole, setUserRole] = useState<string>('operador');
     const [fechaFiltro, setFechaFiltro] = useState<string | null>(null);
+    const [filtroClientesInactivos, setFiltroClientesInactivos] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -92,22 +93,31 @@ function HistorialContent() {
         }
     };
 
-    // Filtrar registros cuando cambia la fecha o los registros
+    // Filtrar registros cuando cambia la fecha, los registros o el filtro de clientes inactivos
     useEffect(() => {
+        let filtrados = registros;
+
+        // Filtro por fecha
         if (fechaFiltro && registros.length > 0) {
-            const filtrados = registros.filter((r) => {
+            filtrados = filtrados.filter((r) => {
                 if (!r.fecha_entregado) return false;
                 const fechaEntregado = new Date(r.fecha_entregado).toISOString().split('T')[0];
                 return fechaEntregado === fechaFiltro;
             });
-            setRegistrosFiltrados(filtrados);
-        } else {
-            setRegistrosFiltrados(registros);
         }
-    }, [fechaFiltro, registros]);
+
+        // Filtro por clientes inactivos
+        if (filtroClientesInactivos && clientesSinVisitar.length > 0) {
+            const celularesInactivos = new Set(clientesSinVisitar.map(c => c.celular));
+            filtrados = filtrados.filter((r) => celularesInactivos.has(r.celular));
+        }
+
+        setRegistrosFiltrados(filtrados);
+    }, [fechaFiltro, registros, filtroClientesInactivos, clientesSinVisitar]);
 
     const limpiarFiltro = () => {
         setFechaFiltro(null);
+        setFiltroClientesInactivos(false);
         // Actualizar URL sin el parámetro fecha
         router.push('/historial');
     };
@@ -275,7 +285,9 @@ function HistorialContent() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="bg-white rounded-2xl p-6 shadow-xl">
                         <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-bold text-gray-900">{fechaFiltro ? 'Registros del día' : 'Total Registros'}</h3>
+                            <h3 className="font-bold text-gray-900">
+                                {filtroClientesInactivos ? 'Registros de clientes inactivos' : fechaFiltro ? 'Registros del día' : 'Total Registros'}
+                            </h3>
                             <Car className="text-blue-600" size={24} />
                         </div>
                         <p className="text-3xl font-bold text-blue-600">{registrosFiltrados.length}</p>
@@ -296,42 +308,76 @@ function HistorialContent() {
                             <h3 className="font-bold text-gray-900">Sin visitar +15 días</h3>
                             <AlertCircle className="text-orange-600" size={24} />
                         </div>
-                        <p className="text-3xl font-bold text-orange-600">
+                        <button
+                            onClick={() => {
+                                setFiltroClientesInactivos(!filtroClientesInactivos);
+                                setTimeout(() => {
+                                    const element = document.getElementById('historial-tabla');
+                                    if (element) {
+                                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }
+                                }, 100);
+                            }}
+                            className={`text-3xl font-bold transition-colors cursor-pointer hover:underline ${
+                                filtroClientesInactivos ? 'text-orange-700 underline' : 'text-orange-600 hover:text-orange-700'
+                            }`}
+                            title="Click para filtrar historial con estos clientes"
+                        >
                             {clientesSinVisitar.length}
-                        </p>
+                        </button>
+                        {filtroClientesInactivos && (
+                            <p className="text-xs text-orange-600 mt-1 font-medium">
+                                Historial filtrado ↓
+                            </p>
+                        )}
                     </div>
                 </div>
 
                 {/* Banner de filtro activo */}
-                {fechaFiltro && (
-                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-lg">
+                {(fechaFiltro || filtroClientesInactivos) && (
+                    <div className={`border-l-4 p-4 mb-6 rounded-lg ${
+                        filtroClientesInactivos ? 'bg-orange-50 border-orange-500' : 'bg-blue-50 border-blue-500'
+                    }`}>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center">
-                                <Calendar className="text-blue-500 mr-3" size={24} />
+                                {filtroClientesInactivos ? (
+                                    <AlertCircle className="text-orange-500 mr-3" size={24} />
+                                ) : (
+                                    <Calendar className="text-blue-500 mr-3" size={24} />
+                                )}
                                 <div>
-                                    <p className="text-sm font-semibold text-blue-700">
-                                        Filtrado por fecha de entrega
+                                    <p className={`text-sm font-semibold ${filtroClientesInactivos ? 'text-orange-700' : 'text-blue-700'}`}>
+                                        {filtroClientesInactivos ? 'Filtrado por clientes inactivos (+15 días)' : 'Filtrado por fecha de entrega'}
                                     </p>
-                                    <p className="text-sm text-blue-600">
-                                        Mostrando registros del: <strong>{(() => {
-                                            const [year, month, day] = fechaFiltro.split('-');
-                                            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                                            return date.toLocaleDateString('es-AR', {
-                                                weekday: 'long',
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric'
-                                            });
-                                        })()}</strong>
-                                    </p>
-                                    <p className="text-xs text-blue-500 mt-1">
+                                    {fechaFiltro && (
+                                        <p className="text-sm text-blue-600">
+                                            Mostrando registros del: <strong>{(() => {
+                                                const [year, month, day] = fechaFiltro.split('-');
+                                                const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                                                return date.toLocaleDateString('es-AR', {
+                                                    weekday: 'long',
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                    day: 'numeric'
+                                                });
+                                            })()}</strong>
+                                        </p>
+                                    )}
+                                    {filtroClientesInactivos && (
+                                        <p className={`text-sm ${filtroClientesInactivos ? 'text-orange-600' : 'text-blue-600'}`}>
+                                            Mostrando registros de <strong>{clientesSinVisitar.length} cliente(s)</strong> que no visitan hace más de 15 días
+                                        </p>
+                                    )}
+                                    <p className={`text-xs mt-1 ${filtroClientesInactivos ? 'text-orange-500' : 'text-blue-500'}`}>
                                         {registrosFiltrados.length} registro(s) encontrado(s)
                                     </p>
                                 </div>
                             </div>
                             <button
                                 onClick={limpiarFiltro}
-                                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm font-medium"
+                                className={`px-4 py-2 text-white rounded-lg transition-colors text-sm font-medium ${
+                                    filtroClientesInactivos ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-500 hover:bg-blue-600'
+                                }`}
                             >
                                 Ver todos
                             </button>
@@ -341,7 +387,7 @@ function HistorialContent() {
 
                 {/* Clientes sin visitar - Tabla */}
                 {!fechaFiltro && clientesSinVisitar.length > 0 && (
-                    <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+                    <div id="clientes-inactivos" className="bg-white rounded-2xl shadow-xl p-6 mb-6 scroll-mt-4">
                         <h2 className="text-2xl font-bold text-orange-700 mb-4">
                             📢 Clientes Inactivos (+15 días sin visitar)
                         </h2>
@@ -411,9 +457,9 @@ function HistorialContent() {
                 )}
 
                 {/* Historial completo */}
-                <div className="bg-white rounded-2xl shadow-xl p-6">
+                <div id="historial-tabla" className="bg-white rounded-2xl shadow-xl p-6 scroll-mt-4">
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                        Historial Completo
+                        {filtroClientesInactivos ? 'Historial de Clientes Inactivos' : 'Historial Completo'}
                     </h2>
                     <div className="overflow-x-auto">
                         <table className="w-full">

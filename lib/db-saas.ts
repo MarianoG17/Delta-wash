@@ -220,19 +220,29 @@ export async function registrarEmpresa(datos: {
  * @param empresaId - ID de la empresa (undefined para DeltaWash legacy)
  * @returns Conexión SQL apropiada
  */
-export async function getDBConnection(empresaId?: number): Promise<typeof sql> {
-  try {
-    console.log('========================================');
-    console.log('[DB] 🔌 getDBConnection() iniciado');
-    console.log(`[DB] empresaId recibido: ${empresaId || '(undefined)'}`);
+export async function getDBConnection(empresaId?: number): Promise<any> {
+    try {
+        console.log('========================================');
+        console.log('[DB] 🔌 getDBConnection() iniciado');
+        console.log(`[DB] empresaId recibido: ${empresaId || '(undefined)'}`);
 
-    // NIVEL 1: Sin empresaId = DeltaWash legacy
-    if (!empresaId) {
-      console.log('[DB] ⚠️ Sin empresaId → Usando POSTGRES_URL (DeltaWash Legacy)');
-      console.log('[DB] Connection String: POSTGRES_URL (variable de entorno)');
-      console.log('========================================');
-      return sql;
-    }
+        // NIVEL 1: Sin empresaId = DeltaWash legacy
+        if (!empresaId) {
+            console.log('[DB] ⚠️ Sin empresaId → Usando POSTGRES_URL (DeltaWash Legacy)');
+            console.log('[DB] Connection String: POSTGRES_URL (variable de entorno)');
+            
+            // Verificar si POSTGRES_URL es de Neon (connection string directo)
+            const postgresUrl = process.env.POSTGRES_URL || '';
+            if (postgresUrl.includes('neon.tech')) {
+                console.log('[DB] 🔧 POSTGRES_URL es de Neon → Usando driver @neondatabase/serverless');
+                console.log('========================================');
+                return neon(postgresUrl);
+            }
+            
+            console.log('[DB] 🔧 POSTGRES_URL es pooled → Usando @vercel/postgres');
+            console.log('========================================');
+            return sql;
+        }
 
     try {
       // NIVEL 2: Consultar BD Central para obtener branch_url
@@ -253,10 +263,11 @@ export async function getDBConnection(empresaId?: number): Promise<typeof sql> {
 
       // Verificar que la empresa existe
       if (empresaResult.rows.length === 0) {
-        console.warn(`[DB] ❌ Empresa ${empresaId} NO ENCONTRADA en BD Central`);
-        console.warn(`[DB] → Fallback a POSTGRES_URL (DeltaWash)`);
-        console.log('========================================');
-        return sql;
+          console.warn(`[DB] ❌ Empresa ${empresaId} NO ENCONTRADA en BD Central`);
+          console.warn(`[DB] → Fallback a POSTGRES_URL (DeltaWash)`);
+          console.log('========================================');
+          const postgresUrl = process.env.POSTGRES_URL || '';
+          return postgresUrl.includes('neon.tech') ? neon(postgresUrl) : sql;
       }
 
       const empresa = empresaResult.rows[0];
@@ -269,18 +280,20 @@ export async function getDBConnection(empresaId?: number): Promise<typeof sql> {
 
       // Verificar que esté activa
       if (empresa.estado !== 'activo') {
-        console.warn(`[DB] ⚠️ Empresa ${empresaId} está ${empresa.estado.toUpperCase()}, no ACTIVA`);
-        console.warn(`[DB] → Fallback a POSTGRES_URL (DeltaWash)`);
-        console.log('========================================');
-        return sql;
+          console.warn(`[DB] ⚠️ Empresa ${empresaId} está ${empresa.estado.toUpperCase()}, no ACTIVA`);
+          console.warn(`[DB] → Fallback a POSTGRES_URL (DeltaWash)`);
+          console.log('========================================');
+          const postgresUrl = process.env.POSTGRES_URL || '';
+          return postgresUrl.includes('neon.tech') ? neon(postgresUrl) : sql;
       }
 
       // NIVEL 3: Verificar que tenga branch_url
       if (!empresa.branch_url || empresa.branch_url.trim() === '') {
-        console.warn(`[DB] ❌ Empresa ${empresaId} SIN branch_url configurado`);
-        console.warn(`[DB] → Fallback a POSTGRES_URL (DeltaWash)`);
-        console.log('========================================');
-        return sql;
+          console.warn(`[DB] ❌ Empresa ${empresaId} SIN branch_url configurado`);
+          console.warn(`[DB] → Fallback a POSTGRES_URL (DeltaWash)`);
+          console.log('========================================');
+          const postgresUrl = process.env.POSTGRES_URL || '';
+          return postgresUrl.includes('neon.tech') ? neon(postgresUrl) : sql;
       }
 
       try {

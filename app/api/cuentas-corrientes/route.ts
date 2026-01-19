@@ -52,8 +52,13 @@ export async function GET(request: Request) {
         });
     } catch (error) {
         console.error('Error obteniendo cuentas corrientes:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
         return NextResponse.json(
-            { success: false, message: 'Error del servidor' },
+            {
+                success: false,
+                message: 'Error del servidor',
+                error: errorMessage
+            },
             { status: 500 }
         );
     }
@@ -114,8 +119,14 @@ export async function POST(request: Request) {
         });
     } catch (error) {
         console.error('Error creando cuenta corriente:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
         return NextResponse.json(
-            { success: false, message: 'Error del servidor' },
+            {
+                success: false,
+                message: 'Error del servidor',
+                error: errorMessage,
+                details: error instanceof Error ? error.stack : String(error)
+            },
             { status: 500 }
         );
     }

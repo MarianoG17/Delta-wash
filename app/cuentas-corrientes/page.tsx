@@ -83,9 +83,19 @@ export default function CuentasCorrientesPage() {
         setMessage('');
 
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const headers: HeadersInit = { 'Content-Type': 'application/json' };
+            if (authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+
             const res = await fetch('/api/cuentas-corrientes', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({
                     nombre_cliente: nombreCliente,
                     celular: celular,
@@ -123,9 +133,19 @@ export default function CuentasCorrientesPage() {
         setLoading(true);
 
         try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const headers: HeadersInit = { 'Content-Type': 'application/json' };
+            if (authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+
             const res = await fetch('/api/cuentas-corrientes/cargar-saldo', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({
                     cuenta_id: cuentaId,
                     monto: parseFloat(montoCargar),
