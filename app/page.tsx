@@ -793,6 +793,10 @@ export default function Home() {
                                                     // Buscar cuenta corriente automáticamente
                                                     if (data.data.celular && data.data.celular.length >= 8) {
                                                         buscarCuentaCorriente(data.data.celular);
+                                                        // Detectar upselling para clientes frecuentes al autocompletar
+                                                        if (data.data.nombre_cliente) {
+                                                            detectarUpselling(data.data.celular, data.data.nombre_cliente);
+                                                        }
                                                     }
                                                     setMessage('✅ Cliente encontrado! Datos autocompletados');
                                                     setTimeout(() => setMessage(''), 3000);
