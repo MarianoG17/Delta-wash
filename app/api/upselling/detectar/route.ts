@@ -165,7 +165,8 @@ export async function POST(request: Request) {
             elegible: true,
             cliente: {
                 total_visitas: totalVisitasCliente,
-                percentil: 'top_20'
+                percentil: 'top_20',
+                umbral_minimo: Math.ceil(percentil80)
             },
             promocion: {
                 id: promocion.id,

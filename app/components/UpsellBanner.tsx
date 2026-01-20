@@ -15,6 +15,7 @@ interface Promocion {
 interface ClienteInfo {
     total_visitas: number;
     percentil: string;
+    umbral_minimo?: number;
 }
 
 interface UpsellBannerProps {
@@ -139,7 +140,7 @@ export default function UpsellBanner({
                     >
                         <X size={24} />
                     </button>
-                    
+
                     <div className="flex items-center gap-3 mb-2">
                         <div className="bg-white/20 p-3 rounded-full">
                             <Sparkles className="text-yellow-300" size={32} />
@@ -149,7 +150,11 @@ export default function UpsellBanner({
                             <div className="flex items-center gap-2 mt-1">
                                 <TrendingUp className="text-green-300" size={16} />
                                 <p className="text-white/90 text-sm font-semibold">
-                                    ¡Sos uno de nuestros mejores clientes! ({cliente.total_visitas} visitas)
+                                    ¡Sos uno de nuestros mejores clientes!
+                                    {cliente.umbral_minimo
+                                        ? ` (${cliente.total_visitas} visitas - Top 20%, mín: ${cliente.umbral_minimo})`
+                                        : ` (${cliente.total_visitas} visitas)`
+                                    }
                                 </p>
                             </div>
                         </div>
@@ -162,7 +167,7 @@ export default function UpsellBanner({
                         <p className="text-gray-800 text-lg mb-4">
                             {promocion.descripcion}
                         </p>
-                        
+
                         <div className="bg-white rounded-lg p-4 border-2 border-dashed border-purple-300">
                             <div className="flex items-center justify-between">
                                 <span className="text-gray-700 font-semibold">Tu descuento exclusivo:</span>
@@ -183,9 +188,9 @@ export default function UpsellBanner({
                             {promocion.servicios_objetivo.map((servicio, idx) => (
                                 <div key={idx} className="bg-purple-50 rounded-lg p-3 border border-purple-200">
                                     <p className="text-sm font-semibold text-purple-900 capitalize text-center">
-                                        🌟 {servicio === 'chasis' ? 'Limpieza de Chasis' : 
-                                            servicio === 'motor' ? 'Limpieza de Motor' : 
-                                            'Pulido de Ópticas'}
+                                        🌟 {servicio === 'chasis' ? 'Limpieza de Chasis' :
+                                            servicio === 'motor' ? 'Limpieza de Motor' :
+                                                'Pulido de Ópticas'}
                                     </p>
                                 </div>
                             ))}
