@@ -105,6 +105,29 @@ export async function GET(request: Request) {
             if (row.accion === 'interes_futuro') interacciones.interes_futuro = parseInt(row.cantidad);
         });
 
+        // 4. Obtener TODAS las interacciones con detalles
+        const todasInteraccionesResult = await db`
+            SELECT
+                ui.cliente_nombre,
+                ui.cliente_celular,
+                ui.accion,
+                ui.descuento_aplicado,
+                ui.fecha_interaccion,
+                ui.notas,
+                p.nombre as promocion_nombre,
+                p.descuento_porcentaje,
+                p.descuento_fijo
+            FROM upselling_interacciones ui
+            LEFT JOIN promociones_upselling p ON ui.promocion_id = p.id
+            ${empresaId ? db`WHERE ui.empresa_id = ${empresaId}` : db`WHERE ui.empresa_id IS NULL`}
+            ORDER BY ui.fecha_interaccion DESC
+            LIMIT 100
+        `;
+
+        const todasInteraccionesData = Array.isArray(todasInteraccionesResult)
+            ? todasInteraccionesResult
+            : todasInteraccionesResult.rows || [];
+
         return NextResponse.json({
             success: true,
             estadisticas: {
@@ -112,7 +135,8 @@ export async function GET(request: Request) {
                 total_clientes: totalClientes,
                 clientes_elegibles: clientesElegiblesData.length,
                 top_clientes_elegibles: clientesElegiblesData.slice(0, 10),
-                interacciones_30_dias: interacciones
+                interacciones_30_dias: interacciones,
+                todas_interacciones: todasInteraccionesData
             }
         });
 

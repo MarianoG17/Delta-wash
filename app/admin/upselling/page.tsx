@@ -33,6 +33,17 @@ interface Estadisticas {
         rechazado: number;
         interes_futuro: number;
     };
+    todas_interacciones: Array<{
+        cliente_nombre: string;
+        cliente_celular: string;
+        accion: string;
+        descuento_aplicado: number;
+        fecha_interaccion: string;
+        promocion_nombre: string;
+        descuento_porcentaje: number;
+        descuento_fijo: number;
+        notas?: string;
+    }>;
 }
 
 export default function AdminUpsellingPage() {
@@ -43,6 +54,7 @@ export default function AdminUpsellingPage() {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editando, setEditando] = useState<Promocion | null>(null);
+    const [filtroInteraccion, setFiltroInteraccion] = useState<string>('todos');
 
     // Form states
     const [formData, setFormData] = useState({
@@ -363,6 +375,139 @@ export default function AdminUpsellingPage() {
                                 </p>
                             </div>
                         )}
+
+                        {/* Historial de interacciones con filtros */}
+                        {estadisticas.todas_interacciones && estadisticas.todas_interacciones.length > 0 && (
+                            <div className="mt-6">
+                                <h3 className="text-lg font-bold text-gray-900 mb-3">
+                                    📋 Historial de Interacciones
+                                </h3>
+
+                                {/* Filtros/Pestañas */}
+                                <div className="flex gap-2 mb-4">
+                                    <button
+                                        onClick={() => setFiltroInteraccion('todos')}
+                                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${filtroInteraccion === 'todos'
+                                                ? 'bg-blue-500 text-white'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            }`}
+                                    >
+                                        Todos ({estadisticas.todas_interacciones.length})
+                                    </button>
+                                    <button
+                                        onClick={() => setFiltroInteraccion('aceptado')}
+                                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${filtroInteraccion === 'aceptado'
+                                                ? 'bg-green-500 text-white'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            }`}
+                                    >
+                                        ✓ Aceptado ({estadisticas.todas_interacciones.filter(i => i.accion === 'aceptado').length})
+                                    </button>
+                                    <button
+                                        onClick={() => setFiltroInteraccion('interes_futuro')}
+                                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${filtroInteraccion === 'interes_futuro'
+                                                ? 'bg-blue-500 text-white'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            }`}
+                                    >
+                                        ⏰ Próxima ({estadisticas.todas_interacciones.filter(i => i.accion === 'interes_futuro').length})
+                                    </button>
+                                    <button
+                                        onClick={() => setFiltroInteraccion('rechazado')}
+                                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${filtroInteraccion === 'rechazado'
+                                                ? 'bg-red-500 text-white'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            }`}
+                                    >
+                                        ✕ Rechazado ({estadisticas.todas_interacciones.filter(i => i.accion === 'rechazado').length})
+                                    </button>
+                                </div>
+
+                                <div className="bg-gray-50 rounded-xl p-4 max-h-96 overflow-y-auto">
+                                    <div className="space-y-3">
+                                        {estadisticas.todas_interacciones
+                                            .filter(interaccion => filtroInteraccion === 'todos' || interaccion.accion === filtroInteraccion)
+                                            .map((interaccion, idx) => {
+                                                const descuentoMonto = interaccion.descuento_aplicado || 0;
+                                                const descuentoPorcentaje = interaccion.descuento_porcentaje || 0;
+                                                const descuentoFijo = interaccion.descuento_fijo || 0;
+
+                                                let borderColor = 'border-gray-200';
+                                                let badgeColor = 'bg-gray-100 text-gray-700';
+                                                let badgeText = 'Desconocido';
+
+                                                if (interaccion.accion === 'aceptado') {
+                                                    borderColor = 'border-green-200';
+                                                    badgeColor = 'bg-green-100 text-green-800';
+                                                    badgeText = '✓ Aceptado';
+                                                } else if (interaccion.accion === 'rechazado') {
+                                                    borderColor = 'border-red-200';
+                                                    badgeColor = 'bg-red-100 text-red-800';
+                                                    badgeText = '✕ Rechazado';
+                                                } else if (interaccion.accion === 'interes_futuro') {
+                                                    borderColor = 'border-blue-200';
+                                                    badgeColor = 'bg-blue-100 text-blue-800';
+                                                    badgeText = '⏰ Próxima vez';
+                                                }
+
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        className={`bg-white rounded-lg p-4 border ${borderColor} shadow-sm`}
+                                                    >
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <p className="font-semibold text-gray-900">{interaccion.cliente_nombre}</p>
+                                                                <p className="text-xs text-gray-500">{interaccion.cliente_celular}</p>
+                                                            </div>
+                                                            <span className={`${badgeColor} px-2 py-1 rounded text-xs font-bold`}>
+                                                                {badgeText}
+                                                            </span>
+                                                        </div>
+                                                        <div className="bg-purple-50 rounded-lg p-3 mb-2">
+                                                            <p className="text-xs text-purple-700 mb-1">
+                                                                <strong>Promoción:</strong> {interaccion.promocion_nombre}
+                                                            </p>
+                                                            <p className="text-xs text-purple-700">
+                                                                <strong>Descuento ofrecido:</strong> {
+                                                                    descuentoPorcentaje > 0
+                                                                        ? `${descuentoPorcentaje}%`
+                                                                        : `$${descuentoFijo.toLocaleString('es-AR')}`
+                                                                }
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-xs">
+                                                            <span className="text-gray-600">
+                                                                {new Date(interaccion.fecha_interaccion).toLocaleDateString('es-AR', {
+                                                                    year: 'numeric',
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit'
+                                                                })}
+                                                            </span>
+                                                            {interaccion.accion === 'aceptado' && (
+                                                                <span className="font-bold text-green-600">
+                                                                    Ahorró: ${descuentoMonto.toLocaleString('es-AR')}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        {interaccion.notas && (
+                                                            <p className="text-xs text-gray-500 mt-2 italic">
+                                                                📝 {interaccion.notas}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })
+                                        }
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    📊 Mostrando las últimas 100 interacciones
+                                </p>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -388,8 +533,8 @@ export default function AdminUpsellingPage() {
                                 <div
                                     key={promocion.id}
                                     className={`border-2 rounded-xl p-6 ${promocion.activa
-                                            ? 'border-green-300 bg-green-50'
-                                            : 'border-gray-300 bg-gray-50'
+                                        ? 'border-green-300 bg-green-50'
+                                        : 'border-gray-300 bg-gray-50'
                                         }`}
                                 >
                                     <div className="flex justify-between items-start mb-4">
@@ -400,8 +545,8 @@ export default function AdminUpsellingPage() {
                                                 </h3>
                                                 <span
                                                     className={`px-3 py-1 rounded-full text-xs font-bold ${promocion.activa
-                                                            ? 'bg-green-200 text-green-800'
-                                                            : 'bg-gray-200 text-gray-600'
+                                                        ? 'bg-green-200 text-green-800'
+                                                        : 'bg-gray-200 text-gray-600'
                                                         }`}
                                                 >
                                                     {promocion.activa ? '🟢 Activa' : '⚪ Inactiva'}
@@ -450,8 +595,8 @@ export default function AdminUpsellingPage() {
                                             <button
                                                 onClick={() => toggleActiva(promocion)}
                                                 className={`p-2 rounded-lg transition-all ${promocion.activa
-                                                        ? 'bg-green-500 hover:bg-green-600 text-white'
-                                                        : 'bg-gray-300 hover:bg-gray-400 text-gray-600'
+                                                    ? 'bg-green-500 hover:bg-green-600 text-white'
+                                                    : 'bg-gray-300 hover:bg-gray-400 text-gray-600'
                                                     }`}
                                                 title={promocion.activa ? 'Desactivar' : 'Activar'}
                                             >
