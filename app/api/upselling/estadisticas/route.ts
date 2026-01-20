@@ -10,18 +10,24 @@ export async function GET(request: Request) {
         // 1. Calcular el percentil 80 (umbral para top 20%)
         const percentilResult = await db`
             WITH cliente_visitas AS (
-                SELECT 
+                SELECT
                     celular,
                     COUNT(*) as visitas
                 FROM registros_lavado
                 WHERE (anulado IS NULL OR anulado = FALSE)
                 GROUP BY celular
+            ),
+            percentil_calc AS (
+                SELECT
+                    PERCENTILE_CONT(0.80) WITHIN GROUP (ORDER BY visitas) as percentil_80
+                FROM cliente_visitas
             )
-            SELECT 
-                PERCENTILE_CONT(0.80) WITHIN GROUP (ORDER BY visitas) as percentil_80,
-                COUNT(*) as total_clientes,
-                COUNT(*) FILTER (WHERE visitas >= PERCENTILE_CONT(0.80) WITHIN GROUP (ORDER BY visitas)) as clientes_top_20
-            FROM cliente_visitas
+            SELECT
+                p.percentil_80,
+                COUNT(*) as total_clientes
+            FROM cliente_visitas cv
+            CROSS JOIN percentil_calc p
+            GROUP BY p.percentil_80
         `;
 
         const percentilData = Array.isArray(percentilResult) ? percentilResult : percentilResult.rows || [];
