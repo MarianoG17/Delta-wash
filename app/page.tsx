@@ -749,13 +749,16 @@ export default function Home() {
                                 <History size={16} />
                                 <span>Historial</span>
                             </Link>
-                            <Link
-                                href="/admin/upselling"
-                                className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm"
-                            >
-                                <TrendingUp size={16} />
-                                <span>Upselling</span>
-                            </Link>
+                            {/* Solo mostrar Upselling para usuarios SaaS */}
+                            {getAuthUser()?.isSaas && (
+                                <Link
+                                    href="/admin/upselling"
+                                    className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm"
+                                >
+                                    <TrendingUp size={16} />
+                                    <span>Upselling</span>
+                                </Link>
+                            )}
                         </div>
                     )}
                 </div>
@@ -1431,8 +1434,8 @@ export default function Home() {
                     </div>
                 )}
 
-                {/* Banner de Upselling */}
-                {showUpsellBanner && upsellPromocion && upsellCliente && (
+                {/* Banner de Upselling - Solo para SaaS */}
+                {getAuthUser()?.isSaas && showUpsellBanner && upsellPromocion && upsellCliente && (
                     <UpsellBanner
                         promocion={upsellPromocion}
                         cliente={upsellCliente}
