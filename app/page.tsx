@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Car, LogOut, History, Plus, Send, Users, Wallet, Ban, DollarSign, TrendingUp } from 'lucide-react';
 import { getAuthUser, clearAuth, getLoginUrl } from '@/lib/auth-utils';
+import UpsellBanner from './components/UpsellBanner';
 
 interface Registro {
     id: number;
@@ -56,6 +57,12 @@ export default function Home() {
     const [registroParaPago, setRegistroParaPago] = useState<number | null>(null);
     const [metodoPagoModal, setMetodoPagoModal] = useState<string>('efectivo');
 
+    // Estados para upselling
+    const [showUpsellBanner, setShowUpsellBanner] = useState(false);
+    const [upsellPromocion, setUpsellPromocion] = useState<any>(null);
+    const [upsellCliente, setUpsellCliente] = useState<any>(null);
+    const [descuentoAplicado, setDescuentoAplicado] = useState(0);
+
     // Registros en proceso y listos
     const [registrosEnProceso, setRegistrosEnProceso] = useState<Registro[]>([]);
     const [registrosListos, setRegistrosListos] = useState<Registro[]>([]);
@@ -71,7 +78,7 @@ export default function Home() {
                 setUsername(user.nombre);
                 setUserId(user.id);
                 setUserRole(user.rol);
-                
+
                 // Cargar nombre de empresa según tipo de usuario
                 if (user.isSaas) {
                     // Usuario SaaS: cargar nombre de empresa desde localStorage
@@ -83,7 +90,7 @@ export default function Home() {
                     // Usuario Legacy: siempre mostrar "DeltaWash"
                     setEmpresaNombre('DeltaWash');
                 }
-                
+
                 cargarPreciosDinamicos();
                 cargarRegistrosEnProceso();
             }
@@ -175,6 +182,69 @@ export default function Home() {
             setCuentaCorriente(null);
             setUsaCuentaCorriente(false);
         }
+    };
+
+    // Detectar clientes elegibles para upselling
+    const detectarUpselling = async (celularBuscar: string, nombreCliente: string) => {
+        if (!celularBuscar || celularBuscar.length < 8) {
+            return;
+        }
+
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/upselling/detectar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ celular: celularBuscar })
+            });
+
+            const data = await res.json();
+
+            if (data.success && data.elegible) {
+                setUpsellPromocion(data.promocion);
+                setUpsellCliente(data.cliente);
+                setShowUpsellBanner(true);
+            }
+        } catch (error) {
+            console.error('Error detectando upselling:', error);
+        }
+    };
+
+    // Handlers para el banner de upselling
+    const handleUpsellAceptar = (descuento: number) => {
+        setDescuentoAplicado(descuento);
+        setShowUpsellBanner(false);
+
+        // Aplicar descuento al precio actual
+        const precioConDescuento = upsellPromocion.descuento_porcentaje > 0
+            ? precio * (1 - upsellPromocion.descuento_porcentaje / 100)
+            : precio - upsellPromocion.descuento_fijo;
+
+        setPrecio(Math.max(0, precioConDescuento));
+        setMessage(`✅ ¡Descuento aplicado! Ahorrás $${(precio - Math.max(0, precioConDescuento)).toLocaleString('es-AR')}`);
+    };
+
+    const handleUpsellRechazar = () => {
+        setShowUpsellBanner(false);
+        setMessage('👍 Entendido. Seguimos con el registro normal.');
+        setTimeout(() => setMessage(''), 3000);
+    };
+
+    const handleUpsellInteresFuturo = () => {
+        setShowUpsellBanner(false);
+        setMessage('📝 Perfecto! Te lo ofreceremos en su próxima visita.');
+        setTimeout(() => setMessage(''), 3000);
+    };
+
+    const handleUpsellCerrar = () => {
+        setShowUpsellBanner(false);
     };
 
     // Función para calcular el precio según tipo de vehículo y lavado
@@ -667,6 +737,13 @@ export default function Home() {
                                 <History size={16} />
                                 <span>Historial</span>
                             </Link>
+                            <Link
+                                href="/admin/upselling"
+                                className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm"
+                            >
+                                <TrendingUp size={16} />
+                                <span>Upselling</span>
+                            </Link>
                         </div>
                     )}
                 </div>
@@ -843,6 +920,10 @@ export default function Home() {
                                         // Buscar cuenta corriente cuando el celular tiene suficientes dígitos
                                         if (value.length >= 8) {
                                             buscarCuentaCorriente(value);
+                                            // Detectar upselling para clientes frecuentes
+                                            if (nombreCliente) {
+                                                detectarUpselling(value, nombreCliente);
+                                            }
                                         } else {
                                             setCuentaCorriente(null);
                                             setUsaCuentaCorriente(false);
@@ -1325,6 +1406,20 @@ export default function Home() {
                             </div>
                         </div>
                     </div>
+                )}
+
+                {/* Banner de Upselling */}
+                {showUpsellBanner && upsellPromocion && upsellCliente && (
+                    <UpsellBanner
+                        promocion={upsellPromocion}
+                        cliente={upsellCliente}
+                        clienteNombre={nombreCliente}
+                        clienteCelular={celular}
+                        onAceptar={handleUpsellAceptar}
+                        onRechazar={handleUpsellRechazar}
+                        onInteresFuturo={handleUpsellInteresFuturo}
+                        onCerrar={handleUpsellCerrar}
+                    />
                 )}
             </div>
         </div>
