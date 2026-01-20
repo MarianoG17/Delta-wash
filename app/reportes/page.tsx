@@ -280,53 +280,53 @@ export default function Reportes() {
 
                 {/* Tabs */}
                 <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
-                    <div className="flex border-b border-gray-200">
+                    <div className="flex border-b border-gray-200 overflow-x-auto">
                         <button
                             onClick={() => setTabActiva('diario')}
-                            className={`flex-1 px-6 py-4 font-semibold transition-colors ${tabActiva === 'diario'
+                            className={`flex-1 min-w-[120px] px-3 md:px-6 py-4 font-semibold transition-colors ${tabActiva === 'diario'
                                 ? 'bg-blue-500 text-white'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                         >
-                            <div className="flex items-center justify-center gap-2">
-                                <Calendar size={20} />
-                                <span>Reporte Diario</span>
+                            <div className="flex items-center justify-center gap-1 md:gap-2">
+                                <Calendar size={18} className="md:w-5 md:h-5" />
+                                <span className="text-xs md:text-base whitespace-nowrap">Diario</span>
                             </div>
                         </button>
                         <button
                             onClick={() => setTabActiva('caja')}
-                            className={`flex-1 px-6 py-4 font-semibold transition-colors ${tabActiva === 'caja'
+                            className={`flex-1 min-w-[120px] px-3 md:px-6 py-4 font-semibold transition-colors ${tabActiva === 'caja'
                                 ? 'bg-blue-500 text-white'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                         >
-                            <div className="flex items-center justify-center gap-2">
-                                <Wallet size={20} />
-                                <span>Caja Diaria</span>
+                            <div className="flex items-center justify-center gap-1 md:gap-2">
+                                <Wallet size={18} className="md:w-5 md:h-5" />
+                                <span className="text-xs md:text-base whitespace-nowrap">Caja</span>
                             </div>
                         </button>
                         <button
                             onClick={() => setTabActiva('horario')}
-                            className={`flex-1 px-6 py-4 font-semibold transition-colors ${tabActiva === 'horario'
+                            className={`flex-1 min-w-[120px] px-3 md:px-6 py-4 font-semibold transition-colors ${tabActiva === 'horario'
                                 ? 'bg-blue-500 text-white'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                         >
-                            <div className="flex items-center justify-center gap-2">
-                                <Clock size={20} />
-                                <span>Reporte por Horario</span>
+                            <div className="flex items-center justify-center gap-1 md:gap-2">
+                                <Clock size={18} className="md:w-5 md:h-5" />
+                                <span className="text-xs md:text-base whitespace-nowrap">Horario</span>
                             </div>
                         </button>
                         <button
                             onClick={() => setTabActiva('clientes-inactivos')}
-                            className={`flex-1 px-6 py-4 font-semibold transition-colors ${tabActiva === 'clientes-inactivos'
+                            className={`flex-1 min-w-[120px] px-3 md:px-6 py-4 font-semibold transition-colors ${tabActiva === 'clientes-inactivos'
                                 ? 'bg-blue-500 text-white'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                         >
-                            <div className="flex items-center justify-center gap-2">
-                                <AlertCircle size={20} />
-                                <span>Clientes Inactivos</span>
+                            <div className="flex items-center justify-center gap-1 md:gap-2">
+                                <AlertCircle size={18} className="md:w-5 md:h-5" />
+                                <span className="text-xs md:text-base whitespace-nowrap">Inactivos</span>
                             </div>
                         </button>
                     </div>
