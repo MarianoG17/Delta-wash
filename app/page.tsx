@@ -310,8 +310,20 @@ export default function Home() {
     useEffect(() => {
         const precioBase = calcularPrecio(tipoVehiculo, tiposLimpieza);
         const valorExtras = parseFloat(extrasValor) || 0;
-        setPrecio(precioBase + valorExtras);
-    }, [tipoVehiculo, tiposLimpieza, extrasValor, preciosDinamicos]);
+        let precioTotal = precioBase + valorExtras;
+
+        // Si hay descuento de upselling aplicado, aplicarlo al precio total
+        if (descuentoAplicado > 0 && upsellPromocion) {
+            if (upsellPromocion.descuento_porcentaje > 0) {
+                precioTotal = precioTotal * (1 - upsellPromocion.descuento_porcentaje / 100);
+            } else {
+                precioTotal = precioTotal - upsellPromocion.descuento_fijo;
+            }
+            precioTotal = Math.max(0, precioTotal);
+        }
+
+        setPrecio(precioTotal);
+    }, [tipoVehiculo, tiposLimpieza, extrasValor, preciosDinamicos, descuentoAplicado, upsellPromocion]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -1014,8 +1026,15 @@ export default function Home() {
                             </div>
 
                             {precio > 0 && (
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div className={`${descuentoAplicado > 0 ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'} border rounded-lg p-4`}>
                                     <p className="text-xs font-semibold text-blue-900 mb-3">📋 Resumen de Servicios:</p>
+                                    {descuentoAplicado > 0 && (
+                                        <div className="bg-purple-100 border border-purple-300 rounded-lg p-2 mb-3">
+                                            <p className="text-xs font-bold text-purple-900">
+                                                🎉 Descuento Upselling Aplicado: {upsellPromocion?.descuento_porcentaje > 0 ? `${upsellPromocion.descuento_porcentaje}%` : `$${upsellPromocion?.descuento_fijo.toLocaleString('es-AR')}`}
+                                            </p>
+                                        </div>
+                                    )}
                                     <div className="space-y-2 mb-3">
                                         {/* Mostrar cada servicio seleccionado con su precio individual */}
                                         {tiposLimpieza.map((tipo) => {
