@@ -178,15 +178,15 @@ export async function PUT(request: Request) {
 
         const result = await db`
             UPDATE promociones_upselling
-            SET 
-                nombre = COALESCE(${nombre}, nombre),
-                descripcion = COALESCE(${descripcion}, descripcion),
-                servicios_objetivo = COALESCE(${serviciosJSON}, servicios_objetivo),
-                descuento_porcentaje = COALESCE(${descuento_porcentaje}, descuento_porcentaje),
-                descuento_fijo = COALESCE(${descuento_fijo}, descuento_fijo),
-                activa = COALESCE(${activa}, activa),
-                fecha_inicio = COALESCE(${fecha_inicio}, fecha_inicio),
-                fecha_fin = COALESCE(${fecha_fin}, fecha_fin),
+            SET
+                nombre = ${nombre !== undefined ? nombre : db`nombre`},
+                descripcion = ${descripcion !== undefined ? descripcion : db`descripcion`},
+                servicios_objetivo = ${serviciosJSON !== undefined ? serviciosJSON : db`servicios_objetivo`},
+                descuento_porcentaje = ${descuento_porcentaje !== undefined ? descuento_porcentaje : db`descuento_porcentaje`},
+                descuento_fijo = ${descuento_fijo !== undefined ? descuento_fijo : db`descuento_fijo`},
+                activa = ${activa !== undefined ? activa : db`activa`},
+                fecha_inicio = ${fecha_inicio !== undefined ? fecha_inicio : db`fecha_inicio`},
+                fecha_fin = ${fecha_fin !== undefined ? fecha_fin : db`fecha_fin`},
                 updated_at = NOW()
             WHERE id = ${id}
             ${empresaId ? db`AND (empresa_id = ${empresaId} OR empresa_id IS NULL)` : db`AND empresa_id IS NULL`}
