@@ -11,6 +11,7 @@ export async function GET(request: Request) {
     // Obtener estadísticas de clientes en los últimos 30 días
     // Agrupar SOLO por celular para evitar duplicados por diferencias en nombres
     // EXCLUIR registros anulados
+    // Calcular frecuencia promedio de visitas en días
     const result = await db`
           SELECT
             MAX(nombre_cliente) as nombre_cliente,
@@ -18,7 +19,15 @@ export async function GET(request: Request) {
             COUNT(*) as total_visitas,
             MAX(fecha_ingreso) as ultima_visita,
             MIN(fecha_ingreso) as primera_visita,
-            STRING_AGG(DISTINCT marca_modelo, ', ') as autos
+            STRING_AGG(DISTINCT marca_modelo, ', ') as autos,
+            CASE
+              WHEN COUNT(*) > 1 THEN
+                ROUND(
+                  EXTRACT(EPOCH FROM (MAX(fecha_ingreso) - MIN(fecha_ingreso))) / 86400.0 / (COUNT(*) - 1),
+                  1
+                )
+              ELSE NULL
+            END as frecuencia_promedio_dias
           FROM registros_lavado
           WHERE fecha_ingreso >= NOW() - INTERVAL '30 days'
             AND (anulado IS NULL OR anulado = FALSE)

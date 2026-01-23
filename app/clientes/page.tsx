@@ -13,6 +13,7 @@ interface Cliente {
     ultima_visita: string;
     primera_visita: string;
     autos: string;
+    frecuencia_promedio_dias: number | null;
 }
 
 interface Estadisticas {
@@ -192,6 +193,9 @@ export default function Clientes() {
                                     <th className="text-center py-3 px-2 font-semibold text-gray-700">
                                         Visitas
                                     </th>
+                                    <th className="text-center py-3 px-2 font-semibold text-gray-700">
+                                        Frecuencia
+                                    </th>
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
                                         Primera Visita
                                     </th>
@@ -203,7 +207,7 @@ export default function Clientes() {
                             <tbody>
                                 {clientesFiltrados.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="text-center py-8 text-gray-500">
+                                        <td colSpan={7} className="text-center py-8 text-gray-500">
                                             No se encontraron clientes
                                         </td>
                                     </tr>
@@ -239,6 +243,26 @@ export default function Clientes() {
                                                     }`}>
                                                     {cliente.total_visitas}
                                                 </span>
+                                            </td>
+                                            <td className="py-3 px-2 text-center">
+                                                {cliente.frecuencia_promedio_dias !== null ? (
+                                                    <div className="flex flex-col items-center">
+                                                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold ${cliente.frecuencia_promedio_dias <= 7
+                                                                ? 'bg-green-100 text-green-700'
+                                                                : cliente.frecuencia_promedio_dias <= 15
+                                                                    ? 'bg-blue-100 text-blue-700'
+                                                                    : cliente.frecuencia_promedio_dias <= 30
+                                                                        ? 'bg-yellow-100 text-yellow-700'
+                                                                        : 'bg-red-100 text-red-700'
+                                                            }`}>
+                                                            {cliente.frecuencia_promedio_dias} días
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-gray-400 text-xs">
+                                                        1 visita
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="py-3 px-2 text-sm text-gray-900">
                                                 {formatFecha(cliente.primera_visita)}
