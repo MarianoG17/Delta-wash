@@ -50,6 +50,7 @@ interface ClienteInactivo {
 interface Totales {
     cantidad_total: number;
     facturacion_total: number;
+    frecuencia_promedio_autos: number | null;
 }
 
 interface TotalesCaja {
@@ -84,7 +85,8 @@ export default function Reportes() {
     const [clientesInactivos, setClientesInactivos] = useState<ClienteInactivo[]>([]);
     const [totales, setTotales] = useState<Totales>({
         cantidad_total: 0,
-        facturacion_total: 0
+        facturacion_total: 0,
+        frecuencia_promedio_autos: null
     });
     const [totalesCaja, setTotalesCaja] = useState<TotalesCaja>({
         total_efectivo: 0,
@@ -259,7 +261,7 @@ export default function Reportes() {
                 </div>
 
                 {/* Tarjetas de totales */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                     <div className="bg-white rounded-lg shadow-lg p-6">
                         <div className="flex items-center gap-2 text-gray-600 mb-2">
                             <Calendar size={20} />
@@ -275,6 +277,26 @@ export default function Reportes() {
                         <p className="text-3xl font-bold text-green-600">
                             ${totales.facturacion_total.toLocaleString('es-AR')}
                         </p>
+                    </div>
+                    <div className="bg-white rounded-lg shadow-lg p-6">
+                        <div className="flex items-center gap-2 text-gray-600 mb-2">
+                            <Clock size={20} />
+                            <span className="text-sm font-medium">Frecuencia Promedio</span>
+                        </div>
+                        {totales.frecuencia_promedio_autos !== null ? (
+                            <p className={`text-3xl font-bold ${totales.frecuencia_promedio_autos <= 7
+                                    ? 'text-green-600'
+                                    : totales.frecuencia_promedio_autos <= 15
+                                        ? 'text-blue-600'
+                                        : totales.frecuencia_promedio_autos <= 30
+                                            ? 'text-yellow-600'
+                                            : 'text-red-600'
+                                }`}>
+                                {totales.frecuencia_promedio_autos} días
+                            </p>
+                        ) : (
+                            <p className="text-lg text-gray-400">Sin datos</p>
+                        )}
                     </div>
                 </div>
 
@@ -645,11 +667,10 @@ export default function Reportes() {
                                                         })}
                                                     </td>
                                                     <td className="py-3 px-4 text-right">
-                                                        <span className={`inline-block px-3 py-1 rounded-full font-semibold ${
-                                                            cliente.diasSinVisitar > 30
+                                                        <span className={`inline-block px-3 py-1 rounded-full font-semibold ${cliente.diasSinVisitar > 30
                                                                 ? 'bg-red-100 text-red-700'
                                                                 : 'bg-orange-100 text-orange-700'
-                                                        }`}>
+                                                            }`}>
                                                             {cliente.diasSinVisitar} días
                                                         </span>
                                                     </td>

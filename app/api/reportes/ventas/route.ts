@@ -26,7 +26,8 @@ export async function GET(request: Request) {
         const result = await db`
             SELECT
                 fecha_entregado,
-                precio
+                precio,
+                patente
             FROM registros_lavado
             WHERE estado = 'entregado'
               AND fecha_entregado IS NOT NULL
@@ -67,10 +68,50 @@ export async function GET(request: Request) {
             }))
             .sort((a, b) => b.fecha.localeCompare(a.fecha));
 
+        // Calcular frecuencia promedio de visitas por auto (patente)
+        const visitasPorAuto: { [key: string]: Date[] } = {};
+
+        registros.forEach((registro: any) => {
+            const patente = registro.patente?.toUpperCase().trim();
+            if (patente) {
+                if (!visitasPorAuto[patente]) {
+                    visitasPorAuto[patente] = [];
+                }
+                visitasPorAuto[patente].push(new Date(registro.fecha_entregado));
+            }
+        });
+
+        // Calcular frecuencia promedio solo de autos con más de 1 visita
+        let totalDiasEntrVisitas = 0;
+        let totalIntervalos = 0;
+
+        Object.values(visitasPorAuto).forEach(fechas => {
+            if (fechas.length > 1) {
+                // Ordenar fechas de más antigua a más reciente
+                fechas.sort((a, b) => a.getTime() - b.getTime());
+
+                // Calcular días entre primera y última visita
+                const primeraVisita = fechas[0];
+                const ultimaVisita = fechas[fechas.length - 1];
+                const diasTotal = (ultimaVisita.getTime() - primeraVisita.getTime()) / (1000 * 60 * 60 * 24);
+
+                // Promedio entre visitas = días total / (cantidad de visitas - 1)
+                const intervaloPromedio = diasTotal / (fechas.length - 1);
+
+                totalDiasEntrVisitas += intervaloPromedio;
+                totalIntervalos++;
+            }
+        });
+
+        const frecuenciaPromedioAutos = totalIntervalos > 0
+            ? Math.round((totalDiasEntrVisitas / totalIntervalos) * 10) / 10
+            : null;
+
         // Calcular totales
         const totales = {
             cantidad_total: reporte.reduce((sum, row) => sum + row.cantidad, 0),
-            facturacion_total: reporte.reduce((sum, row) => sum + row.facturacion, 0)
+            facturacion_total: reporte.reduce((sum, row) => sum + row.facturacion, 0),
+            frecuencia_promedio_autos: frecuenciaPromedioAutos
         };
 
         return NextResponse.json({
@@ -80,7 +121,8 @@ export async function GET(request: Request) {
             debug: {
                 total_registros: registros.length,
                 fecha_desde: fechaDesde,
-                fecha_hasta: fechaHasta
+                fecha_hasta: fechaHasta,
+                autos_con_multiples_visitas: totalIntervalos
             }
         });
 
