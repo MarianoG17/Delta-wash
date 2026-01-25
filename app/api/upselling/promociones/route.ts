@@ -242,25 +242,7 @@ export async function DELETE(request: Request) {
             );
         }
 
-        // Primero verificar que la promoción pertenece a la empresa o es global
-        const checkResult = await db`
-            SELECT id FROM promociones_upselling
-            WHERE id = ${parseInt(id)}
-            AND (
-                empresa_id ${empresaId ? db`= ${empresaId}` : db`IS NULL`}
-                OR empresa_id IS NULL
-            )
-        `;
-
-        const checkData = Array.isArray(checkResult) ? checkResult : checkResult.rows || [];
-
-        if (checkData.length === 0) {
-            return NextResponse.json(
-                { success: false, message: 'Promoción no encontrada o no tienes permisos para eliminarla' },
-                { status: 404 }
-            );
-        }
-
+        // Eliminar la promoción (puede ser propia de la empresa o global con empresa_id NULL)
         const result = await db`
             DELETE FROM promociones_upselling
             WHERE id = ${parseInt(id)}
