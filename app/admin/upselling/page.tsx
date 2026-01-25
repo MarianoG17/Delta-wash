@@ -179,8 +179,13 @@ export default function AdminUpsellingPage() {
             const data = await res.json();
 
             if (data.success && data.precios) {
-                // Extraer nombres únicos de servicios
-                const serviciosUnicos = [...new Set(data.precios.map((p: any) => p.nombre))] as string[];
+                // El API retorna precios como objeto: { auto: { simple: 15000, ... }, mono: { ... }, ... }
+                // Extraer nombres únicos de servicios de todos los tipos de vehículos
+                const serviciosSet = new Set<string>();
+                Object.values(data.precios).forEach((vehiculoPrecios: any) => {
+                    Object.keys(vehiculoPrecios).forEach(servicio => serviciosSet.add(servicio));
+                });
+                const serviciosUnicos = Array.from(serviciosSet);
                 setServiciosDisponibles(serviciosUnicos);
             }
         } catch (error) {
