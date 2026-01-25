@@ -950,34 +950,14 @@ export default function AdminUpsellingPage() {
                             </h3>
 
                             <div className="space-y-6">
-                                {/* Percentil de clientes */}
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <label className="block text-sm font-bold text-blue-900 mb-2">
-                                        🎯 Percentil de Clientes Objetivo
-                                    </label>
-                                    <p className="text-xs text-blue-700 mb-3">
-                                        Define qué tan selectivo es el sistema. Valor 80 = Top 20%, Valor 90 = Top 10%
+                                {/* Nota informativa */}
+                                <div className="bg-indigo-50 border-2 border-indigo-200 rounded-lg p-4">
+                                    <p className="text-sm text-indigo-900 font-semibold mb-2">
+                                        ℹ️ Configuración Global del Sistema
                                     </p>
-                                    <div className="flex items-center gap-4">
-                                        <input
-                                            type="range"
-                                            min="50"
-                                            max="95"
-                                            step="5"
-                                            value={configuracion.percentil_clientes}
-                                            onChange={(e) => setConfiguracion({
-                                                ...configuracion,
-                                                percentil_clientes: parseInt(e.target.value)
-                                            })}
-                                            className="flex-1"
-                                        />
-                                        <div className="text-center bg-white rounded-lg px-4 py-2 border-2 border-blue-300 min-w-[120px]">
-                                            <div className="text-2xl font-bold text-blue-600">
-                                                Top {100 - configuracion.percentil_clientes}%
-                                            </div>
-                                            <div className="text-xs text-gray-600">Percentil {configuracion.percentil_clientes}</div>
-                                        </div>
-                                    </div>
+                                    <p className="text-xs text-indigo-700">
+                                        Esta configuración se aplica a <strong>todas las promociones</strong>. El <strong>público objetivo (percentil)</strong> ahora se configura individualmente en cada promoción.
+                                    </p>
                                 </div>
 
                                 {/* Período de rechazo */}
