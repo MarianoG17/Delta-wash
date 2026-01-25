@@ -13,6 +13,7 @@ interface Promocion {
     servicios_objetivo: string[];
     descuento_porcentaje: number;
     descuento_fijo: number;
+    percentil_clientes: number;
     activa: boolean;
     fecha_inicio: string | null;
     fecha_fin: string | null;
@@ -29,6 +30,7 @@ interface ConfiguracionUpselling {
 
 interface Estadisticas {
     umbral_minimo: number;
+    percentil_configurado: number;
     total_clientes: number;
     clientes_elegibles: number;
     top_clientes_elegibles: Array<{
@@ -74,6 +76,7 @@ export default function AdminUpsellingPage() {
         servicios_objetivo: [] as string[],
         descuento_porcentaje: 0,
         descuento_fijo: 0,
+        percentil_clientes: 80,
         activa: true,
         fecha_inicio: '',
         fecha_fin: ''
@@ -320,6 +323,7 @@ export default function AdminUpsellingPage() {
             servicios_objetivo: promocion.servicios_objetivo,
             descuento_porcentaje: promocion.descuento_porcentaje,
             descuento_fijo: promocion.descuento_fijo,
+            percentil_clientes: promocion.percentil_clientes || 80,
             activa: promocion.activa,
             fecha_inicio: promocion.fecha_inicio || '',
             fecha_fin: promocion.fecha_fin || ''
@@ -334,6 +338,7 @@ export default function AdminUpsellingPage() {
             servicios_objetivo: [],
             descuento_porcentaje: 0,
             descuento_fijo: 0,
+            percentil_clientes: 80,
             activa: true,
             fecha_inicio: '',
             fecha_fin: ''
@@ -417,10 +422,13 @@ export default function AdminUpsellingPage() {
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-300">
                                 <p className="text-sm text-blue-600 font-semibold mb-1">
-                                    Umbral Mínimo (Top {configuracion ? 100 - configuracion.percentil_clientes : 20}%)
+                                    Umbral Mínimo (Top {100 - (estadisticas.percentil_configurado || 80)}%)
                                 </p>
                                 <p className="text-3xl font-bold text-blue-900">
                                     {estadisticas.umbral_minimo} visitas
+                                </p>
+                                <p className="text-xs text-blue-600 mt-1">
+                                    Percentil {estadisticas.percentil_configurado || 80}
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border-2 border-purple-300">
@@ -475,7 +483,7 @@ export default function AdminUpsellingPage() {
                                     </div>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-2">
-                                    💡 Estos clientes están en el top {configuracion ? 100 - configuracion.percentil_clientes : 20}% más frecuentes y nunca pidieron servicios premium
+                                    💡 Estos clientes están en el top {100 - (estadisticas.percentil_configurado || 80)}% más frecuentes y nunca pidieron servicios premium
                                 </p>
                             </div>
                         )}
@@ -658,7 +666,14 @@ export default function AdminUpsellingPage() {
                                             </div>
                                             <p className="text-gray-700 mb-3">{promocion.descripcion}</p>
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                                                <div className="bg-white rounded-lg p-3 border border-gray-200">
+                                                    <p className="text-xs text-gray-600 mb-1">Público Objetivo:</p>
+                                                    <p className="text-lg font-bold text-indigo-600">
+                                                        Top {100 - (promocion.percentil_clientes || 80)}%
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">Percentil {promocion.percentil_clientes || 80}</p>
+                                                </div>
                                                 <div className="bg-white rounded-lg p-3 border border-gray-200">
                                                     <p className="text-xs text-gray-600 mb-1">Descuento:</p>
                                                     <p className="text-lg font-bold text-purple-600">
@@ -802,6 +817,32 @@ export default function AdminUpsellingPage() {
                                                 </p>
                                             </div>
                                         )}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        🎯 Público Objetivo (Percentil de Clientes)
+                                    </label>
+                                    <p className="text-xs text-gray-600 mb-3">
+                                        Define qué tan selectiva es esta promoción. Valor 80 = Top 20%, Valor 90 = Top 10%
+                                    </p>
+                                    <div className="flex items-center gap-4">
+                                        <input
+                                            type="range"
+                                            min="50"
+                                            max="95"
+                                            step="5"
+                                            value={formData.percentil_clientes}
+                                            onChange={(e) => setFormData({ ...formData, percentil_clientes: parseInt(e.target.value) })}
+                                            className="flex-1"
+                                        />
+                                        <div className="text-center bg-indigo-50 rounded-lg px-4 py-2 border-2 border-indigo-300 min-w-[120px]">
+                                            <div className="text-2xl font-bold text-indigo-600">
+                                                Top {100 - formData.percentil_clientes}%
+                                            </div>
+                                            <div className="text-xs text-gray-600">Percentil {formData.percentil_clientes}</div>
+                                        </div>
                                     </div>
                                 </div>
 

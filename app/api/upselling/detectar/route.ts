@@ -37,14 +37,38 @@ export async function POST(request: Request) {
         }
 
         const config = configData[0];
-        const percentilObjetivo = config.percentil_clientes || 80;
         const periodoRechazo = config.periodo_rechazado_dias || 30;
         const serviciosPremium = JSON.parse(config.servicios_premium || '["chasis", "motor", "pulido"]');
-        const topPorcentaje = 100 - percentilObjetivo; // Top 20% si percentil es 80
 
-        // 1. Obtener estadísticas del cliente actual
+        // 1. Obtener promoción activa primero (para saber el percentil específico)
+        const promocionResult = await db`
+            SELECT *
+            FROM promociones_upselling
+            WHERE activa = true
+            ${empresaId ? db`AND (empresa_id = ${empresaId} OR empresa_id IS NULL)` : db`AND empresa_id IS NULL`}
+            AND (fecha_inicio IS NULL OR fecha_inicio <= CURRENT_DATE)
+            AND (fecha_fin IS NULL OR fecha_fin >= CURRENT_DATE)
+            ORDER BY empresa_id DESC NULLS LAST
+            LIMIT 1
+        `;
+
+        const promocionData = Array.isArray(promocionResult) ? promocionResult : promocionResult.rows || [];
+
+        if (promocionData.length === 0) {
+            return NextResponse.json({
+                success: true,
+                elegible: false,
+                razon: 'sin_promocion_activa'
+            });
+        }
+
+        const promocion = promocionData[0];
+        const percentilObjetivo = promocion.percentil_clientes || 80;
+        const topPorcentaje = 100 - percentilObjetivo;
+
+        // 2. Obtener estadísticas del cliente actual
         const clienteStatsResult = await db`
-            SELECT 
+            SELECT
                 COUNT(*) as total_visitas,
                 COUNT(DISTINCT DATE(fecha_ingreso)) as dias_diferentes
             FROM registros_lavado
@@ -64,7 +88,7 @@ export async function POST(request: Request) {
 
         const totalVisitasCliente = parseInt(clienteStatsData[0].total_visitas);
 
-        // 2. Calcular percentil del cliente según configuración
+        // 3. Calcular percentil del cliente según la promoción
         const percentilDecimal = percentilObjetivo / 100; // 80 -> 0.80
         const percentilResult = await db`
             WITH cliente_visitas AS (
@@ -99,7 +123,7 @@ export async function POST(request: Request) {
         const percentilCalculado = parseFloat(percentilData[0].percentil_calculado || '0');
         const visitasCliente = parseInt(percentilData[0].visitas_cliente || '0');
 
-        // Verificar si está en el percentil objetivo
+        // Verificar si está en el percentil objetivo de esta promoción
         if (visitasCliente < percentilCalculado) {
             return NextResponse.json({
                 success: true,
@@ -108,12 +132,13 @@ export async function POST(request: Request) {
                 debug: {
                     visitas_cliente: visitasCliente,
                     minimo_requerido: Math.ceil(percentilCalculado),
-                    percentil_configurado: percentilObjetivo
+                    percentil_configurado: percentilObjetivo,
+                    promocion: promocion.nombre
                 }
             });
         }
 
-        // 3. Verificar si ya usó servicios premium (según configuración)
+        // 4. Verificar si ya usó servicios premium (según configuración)
         // Construir condiciones dinámicas basadas en servicios configurados
         const condicionesPremium = serviciosPremium.map((servicio: string) =>
             `LOWER(tipo_limpieza) LIKE '%${servicio.toLowerCase()}%'`
@@ -138,7 +163,7 @@ export async function POST(request: Request) {
             });
         }
 
-        // 4. Verificar si ya rechazó la oferta recientemente (según configuración)
+        // 5. Verificar si ya rechazó la oferta recientemente (según configuración)
         const interaccionRecienteResult = await db`
             SELECT accion, fecha_interaccion
             FROM upselling_interacciones
@@ -162,30 +187,6 @@ export async function POST(request: Request) {
                 });
             }
         }
-
-        // 5. Obtener promoción activa
-        const promocionResult = await db`
-            SELECT *
-            FROM promociones_upselling
-            WHERE activa = true
-            ${empresaId ? db`AND (empresa_id = ${empresaId} OR empresa_id IS NULL)` : db`AND empresa_id IS NULL`}
-            AND (fecha_inicio IS NULL OR fecha_inicio <= CURRENT_DATE)
-            AND (fecha_fin IS NULL OR fecha_fin >= CURRENT_DATE)
-            ORDER BY empresa_id DESC NULLS LAST
-            LIMIT 1
-        `;
-
-        const promocionData = Array.isArray(promocionResult) ? promocionResult : promocionResult.rows || [];
-
-        if (promocionData.length === 0) {
-            return NextResponse.json({
-                success: true,
-                elegible: false,
-                razon: 'sin_promocion_activa'
-            });
-        }
-
-        const promocion = promocionData[0];
 
         // 6. Cliente es elegible!
         return NextResponse.json({

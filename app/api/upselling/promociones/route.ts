@@ -73,7 +73,8 @@ export async function POST(request: Request) {
             descuento_fijo,
             activa,
             fecha_inicio,
-            fecha_fin
+            fecha_fin,
+            percentil_clientes
         } = await request.json();
 
         if (!nombre || !descripcion || !servicios_objetivo) {
@@ -106,6 +107,7 @@ export async function POST(request: Request) {
                 activa,
                 fecha_inicio,
                 fecha_fin,
+                percentil_clientes,
                 empresa_id
             ) VALUES (
                 ${nombre},
@@ -116,6 +118,7 @@ export async function POST(request: Request) {
                 ${activa !== undefined ? activa : true},
                 ${fecha_inicio || null},
                 ${fecha_fin || null},
+                ${percentil_clientes || 80},
                 ${empresaId || null}
             )
             RETURNING *
@@ -161,7 +164,8 @@ export async function PUT(request: Request) {
             descuento_fijo,
             activa,
             fecha_inicio,
-            fecha_fin
+            fecha_fin,
+            percentil_clientes
         } = await request.json();
 
         if (!id) {
@@ -187,6 +191,7 @@ export async function PUT(request: Request) {
                 activa = ${activa !== undefined ? activa : db`activa`},
                 fecha_inicio = ${fecha_inicio !== undefined ? fecha_inicio : db`fecha_inicio`},
                 fecha_fin = ${fecha_fin !== undefined ? fecha_fin : db`fecha_fin`},
+                percentil_clientes = ${percentil_clientes !== undefined ? percentil_clientes : db`percentil_clientes`},
                 updated_at = NOW()
             WHERE id = ${id}
             ${empresaId ? db`AND (empresa_id = ${empresaId} OR empresa_id IS NULL)` : db`AND empresa_id IS NULL`}

@@ -7,7 +7,39 @@ export async function GET(request: Request) {
         const empresaId = await getEmpresaIdFromToken(request);
         const db = await getDBConnection(empresaId);
 
-        // 1. Calcular el percentil 80 (umbral para top 20%)
+        // 1. Obtener configuración global para servicios premium
+        const configResult = await db`
+            SELECT servicios_premium
+            FROM upselling_configuracion
+            WHERE ${empresaId ? db`empresa_id = ${empresaId}` : db`empresa_id IS NULL`}
+            LIMIT 1
+        `;
+
+        const configData = Array.isArray(configResult) ? configResult : configResult.rows || [];
+        const serviciosPremium = configData.length > 0
+            ? JSON.parse(configData[0].servicios_premium || '["chasis", "motor", "pulido"]')
+            : ["chasis", "motor", "pulido"];
+
+        // 2. Obtener promoción activa para saber el percentil a usar
+        const promocionResult = await db`
+            SELECT percentil_clientes
+            FROM promociones_upselling
+            WHERE activa = true
+            ${empresaId ? db`AND (empresa_id = ${empresaId} OR empresa_id IS NULL)` : db`AND empresa_id IS NULL`}
+            AND (fecha_inicio IS NULL OR fecha_inicio <= CURRENT_DATE)
+            AND (fecha_fin IS NULL OR fecha_fin >= CURRENT_DATE)
+            ORDER BY empresa_id DESC NULLS LAST
+            LIMIT 1
+        `;
+
+        const promocionData = Array.isArray(promocionResult) ? promocionResult : promocionResult.rows || [];
+        const percentilObjetivo = promocionData.length > 0
+            ? (promocionData[0].percentil_clientes || 80)
+            : 80;
+
+        const percentilDecimal = percentilObjetivo / 100; // 80 -> 0.80
+
+        // 3. Calcular el percentil según la promoción activa
         const percentilResult = await db`
             WITH cliente_visitas AS (
                 SELECT
@@ -19,15 +51,15 @@ export async function GET(request: Request) {
             ),
             percentil_calc AS (
                 SELECT
-                    PERCENTILE_CONT(0.80) WITHIN GROUP (ORDER BY visitas) as percentil_80
+                    PERCENTILE_CONT(${percentilDecimal}) WITHIN GROUP (ORDER BY visitas) as percentil_calculado
                 FROM cliente_visitas
             )
             SELECT
-                p.percentil_80,
+                p.percentil_calculado,
                 COUNT(*) as total_clientes
             FROM cliente_visitas cv
             CROSS JOIN percentil_calc p
-            GROUP BY p.percentil_80
+            GROUP BY p.percentil_calculado
         `;
 
         const percentilData = Array.isArray(percentilResult) ? percentilResult : percentilResult.rows || [];
@@ -39,32 +71,33 @@ export async function GET(request: Request) {
             });
         }
 
-        const percentil80 = parseFloat(percentilData[0].percentil_80 || '0');
+        const percentilCalculado = parseFloat(percentilData[0].percentil_calculado || '0');
         const totalClientes = parseInt(percentilData[0].total_clientes || '0');
 
-        // 2. Contar clientes top 20% que nunca usaron premium
-        const clientesElegiblesResult = await db`
+        // 4. Construir condiciones dinámicas para servicios premium
+        const condicionesPremium = serviciosPremium.map((servicio: string) =>
+            `LOWER(tipo_limpieza) LIKE '%${servicio.toLowerCase()}%'`
+        ).join(' OR ');
+
+        // 5. Contar clientes elegibles que nunca usaron premium
+        const clientesElegiblesResult = await db.unsafe(`
             WITH cliente_visitas AS (
-                SELECT 
+                SELECT
                     celular,
                     nombre_cliente,
                     COUNT(*) as total_visitas
                 FROM registros_lavado
                 WHERE (anulado IS NULL OR anulado = FALSE)
                 GROUP BY celular, nombre_cliente
-                HAVING COUNT(*) >= ${Math.ceil(percentil80)}
+                HAVING COUNT(*) >= ${Math.ceil(percentilCalculado)}
             ),
             clientes_con_premium AS (
                 SELECT DISTINCT celular
                 FROM registros_lavado
                 WHERE (anulado IS NULL OR anulado = FALSE)
-                AND (
-                    LOWER(tipo_limpieza) LIKE '%chasis%'
-                    OR LOWER(tipo_limpieza) LIKE '%motor%'
-                    OR LOWER(tipo_limpieza) LIKE '%pulido%'
-                )
+                AND (${condicionesPremium})
             )
-            SELECT 
+            SELECT
                 cv.celular,
                 cv.nombre_cliente,
                 cv.total_visitas
@@ -72,13 +105,13 @@ export async function GET(request: Request) {
             LEFT JOIN clientes_con_premium cp ON cv.celular = cp.celular
             WHERE cp.celular IS NULL
             ORDER BY cv.total_visitas DESC
-        `;
+        `);
 
         const clientesElegiblesData = Array.isArray(clientesElegiblesResult)
             ? clientesElegiblesResult
             : clientesElegiblesResult.rows || [];
 
-        // 3. Contar interacciones recientes
+        // 6. Contar interacciones recientes
         const interaccionesResult = await db`
             SELECT 
                 accion,
@@ -105,7 +138,7 @@ export async function GET(request: Request) {
             if (row.accion === 'interes_futuro') interacciones.interes_futuro = parseInt(row.cantidad);
         });
 
-        // 4. Obtener TODAS las interacciones con detalles
+        // 7. Obtener TODAS las interacciones con detalles
         const todasInteraccionesResult = await db`
             SELECT
                 ui.cliente_nombre,
@@ -131,7 +164,8 @@ export async function GET(request: Request) {
         return NextResponse.json({
             success: true,
             estadisticas: {
-                umbral_minimo: Math.ceil(percentil80),
+                umbral_minimo: Math.ceil(percentilCalculado),
+                percentil_configurado: percentilObjetivo,
                 total_clientes: totalClientes,
                 clientes_elegibles: clientesElegiblesData.length,
                 top_clientes_elegibles: clientesElegiblesData.slice(0, 10),
