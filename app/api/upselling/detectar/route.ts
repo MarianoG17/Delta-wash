@@ -17,6 +17,31 @@ export async function POST(request: Request) {
             );
         }
 
+        // Obtener configuración de upselling
+        const configResult = await db`
+            SELECT *
+            FROM upselling_configuracion
+            WHERE ${empresaId ? db`empresa_id = ${empresaId}` : db`empresa_id IS NULL`}
+            LIMIT 1
+        `;
+
+        const configData = Array.isArray(configResult) ? configResult : configResult.rows || [];
+
+        // Si no hay configuración o está desactivada, no mostrar upselling
+        if (configData.length === 0 || !configData[0].activo) {
+            return NextResponse.json({
+                success: true,
+                elegible: false,
+                razon: 'sistema_desactivado'
+            });
+        }
+
+        const config = configData[0];
+        const percentilObjetivo = config.percentil_clientes || 80;
+        const periodoRechazo = config.periodo_rechazado_dias || 30;
+        const serviciosPremium = JSON.parse(config.servicios_premium || '["chasis", "motor", "pulido"]');
+        const topPorcentaje = 100 - percentilObjetivo; // Top 20% si percentil es 80
+
         // 1. Obtener estadísticas del cliente actual
         const clienteStatsResult = await db`
             SELECT 
@@ -39,10 +64,11 @@ export async function POST(request: Request) {
 
         const totalVisitasCliente = parseInt(clienteStatsData[0].total_visitas);
 
-        // 2. Calcular percentil del cliente (top 20%)
+        // 2. Calcular percentil del cliente según configuración
+        const percentilDecimal = percentilObjetivo / 100; // 80 -> 0.80
         const percentilResult = await db`
             WITH cliente_visitas AS (
-                SELECT 
+                SELECT
                     celular,
                     COUNT(*) as visitas
                 FROM registros_lavado
@@ -50,13 +76,13 @@ export async function POST(request: Request) {
                 GROUP BY celular
             ),
             percentiles AS (
-                SELECT 
-                    PERCENTILE_CONT(0.80) WITHIN GROUP (ORDER BY visitas) as percentil_80
+                SELECT
+                    PERCENTILE_CONT(${percentilDecimal}) WITHIN GROUP (ORDER BY visitas) as percentil_calculado
                 FROM cliente_visitas
             )
-            SELECT 
+            SELECT
                 (SELECT visitas FROM cliente_visitas WHERE celular = ${celular}) as visitas_cliente,
-                percentil_80
+                percentil_calculado
             FROM percentiles
         `;
 
@@ -70,34 +96,36 @@ export async function POST(request: Request) {
             });
         }
 
-        const percentil80 = parseFloat(percentilData[0].percentil_80 || '0');
+        const percentilCalculado = parseFloat(percentilData[0].percentil_calculado || '0');
         const visitasCliente = parseInt(percentilData[0].visitas_cliente || '0');
 
-        // Verificar si está en el top 20%
-        if (visitasCliente < percentil80) {
+        // Verificar si está en el percentil objetivo
+        if (visitasCliente < percentilCalculado) {
             return NextResponse.json({
                 success: true,
                 elegible: false,
-                razon: 'no_top_20',
+                razon: `no_top_${topPorcentaje}`,
                 debug: {
                     visitas_cliente: visitasCliente,
-                    minimo_requerido: Math.ceil(percentil80)
+                    minimo_requerido: Math.ceil(percentilCalculado),
+                    percentil_configurado: percentilObjetivo
                 }
             });
         }
 
-        // 3. Verificar si ya usó servicios premium
-        const serviciosPremiumResult = await db`
+        // 3. Verificar si ya usó servicios premium (según configuración)
+        // Construir condiciones dinámicas basadas en servicios configurados
+        const condicionesPremium = serviciosPremium.map((servicio: string) =>
+            `LOWER(tipo_limpieza) LIKE '%${servicio.toLowerCase()}%'`
+        ).join(' OR ');
+
+        const serviciosPremiumResult = await db.unsafe(`
             SELECT COUNT(*) as tiene_premium
             FROM registros_lavado
-            WHERE celular = ${celular}
+            WHERE celular = '${celular}'
             AND (anulado IS NULL OR anulado = FALSE)
-            AND (
-                LOWER(tipo_limpieza) LIKE '%chasis%'
-                OR LOWER(tipo_limpieza) LIKE '%motor%'
-                OR LOWER(tipo_limpieza) LIKE '%pulido%'
-            )
-        `;
+            AND (${condicionesPremium})
+        `);
 
         const serviciosPremiumData = Array.isArray(serviciosPremiumResult) ? serviciosPremiumResult : serviciosPremiumResult.rows || [];
         const tienePremium = parseInt(serviciosPremiumData[0]?.tiene_premium || '0');
@@ -110,13 +138,13 @@ export async function POST(request: Request) {
             });
         }
 
-        // 4. Verificar si ya rechazó la oferta recientemente (últimos 30 días)
+        // 4. Verificar si ya rechazó la oferta recientemente (según configuración)
         const interaccionRecienteResult = await db`
             SELECT accion, fecha_interaccion
             FROM upselling_interacciones
             WHERE cliente_celular = ${celular}
             ${empresaId ? db`AND empresa_id = ${empresaId}` : db`AND empresa_id IS NULL`}
-            AND fecha_interaccion > NOW() - INTERVAL '30 days'
+            AND fecha_interaccion > NOW() - INTERVAL '${periodoRechazo} days'
             ORDER BY fecha_interaccion DESC
             LIMIT 1
         `;
@@ -165,8 +193,9 @@ export async function POST(request: Request) {
             elegible: true,
             cliente: {
                 total_visitas: totalVisitasCliente,
-                percentil: 'top_20',
-                umbral_minimo: Math.ceil(percentil80)
+                percentil: `top_${topPorcentaje}`,
+                umbral_minimo: Math.ceil(percentilCalculado),
+                percentil_configurado: percentilObjetivo
             },
             promocion: {
                 id: promocion.id,
@@ -175,6 +204,11 @@ export async function POST(request: Request) {
                 descuento_porcentaje: promocion.descuento_porcentaje,
                 descuento_fijo: promocion.descuento_fijo,
                 servicios_objetivo: JSON.parse(promocion.servicios_objetivo)
+            },
+            configuracion: {
+                percentil: percentilObjetivo,
+                periodo_rechazo_dias: periodoRechazo,
+                servicios_premium: serviciosPremium
             }
         });
 

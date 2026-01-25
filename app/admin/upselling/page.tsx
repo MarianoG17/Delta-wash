@@ -19,6 +19,14 @@ interface Promocion {
     created_at: string;
 }
 
+interface ConfiguracionUpselling {
+    id: number;
+    percentil_clientes: number;
+    periodo_rechazado_dias: number;
+    servicios_premium: string[];
+    activo: boolean;
+}
+
 interface Estadisticas {
     umbral_minimo: number;
     total_clientes: number;
@@ -51,10 +59,13 @@ export default function AdminUpsellingPage() {
     const [mounted, setMounted] = useState(false);
     const [promociones, setPromociones] = useState<Promocion[]>([]);
     const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
+    const [configuracion, setConfiguracion] = useState<ConfiguracionUpselling | null>(null);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [showConfigModal, setShowConfigModal] = useState(false);
     const [editando, setEditando] = useState<Promocion | null>(null);
     const [filtroInteraccion, setFiltroInteraccion] = useState<string>('todos');
+    const [nuevoServicio, setNuevoServicio] = useState('');
 
     // Form states
     const [formData, setFormData] = useState({
@@ -77,6 +88,7 @@ export default function AdminUpsellingPage() {
             } else {
                 cargarPromociones();
                 cargarEstadisticas();
+                cargarConfiguracion();
             }
         }
     }, [router]);
@@ -122,6 +134,59 @@ export default function AdminUpsellingPage() {
             }
         } catch (error) {
             console.error('Error cargando estadísticas:', error);
+        }
+    };
+
+    const cargarConfiguracion = async () => {
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/upselling/configuracion', {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            const data = await res.json();
+            if (data.success) {
+                setConfiguracion(data.configuracion);
+            }
+        } catch (error) {
+            console.error('Error cargando configuración:', error);
+        }
+    };
+
+    const guardarConfiguracion = async () => {
+        if (!configuracion) return;
+
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/upselling/configuracion', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify(configuracion)
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                alert('✅ Configuración actualizada');
+                setShowConfigModal(false);
+                cargarEstadisticas(); // Recargar estadísticas con nueva config
+            } else {
+                alert('❌ ' + data.message);
+            }
+        } catch (error) {
+            alert('❌ Error al guardar configuración');
         }
     };
 
@@ -292,17 +357,29 @@ export default function AdminUpsellingPage() {
                             </h1>
                         </div>
                     </div>
-                    <button
-                        onClick={() => {
-                            setEditando(null);
-                            resetForm();
-                            setShowModal(true);
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all"
-                    >
-                        <Plus size={18} />
-                        <span className="text-sm">Nueva Promoción</span>
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setShowConfigModal(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M12 1v6m0 6v6m8.66-13a9 9 0 1 1-17.32 0"></path>
+                            </svg>
+                            <span className="text-sm">Configuración</span>
+                        </button>
+                        <button
+                            onClick={() => {
+                                setEditando(null);
+                                resetForm();
+                                setShowModal(true);
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-all"
+                        >
+                            <Plus size={18} />
+                            <span className="text-sm">Nueva Promoción</span>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Panel de Estadísticas */}
@@ -388,8 +465,8 @@ export default function AdminUpsellingPage() {
                                     <button
                                         onClick={() => setFiltroInteraccion('todos')}
                                         className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${filtroInteraccion === 'todos'
-                                                ? 'bg-blue-500 text-white'
-                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            ? 'bg-blue-500 text-white'
+                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                             }`}
                                     >
                                         Todos ({estadisticas.todas_interacciones.length})
@@ -397,8 +474,8 @@ export default function AdminUpsellingPage() {
                                     <button
                                         onClick={() => setFiltroInteraccion('aceptado')}
                                         className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${filtroInteraccion === 'aceptado'
-                                                ? 'bg-green-500 text-white'
-                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            ? 'bg-green-500 text-white'
+                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                             }`}
                                     >
                                         ✓ Aceptado ({estadisticas.todas_interacciones.filter(i => i.accion === 'aceptado').length})
@@ -406,8 +483,8 @@ export default function AdminUpsellingPage() {
                                     <button
                                         onClick={() => setFiltroInteraccion('interes_futuro')}
                                         className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${filtroInteraccion === 'interes_futuro'
-                                                ? 'bg-blue-500 text-white'
-                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            ? 'bg-blue-500 text-white'
+                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                             }`}
                                     >
                                         ⏰ Próxima ({estadisticas.todas_interacciones.filter(i => i.accion === 'interes_futuro').length})
@@ -415,8 +492,8 @@ export default function AdminUpsellingPage() {
                                     <button
                                         onClick={() => setFiltroInteraccion('rechazado')}
                                         className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${filtroInteraccion === 'rechazado'
-                                                ? 'bg-red-500 text-white'
-                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            ? 'bg-red-500 text-white'
+                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                             }`}
                                     >
                                         ✕ Rechazado ({estadisticas.todas_interacciones.filter(i => i.accion === 'rechazado').length})
@@ -665,18 +742,39 @@ export default function AdminUpsellingPage() {
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Servicios Objetivo
                                     </label>
+                                    <p className="text-xs text-gray-600 mb-2">
+                                        Selecciona los servicios premium que ofrecerá esta promoción
+                                    </p>
                                     <div className="space-y-2">
-                                        {['chasis', 'motor', 'pulido'].map((servicio) => (
-                                            <label key={servicio} className="flex items-center gap-2 cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.servicios_objetivo.includes(servicio)}
-                                                    onChange={() => handleServicioToggle(servicio)}
-                                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded"
-                                                />
-                                                <span className="text-sm text-gray-900 capitalize">{servicio}</span>
-                                            </label>
-                                        ))}
+                                        {configuracion && configuracion.servicios_premium.length > 0 ? (
+                                            configuracion.servicios_premium.map((servicio) => (
+                                                <label key={servicio} className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.servicios_objetivo.includes(servicio)}
+                                                        onChange={() => handleServicioToggle(servicio)}
+                                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                                                    />
+                                                    <span className="text-sm text-gray-900 capitalize">{servicio}</span>
+                                                </label>
+                                            ))
+                                        ) : (
+                                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                                <p className="text-xs text-yellow-800">
+                                                    ⚠️ No hay servicios premium configurados.
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setShowModal(false);
+                                                            setShowConfigModal(true);
+                                                        }}
+                                                        className="ml-1 text-blue-600 hover:text-blue-800 font-semibold underline"
+                                                    >
+                                                        Configurar ahora
+                                                    </button>
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -767,6 +865,189 @@ export default function AdminUpsellingPage() {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal de Configuración de Upselling */}
+                {showConfigModal && configuracion && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+                            <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                    <path d="M12 1v6m0 6v6m8.66-13a9 9 0 1 1-17.32 0"></path>
+                                </svg>
+                                Configuración del Sistema de Upselling
+                            </h3>
+
+                            <div className="space-y-6">
+                                {/* Percentil de clientes */}
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <label className="block text-sm font-bold text-blue-900 mb-2">
+                                        🎯 Percentil de Clientes Objetivo
+                                    </label>
+                                    <p className="text-xs text-blue-700 mb-3">
+                                        Define qué tan selectivo es el sistema. Valor 80 = Top 20%, Valor 90 = Top 10%
+                                    </p>
+                                    <div className="flex items-center gap-4">
+                                        <input
+                                            type="range"
+                                            min="50"
+                                            max="95"
+                                            step="5"
+                                            value={configuracion.percentil_clientes}
+                                            onChange={(e) => setConfiguracion({
+                                                ...configuracion,
+                                                percentil_clientes: parseInt(e.target.value)
+                                            })}
+                                            className="flex-1"
+                                        />
+                                        <div className="text-center bg-white rounded-lg px-4 py-2 border-2 border-blue-300 min-w-[120px]">
+                                            <div className="text-2xl font-bold text-blue-600">
+                                                Top {100 - configuracion.percentil_clientes}%
+                                            </div>
+                                            <div className="text-xs text-gray-600">Percentil {configuracion.percentil_clientes}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Período de rechazo */}
+                                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                    <label className="block text-sm font-bold text-orange-900 mb-2">
+                                        ⏰ Período de Espera tras Rechazo
+                                    </label>
+                                    <p className="text-xs text-orange-700 mb-3">
+                                        Días que deben pasar antes de volver a mostrar la oferta a un cliente que la rechazó
+                                    </p>
+                                    <div className="flex items-center gap-4">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="365"
+                                            value={configuracion.periodo_rechazado_dias}
+                                            onChange={(e) => setConfiguracion({
+                                                ...configuracion,
+                                                periodo_rechazado_dias: parseInt(e.target.value) || 1
+                                            })}
+                                            className="w-full px-4 py-2 border border-orange-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-lg font-semibold"
+                                        />
+                                        <span className="text-orange-900 font-semibold whitespace-nowrap">días</span>
+                                    </div>
+                                </div>
+
+                                {/* Servicios Premium */}
+                                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                    <label className="block text-sm font-bold text-purple-900 mb-2">
+                                        ⭐ Servicios Premium Personalizados
+                                    </label>
+                                    <p className="text-xs text-purple-700 mb-3">
+                                        Define las palabras clave de servicios premium. El sistema detectará si un cliente ya usó alguno de estos servicios.
+                                    </p>
+
+                                    {/* Lista de servicios */}
+                                    <div className="flex flex-wrap gap-2 mb-3">
+                                        {configuracion.servicios_premium.map((servicio, idx) => (
+                                            <div
+                                                key={idx}
+                                                className="flex items-center gap-2 bg-white border-2 border-purple-300 rounded-lg px-3 py-1"
+                                            >
+                                                <span className="text-purple-900 font-medium">{servicio}</span>
+                                                <button
+                                                    onClick={() => {
+                                                        const nuevosServicios = configuracion.servicios_premium.filter((_, i) => i !== idx);
+                                                        setConfiguracion({
+                                                            ...configuracion,
+                                                            servicios_premium: nuevosServicios
+                                                        });
+                                                    }}
+                                                    className="text-red-500 hover:text-red-700 font-bold"
+                                                    title="Eliminar"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Agregar nuevo servicio */}
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={nuevoServicio}
+                                            onChange={(e) => setNuevoServicio(e.target.value.toLowerCase())}
+                                            onKeyPress={(e) => {
+                                                if (e.key === 'Enter' && nuevoServicio.trim()) {
+                                                    e.preventDefault();
+                                                    if (!configuracion.servicios_premium.includes(nuevoServicio.trim())) {
+                                                        setConfiguracion({
+                                                            ...configuracion,
+                                                            servicios_premium: [...configuracion.servicios_premium, nuevoServicio.trim()]
+                                                        });
+                                                        setNuevoServicio('');
+                                                    }
+                                                }
+                                            }}
+                                            placeholder="ej: pulido, hidrolavado, etc..."
+                                            className="flex-1 px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                if (nuevoServicio.trim() && !configuracion.servicios_premium.includes(nuevoServicio.trim())) {
+                                                    setConfiguracion({
+                                                        ...configuracion,
+                                                        servicios_premium: [...configuracion.servicios_premium, nuevoServicio.trim()]
+                                                    });
+                                                    setNuevoServicio('');
+                                                }
+                                            }}
+                                            className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold text-sm"
+                                        >
+                                            + Agregar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Estado del sistema */}
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <label className="flex items-center gap-3 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={configuracion.activo}
+                                            onChange={(e) => setConfiguracion({
+                                                ...configuracion,
+                                                activo: e.target.checked
+                                            })}
+                                            className="w-6 h-6 text-green-600 border-gray-300 rounded"
+                                        />
+                                        <div>
+                                            <span className="text-sm font-bold text-green-900">Sistema de Upselling Activo</span>
+                                            <p className="text-xs text-green-700">
+                                                Cuando está desactivado, no se mostrarán ofertas a ningún cliente
+                                            </p>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                {/* Botones de acción */}
+                                <div className="flex gap-3 pt-4">
+                                    <button
+                                        onClick={() => {
+                                            setShowConfigModal(false);
+                                            cargarConfiguracion(); // Recargar config original
+                                        }}
+                                        className="flex-1 px-4 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={guardarConfiguracion}
+                                        className="flex-1 px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors"
+                                    >
+                                        Guardar Configuración
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
