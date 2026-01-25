@@ -17,9 +17,9 @@ export async function POST(request: Request) {
             );
         }
 
-        // Obtener configuración de upselling
+        // Obtener configuración de upselling (solo para verificar si está activo)
         const configResult = await db`
-            SELECT *
+            SELECT activo, servicios_premium
             FROM upselling_configuracion
             WHERE ${empresaId ? db`empresa_id = ${empresaId}` : db`empresa_id IS NULL`}
             LIMIT 1
@@ -36,9 +36,7 @@ export async function POST(request: Request) {
             });
         }
 
-        const config = configData[0];
-        const periodoRechazo = config.periodo_rechazado_dias || 30;
-        const serviciosPremium = JSON.parse(config.servicios_premium || '["chasis", "motor", "pulido"]');
+        const serviciosPremium = JSON.parse(configData[0].servicios_premium || '["chasis", "motor", "pulido"]');
 
         // 1. Obtener promoción activa primero (para saber el percentil específico)
         const promocionResult = await db`
@@ -64,6 +62,7 @@ export async function POST(request: Request) {
 
         const promocion = promocionData[0];
         const percentilObjetivo = promocion.percentil_clientes || 80;
+        const periodoRechazo = promocion.periodo_rechazado_dias || 30;
         const topPorcentaje = 100 - percentilObjetivo;
 
         // 2. Obtener estadísticas del cliente actual
@@ -206,10 +205,9 @@ export async function POST(request: Request) {
                 descuento_fijo: promocion.descuento_fijo,
                 servicios_objetivo: JSON.parse(promocion.servicios_objetivo)
             },
-            configuracion: {
+            promocion_config: {
                 percentil: percentilObjetivo,
-                periodo_rechazo_dias: periodoRechazo,
-                servicios_premium: serviciosPremium
+                periodo_rechazo_dias: periodoRechazo
             }
         });
 

@@ -14,6 +14,7 @@ interface Promocion {
     descuento_porcentaje: number;
     descuento_fijo: number;
     percentil_clientes: number;
+    periodo_rechazado_dias: number;
     activa: boolean;
     fecha_inicio: string | null;
     fecha_fin: string | null;
@@ -77,6 +78,7 @@ export default function AdminUpsellingPage() {
         descuento_porcentaje: 0,
         descuento_fijo: 0,
         percentil_clientes: 80,
+        periodo_rechazado_dias: 30,
         activa: true,
         fecha_inicio: '',
         fecha_fin: ''
@@ -324,6 +326,7 @@ export default function AdminUpsellingPage() {
             descuento_porcentaje: promocion.descuento_porcentaje,
             descuento_fijo: promocion.descuento_fijo,
             percentil_clientes: promocion.percentil_clientes || 80,
+            periodo_rechazado_dias: promocion.periodo_rechazado_dias || 30,
             activa: promocion.activa,
             fecha_inicio: promocion.fecha_inicio || '',
             fecha_fin: promocion.fecha_fin || ''
@@ -339,6 +342,7 @@ export default function AdminUpsellingPage() {
             descuento_porcentaje: 0,
             descuento_fijo: 0,
             percentil_clientes: 80,
+            periodo_rechazado_dias: 30,
             activa: true,
             fecha_inicio: '',
             fecha_fin: ''
@@ -388,16 +392,6 @@ export default function AdminUpsellingPage() {
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <button
-                            onClick={() => setShowConfigModal(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-all"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="3"></circle>
-                                <path d="M12 1v6m0 6v6m8.66-13a9 9 0 1 1-17.32 0"></path>
-                            </svg>
-                            <span className="text-sm">Configuración</span>
-                        </button>
                         <button
                             onClick={() => {
                                 setEditando(null);
@@ -785,35 +779,27 @@ export default function AdminUpsellingPage() {
                                         Servicios Objetivo
                                     </label>
                                     <p className="text-xs text-gray-600 mb-2">
-                                        Selecciona los servicios premium que ofrecerá esta promoción
+                                        Selecciona los servicios premium de tu lista de precios que ofrecerá esta promoción
                                     </p>
                                     <div className="space-y-2">
-                                        {configuracion && configuracion.servicios_premium.length > 0 ? (
-                                            configuracion.servicios_premium.map((servicio) => (
-                                                <label key={servicio} className="flex items-center gap-2 cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={formData.servicios_objetivo.includes(servicio)}
-                                                        onChange={() => handleServicioToggle(servicio)}
-                                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded"
-                                                    />
-                                                    <span className="text-sm text-gray-900 capitalize">{servicio}</span>
-                                                </label>
-                                            ))
+                                        {serviciosDisponibles.length > 0 ? (
+                                            <div className="max-h-48 overflow-y-auto space-y-2 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                                {serviciosDisponibles.map((servicio) => (
+                                                    <label key={servicio} className="flex items-center gap-2 cursor-pointer hover:bg-white p-2 rounded">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={formData.servicios_objetivo.includes(servicio.toLowerCase())}
+                                                            onChange={() => handleServicioToggle(servicio.toLowerCase())}
+                                                            className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                                                        />
+                                                        <span className="text-sm text-gray-900">{servicio}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
                                         ) : (
                                             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                                                 <p className="text-xs text-yellow-800">
-                                                    ⚠️ No hay servicios premium configurados.
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setShowModal(false);
-                                                            setShowConfigModal(true);
-                                                        }}
-                                                        className="ml-1 text-blue-600 hover:text-blue-800 font-semibold underline"
-                                                    >
-                                                        Configurar ahora
-                                                    </button>
+                                                    ⚠️ No se encontraron servicios en las listas de precios
                                                 </p>
                                             </div>
                                         )}
@@ -843,6 +829,26 @@ export default function AdminUpsellingPage() {
                                             </div>
                                             <div className="text-xs text-gray-600">Percentil {formData.percentil_clientes}</div>
                                         </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        ⏰ Período de Espera tras Rechazo
+                                    </label>
+                                    <p className="text-xs text-gray-600 mb-3">
+                                        Días que deben pasar antes de volver a mostrar esta oferta a un cliente que la rechazó
+                                    </p>
+                                    <div className="flex items-center gap-4">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="365"
+                                            value={formData.periodo_rechazado_dias}
+                                            onChange={(e) => setFormData({ ...formData, periodo_rechazado_dias: parseInt(e.target.value) || 1 })}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        <span className="text-gray-700 font-semibold whitespace-nowrap">días</span>
                                     </div>
                                 </div>
 
