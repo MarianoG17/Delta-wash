@@ -416,7 +416,9 @@ export default function AdminUpsellingPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-300">
-                                <p className="text-sm text-blue-600 font-semibold mb-1">Umbral Mínimo (Top 20%)</p>
+                                <p className="text-sm text-blue-600 font-semibold mb-1">
+                                    Umbral Mínimo (Top {configuracion ? 100 - configuracion.percentil_clientes : 20}%)
+                                </p>
                                 <p className="text-3xl font-bold text-blue-900">
                                     {estadisticas.umbral_minimo} visitas
                                 </p>
@@ -473,7 +475,7 @@ export default function AdminUpsellingPage() {
                                     </div>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-2">
-                                    💡 Estos clientes están en el top 20% más frecuentes y nunca pidieron servicios premium
+                                    💡 Estos clientes están en el top {configuracion ? 100 - configuracion.percentil_clientes : 20}% más frecuentes y nunca pidieron servicios premium
                                 </p>
                             </div>
                         )}
