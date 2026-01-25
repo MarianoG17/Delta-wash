@@ -9,7 +9,7 @@ Se ha implementado un sistema completamente configurable para el upselling que p
 - **Servicios premium personalizados** (no limitado a chasis, motor, pulido)
 - **Activación/Desactivación** del sistema completo
 
-## 🗄️ Archivos Creados/Modificados
+## 🗄️ Archivos Creados/Modificadosa 
 
 ### 1. Migración de Base de Datos
 - **`migration-configuracion-upselling.sql`**

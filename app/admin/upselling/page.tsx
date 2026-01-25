@@ -60,12 +60,12 @@ export default function AdminUpsellingPage() {
     const [promociones, setPromociones] = useState<Promocion[]>([]);
     const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
     const [configuracion, setConfiguracion] = useState<ConfiguracionUpselling | null>(null);
+    const [serviciosDisponibles, setServiciosDisponibles] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [showConfigModal, setShowConfigModal] = useState(false);
     const [editando, setEditando] = useState<Promocion | null>(null);
     const [filtroInteraccion, setFiltroInteraccion] = useState<string>('todos');
-    const [nuevoServicio, setNuevoServicio] = useState('');
 
     // Form states
     const [formData, setFormData] = useState({
@@ -89,6 +89,7 @@ export default function AdminUpsellingPage() {
                 cargarPromociones();
                 cargarEstadisticas();
                 cargarConfiguracion();
+                cargarServiciosDisponibles();
             }
         }
     }, [router]);
@@ -155,6 +156,30 @@ export default function AdminUpsellingPage() {
             }
         } catch (error) {
             console.error('Error cargando configuración:', error);
+        }
+    };
+
+    const cargarServiciosDisponibles = async () => {
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/listas-precios/obtener-precios', {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
+            });
+            const data = await res.json();
+
+            if (data.success && data.precios) {
+                // Extraer nombres únicos de servicios
+                const serviciosUnicos = [...new Set(data.precios.map((p: any) => p.nombre))] as string[];
+                setServiciosDisponibles(serviciosUnicos);
+            }
+        } catch (error) {
+            console.error('Error cargando servicios:', error);
         }
     };
 
@@ -939,73 +964,65 @@ export default function AdminUpsellingPage() {
                                 {/* Servicios Premium */}
                                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                                     <label className="block text-sm font-bold text-purple-900 mb-2">
-                                        ⭐ Servicios Premium Personalizados
+                                        ⭐ Servicios Premium
                                     </label>
                                     <p className="text-xs text-purple-700 mb-3">
-                                        Define las palabras clave de servicios premium. El sistema detectará si un cliente ya usó alguno de estos servicios.
+                                        Selecciona los servicios de tu lista de precios que consideras "premium". El sistema detectará si un cliente ya usó alguno de estos servicios.
                                     </p>
 
-                                    {/* Lista de servicios */}
-                                    <div className="flex flex-wrap gap-2 mb-3">
-                                        {configuracion.servicios_premium.map((servicio, idx) => (
-                                            <div
-                                                key={idx}
-                                                className="flex items-center gap-2 bg-white border-2 border-purple-300 rounded-lg px-3 py-1"
-                                            >
-                                                <span className="text-purple-900 font-medium">{servicio}</span>
-                                                <button
-                                                    onClick={() => {
-                                                        const nuevosServicios = configuracion.servicios_premium.filter((_, i) => i !== idx);
-                                                        setConfiguracion({
-                                                            ...configuracion,
-                                                            servicios_premium: nuevosServicios
-                                                        });
-                                                    }}
-                                                    className="text-red-500 hover:text-red-700 font-bold"
-                                                    title="Eliminar"
-                                                >
-                                                    ×
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
+                                    {serviciosDisponibles.length > 0 ? (
+                                        <div className="max-h-64 overflow-y-auto space-y-2 bg-white rounded-lg p-3 border border-purple-200">
+                                            {serviciosDisponibles.map((servicio) => (
+                                                <label key={servicio} className="flex items-center gap-2 cursor-pointer hover:bg-purple-50 p-2 rounded">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={configuracion.servicios_premium.includes(servicio.toLowerCase())}
+                                                        onChange={(e) => {
+                                                            const servicioLower = servicio.toLowerCase();
+                                                            if (e.target.checked) {
+                                                                setConfiguracion({
+                                                                    ...configuracion,
+                                                                    servicios_premium: [...configuracion.servicios_premium, servicioLower]
+                                                                });
+                                                            } else {
+                                                                setConfiguracion({
+                                                                    ...configuracion,
+                                                                    servicios_premium: configuracion.servicios_premium.filter(s => s !== servicioLower)
+                                                                });
+                                                            }
+                                                        }}
+                                                        className="w-4 h-4 text-purple-600 border-gray-300 rounded"
+                                                    />
+                                                    <span className="text-sm text-gray-900">{servicio}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                            <p className="text-xs text-yellow-800">
+                                                ⚠️ No se encontraron servicios en las listas de precios. Crea servicios primero en la gestión de listas de precios.
+                                            </p>
+                                        </div>
+                                    )}
 
-                                    {/* Agregar nuevo servicio */}
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            value={nuevoServicio}
-                                            onChange={(e) => setNuevoServicio(e.target.value.toLowerCase())}
-                                            onKeyPress={(e) => {
-                                                if (e.key === 'Enter' && nuevoServicio.trim()) {
-                                                    e.preventDefault();
-                                                    if (!configuracion.servicios_premium.includes(nuevoServicio.trim())) {
-                                                        setConfiguracion({
-                                                            ...configuracion,
-                                                            servicios_premium: [...configuracion.servicios_premium, nuevoServicio.trim()]
-                                                        });
-                                                        setNuevoServicio('');
-                                                    }
-                                                }
-                                            }}
-                                            placeholder="ej: pulido, hidrolavado, etc..."
-                                            className="flex-1 px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-                                        />
-                                        <button
-                                            onClick={() => {
-                                                if (nuevoServicio.trim() && !configuracion.servicios_premium.includes(nuevoServicio.trim())) {
-                                                    setConfiguracion({
-                                                        ...configuracion,
-                                                        servicios_premium: [...configuracion.servicios_premium, nuevoServicio.trim()]
-                                                    });
-                                                    setNuevoServicio('');
-                                                }
-                                            }}
-                                            className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-semibold text-sm"
-                                        >
-                                            + Agregar
-                                        </button>
-                                    </div>
+                                    {/* Resumen de seleccionados */}
+                                    {configuracion.servicios_premium.length > 0 && (
+                                        <div className="mt-3 pt-3 border-t border-purple-200">
+                                            <p className="text-xs text-purple-700 font-semibold mb-2">
+                                                Servicios seleccionados ({configuracion.servicios_premium.length}):
+                                            </p>
+                                            <div className="flex flex-wrap gap-1">
+                                                {configuracion.servicios_premium.map((servicio, idx) => (
+                                                    <span
+                                                        key={idx}
+                                                        className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded"
+                                                    >
+                                                        {servicio}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Estado del sistema */}
