@@ -180,12 +180,16 @@ export default function AdminUpsellingPage() {
 
             if (data.success && data.precios) {
                 // El API retorna precios como objeto: { auto: { simple: 15000, ... }, mono: { ... }, ... }
-                // Extraer nombres únicos de servicios de todos los tipos de vehículos
+                // Extraer nombres únicos de servicios, removiendo prefijos de vehículos (xl_, etc)
                 const serviciosSet = new Set<string>();
                 Object.values(data.precios).forEach((vehiculoPrecios: any) => {
-                    Object.keys(vehiculoPrecios).forEach(servicio => serviciosSet.add(servicio));
+                    Object.keys(vehiculoPrecios).forEach(servicio => {
+                        // Remover prefijos de tipo de vehículo (xl_, mono_, etc.)
+                        const servicioBase = servicio.replace(/^(xl_|mono_|camioneta_)/, '');
+                        serviciosSet.add(servicioBase);
+                    });
                 });
-                const serviciosUnicos = Array.from(serviciosSet);
+                const serviciosUnicos = Array.from(serviciosSet).sort();
                 setServiciosDisponibles(serviciosUnicos);
             }
         } catch (error) {
