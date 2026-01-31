@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Star, MessageSquare, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Star, MessageSquare, TrendingUp, Send } from 'lucide-react';
 import { getAuthUser, clearAuth, getLoginUrl } from '@/lib/auth-utils';
 
 interface Encuesta {
@@ -19,6 +19,8 @@ interface Encuesta {
     rating: number | null;
     comment: string | null;
     status: 'creada' | 'disparada' | 'respondida';
+    surveyUrl?: string;
+    whatsappUrl?: string;
 }
 
 interface Estadisticas {
@@ -73,6 +75,44 @@ export default function ReporteEncuestas() {
             alert('Error al cargar el reporte de encuestas');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const enviarEncuesta = async (encuesta: Encuesta) => {
+        if (!encuesta.surveyUrl || !encuesta.whatsappUrl) {
+            // Generar URLs si no vienen en la respuesta
+            const baseUrl = window.location.origin;
+            const surveyUrl = `${baseUrl}/survey/${encuesta.token}`;
+            const whatsappMessage = `Gracias por confiar en DeltaWash. ¿Nos dejarías tu opinión? Son solo 10 segundos y a nosotros nos ayuda a mejorar :)\n👉 ${surveyUrl}`;
+            const whatsappUrl = `https://wa.me/${encuesta.clientPhone}?text=${encodeURIComponent(whatsappMessage)}`;
+            
+            // Abrir WhatsApp
+            window.open(whatsappUrl, '_blank');
+        } else {
+            // Usar URLs de la respuesta
+            window.open(encuesta.whatsappUrl, '_blank');
+        }
+
+        // Marcar como disparada
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            await fetch('/api/surveys/mark-sent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
+                body: JSON.stringify({ visitId: encuesta.id })
+            });
+
+            // Recargar reporte
+            cargarReporte();
+        } catch (error) {
+            console.error('Error al marcar encuesta:', error);
         }
     };
 
@@ -211,12 +251,15 @@ export default function ReporteEncuestas() {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Comentario
                                     </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Acción
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {encuestas.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                                             No hay encuestas registradas
                                         </td>
                                     </tr>
@@ -241,6 +284,19 @@ export default function ReporteEncuestas() {
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
                                                 {encuesta.comment || <span className="text-gray-400">Sin comentario</span>}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {encuesta.respondedAt ? (
+                                                    <span className="text-xs text-green-600 font-semibold">✓ Respondida</span>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => enviarEncuesta(encuesta)}
+                                                        className="inline-flex items-center gap-1 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded-lg transition-colors"
+                                                    >
+                                                        <Send size={14} />
+                                                        WhatsApp
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))

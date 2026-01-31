@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Car, LogOut, History, Plus, Send, Users, Wallet, Ban, DollarSign, TrendingUp } from 'lucide-react';
+import { Car, LogOut, History, Plus, Send, Users, Wallet, Ban, DollarSign, TrendingUp, MessageSquare } from 'lucide-react';
 import { getAuthUser, clearAuth, getLoginUrl } from '@/lib/auth-utils';
 import UpsellBanner from './components/UpsellBanner';
 
@@ -789,6 +789,13 @@ export default function Home() {
                             >
                                 <TrendingUp size={16} />
                                 <span>Reportes</span>
+                            </Link>
+                            <Link
+                                href="/reportes/encuestas"
+                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
+                            >
+                                <MessageSquare size={16} />
+                                <span>Encuestas</span>
                             </Link>
                             <Link
                                 href="/cuentas-corrientes"
