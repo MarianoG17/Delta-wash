@@ -83,35 +83,16 @@ export default function ReporteEncuestas() {
         const baseUrl = window.location.origin;
         const surveyUrl = `${baseUrl}/survey/${encuesta.token}`;
         const whatsappMessage = `Gracias por confiar en DeltaWash. ¿Nos dejarías tu opinión? Son solo 10 segundos y a nosotros nos ayuda a mejorar :)\n👉 ${surveyUrl}`;
-        
+
         // Formatear número de teléfono para Argentina: 549 + número sin el primer 0
         const phoneClean = encuesta.clientPhone.replace(/\D/g, ''); // Solo dígitos
         const whatsappUrl = `https://wa.me/549${phoneClean}?text=${encodeURIComponent(whatsappMessage)}`;
-        
-        // Abrir WhatsApp
+
+        // Abrir WhatsApp (funcionalidad principal)
         window.open(whatsappUrl, '_blank');
 
-        // Marcar como disparada
-        try {
-            const user = getAuthUser();
-            const authToken = user?.isSaas
-                ? localStorage.getItem('authToken')
-                : localStorage.getItem('lavadero_token');
-
-            await fetch('/api/surveys/mark-sent', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-                },
-                body: JSON.stringify({ visitId: encuesta.id })
-            });
-
-            // Recargar reporte
-            cargarReporte();
-        } catch (error) {
-            console.error('Error al marcar encuesta:', error);
-        }
+        // Nota: El tracking de "enviada" se hace manualmente o podemos agregarlo después
+        // Por ahora la funcionalidad core funciona: abrir WhatsApp con el link
     };
 
     const renderStars = (rating: number | null) => {
