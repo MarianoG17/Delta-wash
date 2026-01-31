@@ -33,6 +33,13 @@ interface Survey {
     whatsappUrl: string;
 }
 
+interface Benefit {
+    id: number;
+    type: string;
+    description: string;
+    createdAt: string;
+}
+
 export default function Home() {
     const router = useRouter();
     const [username, setUsername] = useState('');
@@ -70,6 +77,10 @@ export default function Home() {
     const [upsellPromocion, setUpsellPromocion] = useState<any>(null);
     const [upsellCliente, setUpsellCliente] = useState<any>(null);
     const [descuentoAplicado, setDescuentoAplicado] = useState(0);
+
+    // Estados para beneficios de encuestas
+    const [beneficiosPendientes, setBeneficiosPendientes] = useState<Benefit[]>([]);
+    const [beneficioSeleccionado, setBeneficioSeleccionado] = useState<number | null>(null);
 
     // Registros en proceso y listos
     const [registrosEnProceso, setRegistrosEnProceso] = useState<Registro[]>([]);
@@ -179,7 +190,7 @@ export default function Home() {
             });
 
             if (!res.ok) return;
-            
+
             const data = await res.json();
             if (data.survey) {
                 setSurveys(prev => ({
@@ -257,6 +268,40 @@ export default function Home() {
             console.error('Error buscando cuenta corriente:', error);
             setCuentaCorriente(null);
             setUsaCuentaCorriente(false);
+        }
+    };
+
+    // Buscar beneficios pendientes de encuestas
+    const buscarBeneficios = async (celularBuscar: string) => {
+        if (!celularBuscar || celularBuscar.length < 8) {
+            setBeneficiosPendientes([]);
+            setBeneficioSeleccionado(null);
+            return;
+        }
+
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch(`/api/benefits/check?phone=${celularBuscar}`, {
+                headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+            });
+            const data = await res.json();
+
+            if (data.hasBenefits && data.benefits.length > 0) {
+                setBeneficiosPendientes(data.benefits);
+                setMessage(`🎁 ¡Este cliente tiene ${data.totalPending} beneficio(s) pendiente(s)!`);
+                setTimeout(() => setMessage(''), 5000);
+            } else {
+                setBeneficiosPendientes([]);
+                setBeneficioSeleccionado(null);
+            }
+        } catch (error) {
+            console.error('Error buscando beneficios:', error);
+            setBeneficiosPendientes([]);
+            setBeneficioSeleccionado(null);
         }
     };
 
@@ -439,6 +484,7 @@ export default function Home() {
                     cuenta_corriente_id: usaCuentaCorriente && cuentaCorriente ? cuentaCorriente.id : null,
                     pagado: pagado,
                     metodo_pago: pagado ? metodoPago : null,
+                    benefit_id: beneficioSeleccionado || null,
                 }),
             });
 
@@ -888,9 +934,10 @@ export default function Home() {
                                                     if (data.data.tipo_vehiculo) {
                                                         setTipoVehiculo(data.data.tipo_vehiculo);
                                                     }
-                                                    // Buscar cuenta corriente automáticamente
+                                                    // Buscar cuenta corriente y beneficios automáticamente
                                                     if (data.data.celular && data.data.celular.length >= 8) {
                                                         buscarCuentaCorriente(data.data.celular);
+                                                        buscarBeneficios(data.data.celular);
                                                         // Detectar upselling para clientes frecuentes al autocompletar
                                                         if (data.data.nombre_cliente) {
                                                             detectarUpselling(data.data.celular, data.data.nombre_cliente);
@@ -1019,9 +1066,10 @@ export default function Home() {
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         setCelular(value);
-                                        // Buscar cuenta corriente cuando el celular tiene suficientes dígitos
+                                        // Buscar cuenta corriente y beneficios cuando el celular tiene suficientes dígitos
                                         if (value.length >= 8) {
                                             buscarCuentaCorriente(value);
+                                            buscarBeneficios(value);
                                             // Detectar upselling para clientes frecuentes
                                             if (nombreCliente) {
                                                 detectarUpselling(value, nombreCliente);
@@ -1029,6 +1077,8 @@ export default function Home() {
                                         } else {
                                             setCuentaCorriente(null);
                                             setUsaCuentaCorriente(false);
+                                            setBeneficiosPendientes([]);
+                                            setBeneficioSeleccionado(null);
                                         }
                                     }}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
@@ -1070,6 +1120,44 @@ export default function Home() {
                                                     : '⚠️ Cliente tiene cuenta corriente (saldo en negativo)'}
                                             </p>
                                         )}
+                                    </div>
+                                )}
+                                {beneficiosPendientes.length > 0 && (
+                                    <div className="mt-2 p-3 rounded-lg bg-purple-50 border border-purple-200">
+                                        <p className="text-sm font-medium text-purple-900 mb-2">
+                                            🎁 Beneficios Disponibles ({beneficiosPendientes.length})
+                                        </p>
+                                        <div className="space-y-2">
+                                            {beneficiosPendientes.map((beneficio) => (
+                                                <label key={beneficio.id} className="flex items-start gap-2 cursor-pointer p-2 hover:bg-purple-100 rounded">
+                                                    <input
+                                                        type="radio"
+                                                        name="beneficio"
+                                                        checked={beneficioSeleccionado === beneficio.id}
+                                                        onChange={() => {
+                                                            setBeneficioSeleccionado(beneficio.id);
+                                                            // Aplicar 10% de descuento inmediatamente
+                                                            const descuento = precio * 0.10;
+                                                            setPrecio(precio - descuento);
+                                                            setMessage(`✅ Beneficio aplicado: ${beneficio.description}`);
+                                                            setTimeout(() => setMessage(''), 3000);
+                                                        }}
+                                                        className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500 mt-0.5"
+                                                    />
+                                                    <div className="flex-1">
+                                                        <span className="text-sm font-medium text-purple-900">
+                                                            {beneficio.description}
+                                                        </span>
+                                                        <p className="text-xs text-purple-700">
+                                                            Ganado el {new Date(beneficio.createdAt).toLocaleDateString('es-AR')}
+                                                        </p>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+                                        <p className="text-xs text-purple-700 mt-2">
+                                            Selecciona un beneficio para aplicarlo a este lavado
+                                        </p>
                                     </div>
                                 )}
                             </div>

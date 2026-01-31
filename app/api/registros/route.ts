@@ -81,8 +81,8 @@ export async function POST(request: Request) {
         const db = await getDBConnection(empresaId);
         console.log('[Registros POST] Conexión DB obtenida exitosamente');
 
-        const { marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, usa_cuenta_corriente, cuenta_corriente_id, pagado, metodo_pago } = await request.json();
-        console.log(`[Registros POST] Datos recibidos: Patente=${patente}, Cliente=${nombre_cliente}, Precio=${precio}`);
+        const { marca_modelo, patente, tipo_vehiculo, tipo_limpieza, nombre_cliente, celular, extras, extras_valor, precio, usuario_id, usa_cuenta_corriente, cuenta_corriente_id, pagado, metodo_pago, benefit_id } = await request.json();
+        console.log(`[Registros POST] Datos recibidos: Patente=${patente}, Cliente=${nombre_cliente}, Precio=${precio}, BenefitId=${benefit_id || 'ninguno'}`);
 
         if (!marca_modelo || !patente || !tipo_limpieza || !nombre_cliente || !celular) {
             return NextResponse.json(
@@ -188,15 +188,34 @@ export async function POST(request: Request) {
 
                 const normalResultData = Array.isArray(result) ? result : result.rows || [];
 
+                // Si se usó un beneficio, marcarlo como canjeado
+                if (benefit_id) {
+                    try {
+                        await db`
+                            UPDATE benefits
+                            SET status = 'redeemed',
+                                redeemed_at = NOW(),
+                                redeemed_visit_id = ${normalResultData[0]?.id}
+                            WHERE id = ${benefit_id}
+                            AND status = 'pending'
+                        `;
+                        console.log(`[Registros POST] ✅ Beneficio ${benefit_id} marcado como canjeado`);
+                    } catch (benefitError) {
+                        console.error('[Registros POST] Error al canjear beneficio:', benefitError);
+                        // No fallar el registro por esto
+                    }
+                }
+
                 return NextResponse.json({
                     success: true,
                     registro: normalResultData[0],
+                    beneficio_aplicado: benefit_id ? true : false,
                 });
             } catch (insertError: any) {
                 // LAZY SYNC: Detectar error de Foreign Key (usuario no existe en branch)
                 if (insertError.code === '23503' && insertError.constraint?.includes('usuario')) {
                     console.log('[Registros POST] 🔄 Detectado error FK de usuario - Activando Lazy Sync');
-                    
+
                     // Solo para usuarios SaaS (que tienen empresaId)
                     if (empresaId) {
                         try {
@@ -206,19 +225,19 @@ export async function POST(request: Request) {
                             const empresaResult = await centralSql`
                                 SELECT branch_url FROM empresas WHERE id = ${empresaId}
                             `;
-                            
+
                             // Neon driver retorna array directamente (no tiene .rows)
                             const empresaData = Array.isArray(empresaResult) ? empresaResult : [];
-                            
+
                             if (empresaData.length > 0 && empresaData[0].branch_url) {
                                 const branchUrl = empresaData[0].branch_url;
                                 console.log('[Registros POST] Sincronizando usuarios con 2 intentos...');
-                                
+
                                 const sincronizado = await sincronizarUsuariosEmpresa(empresaId, branchUrl, 2);
-                                
+
                                 if (sincronizado) {
                                     console.log('[Registros POST] ✅ Lazy Sync exitoso - Reintentando INSERT');
-                                    
+
                                     // Reintentar el INSERT
                                     let resultRetry;
                                     if (pagado && metodo_pago) {
@@ -240,9 +259,9 @@ export async function POST(request: Request) {
                                             RETURNING *
                                         `;
                                     }
-                                    
+
                                     const retryResultData = Array.isArray(resultRetry) ? resultRetry : resultRetry.rows || [];
-                                    
+
                                     return NextResponse.json({
                                         success: true,
                                         registro: retryResultData[0],
@@ -255,7 +274,7 @@ export async function POST(request: Request) {
                         }
                     }
                 }
-                
+
                 // Si no se pudo resolver con Lazy Sync, lanzar el error original
                 throw insertError;
             }
