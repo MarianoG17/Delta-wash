@@ -1253,6 +1253,21 @@ export default function Home() {
                                             </div>
                                         )}
                                     </div>
+
+                                    {/* Mostrar descuento de beneficio si hay uno aplicado */}
+                                    {beneficioSeleccionado && beneficiosPendientes.length > 0 && (
+                                        <div className="bg-purple-100 border border-purple-300 rounded-lg p-2 mb-2">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs font-bold text-purple-900">
+                                                    🎁 Descuento Beneficio de Encuesta:
+                                                </span>
+                                                <span className="text-xs font-bold text-purple-900">
+                                                    -10%
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="border-t border-blue-300 pt-2 flex justify-between items-center">
                                         <span className="text-sm font-medium text-gray-900">Precio Total:</span>
                                         <span className="text-2xl font-bold text-blue-600">

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Star, MessageSquare, TrendingUp, Send } from 'lucide-react';
+import { ArrowLeft, Star, MessageSquare, TrendingUp, Send, Settings } from 'lucide-react';
 import { getAuthUser, clearAuth, getLoginUrl } from '@/lib/auth-utils';
 
 interface Encuesta {
@@ -32,12 +32,30 @@ interface Estadisticas {
     distribucionRatings: Record<string, number>;
 }
 
+interface SurveyConfig {
+    brand_name: string;
+    whatsapp_message: string;
+    discount_percentage: number;
+    google_maps_url: string;
+}
+
 export default function ReporteEncuestas() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [encuestas, setEncuestas] = useState<Encuesta[]>([]);
     const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
     const [empresaNombre, setEmpresaNombre] = useState<string>('DeltaWash');
+
+    // Estados para configuración
+    const [showConfig, setShowConfig] = useState(false);
+    const [loadingConfig, setLoadingConfig] = useState(false);
+    const [savingConfig, setSavingConfig] = useState(false);
+    const [config, setConfig] = useState<SurveyConfig>({
+        brand_name: 'DeltaWash',
+        whatsapp_message: 'Gracias por confiar en DeltaWash. ¿Nos dejarías tu opinión? Son solo 10 segundos y a nosotros nos ayuda a mejorar :)',
+        discount_percentage: 10,
+        google_maps_url: 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36'
+    });
 
     useEffect(() => {
         const user = getAuthUser();
@@ -52,7 +70,61 @@ export default function ReporteEncuestas() {
         }
 
         cargarReporte();
+        cargarConfiguracion();
     }, [router]);
+
+    const cargarConfiguracion = async () => {
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/survey-config', {
+                headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.success && data.config) {
+                    setConfig(data.config);
+                }
+            }
+        } catch (error) {
+            console.error('Error al cargar configuración:', error);
+        }
+    };
+
+    const guardarConfiguracion = async () => {
+        setSavingConfig(true);
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/survey-config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
+                body: JSON.stringify(config)
+            });
+
+            if (res.ok) {
+                alert('✅ Configuración guardada exitosamente');
+                setShowConfig(false);
+            } else {
+                throw new Error('Error al guardar');
+            }
+        } catch (error) {
+            console.error('Error al guardar configuración:', error);
+            alert('❌ Error al guardar la configuración');
+        } finally {
+            setSavingConfig(false);
+        }
+    };
 
     const cargarReporte = async () => {
         try {
