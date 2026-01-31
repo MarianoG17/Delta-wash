@@ -443,8 +443,13 @@ export default function Home() {
             precioTotal = Math.max(0, precioTotal);
         }
 
+        // Si hay un beneficio de encuesta seleccionado, aplicar 10% de descuento
+        if (beneficioSeleccionado) {
+            precioTotal = precioTotal * 0.9; // 10% OFF
+        }
+
         setPrecio(precioTotal);
-    }, [tipoVehiculo, tiposLimpieza, extrasValor, preciosDinamicos, descuentoAplicado, upsellPromocion]);
+    }, [tipoVehiculo, tiposLimpieza, extrasValor, preciosDinamicos, descuentoAplicado, upsellPromocion, beneficioSeleccionado]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -1136,9 +1141,6 @@ export default function Home() {
                                                         checked={beneficioSeleccionado === beneficio.id}
                                                         onChange={() => {
                                                             setBeneficioSeleccionado(beneficio.id);
-                                                            // Aplicar 10% de descuento inmediatamente
-                                                            const descuento = precio * 0.10;
-                                                            setPrecio(precio - descuento);
                                                             setMessage(`✅ Beneficio aplicado: ${beneficio.description}`);
                                                             setTimeout(() => setMessage(''), 3000);
                                                         }}
