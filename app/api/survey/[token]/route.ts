@@ -4,9 +4,10 @@ import { neon } from '@neondatabase/serverless';
 // Esta API es PÚBLICA - no requiere autenticación
 export async function GET(
     request: Request,
-    { params }: { params: { token: string } }
+    context: { params: Promise<{ token: string }> }
 ) {
     try {
+        const params = await context.params;
         const token = params.token;
 
         if (!token) {
