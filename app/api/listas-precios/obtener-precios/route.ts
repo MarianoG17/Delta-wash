@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
 import { getDBConnection } from '@/lib/db-saas';
-import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
+import { getEmpresaIdFromToken, checkTokenStatus } from '@/lib/auth-middleware';
 
 export async function GET(request: Request) {
     try {
+        // Verificar si el token expiró (solo para usuarios SaaS)
+        const tokenStatus = await checkTokenStatus(request);
+        if (tokenStatus === 'expired') {
+            return NextResponse.json(
+                { success: false, message: 'Sesión expirada', code: 'TOKEN_EXPIRED' },
+                { status: 401 }
+            );
+        }
+
         // Obtener conexión apropiada (DeltaWash o empresa específica)
         const empresaId = await getEmpresaIdFromToken(request);
         const db = await getDBConnection(empresaId);

@@ -1,5 +1,6 @@
 /**
  * Utilidades de autenticación que soportan tanto SaaS como DeltaWash legacy
+ * Last deployed: 2026-01-31
  */
 
 export interface AuthUser {
@@ -100,8 +101,92 @@ export function getLoginUrl(afterLogout: boolean = false): string {
     // Si era DeltaWash legacy, ir a /login
     return user?.isSaas ? '/home' : '/login';
   }
-  
+
   // Para redirecciones normales (sin logout)
   const authToken = localStorage.getItem('authToken');
   return authToken ? '/login-saas' : '/login';
+}
+
+/**
+ * Maneja errores de API, detectando token expirado y redirigiendo al login
+ * 
+ * @param response - Response del fetch
+ * @param router - Next.js router (opcional, si se quiere redirección automática)
+ * @returns true si hubo error de autenticación (token expirado), false si no
+ * 
+ * Uso típico:
+ * ```typescript
+ * const res = await fetch('/api/algo', { headers: { Authorization: `Bearer ${token}` } });
+ * if (handleApiError(res, router)) return; // Sale si hay error de auth
+ * const data = await res.json();
+ * ```
+ */
+export function handleApiError(
+  response: Response,
+  router?: { push: (url: string) => void }
+): boolean {
+  // Detectar errores de autenticación
+  if (response.status === 401 || response.status === 403) {
+    console.warn('[Auth] Token inválido o expirado - Redirigiendo a login');
+    handleSessionExpired(router);
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Maneja sesión expirada: limpia localStorage, muestra mensaje y redirige
+ */
+export function handleSessionExpired(router?: { push: (url: string) => void }): void {
+  if (typeof window === 'undefined') return;
+
+  const user = getAuthUser();
+  const loginUrl = user?.isSaas ? '/login-saas' : '/login';
+
+  // Limpiar sesión
+  clearAuth();
+
+  // Mostrar mensaje al usuario
+  alert('Tu sesión ha expirado. Por favor, vuelve a iniciar sesión.');
+
+  // Redirigir
+  if (router) {
+    router.push(loginUrl);
+  } else {
+    window.location.href = loginUrl;
+  }
+}
+
+/**
+ * Wrapper para fetch que detecta automáticamente token expirado
+ * 
+ * @param url - URL del endpoint
+ * @param options - Opciones del fetch
+ * @param router - Next.js router para redirección
+ * @returns Response o null si hubo error de auth
+ */
+export async function authFetch(
+  url: string,
+  options: RequestInit = {},
+  router?: { push: (url: string) => void }
+): Promise<Response | null> {
+  const user = getAuthUser();
+  const token = user?.isSaas
+    ? localStorage.getItem('authToken')
+    : localStorage.getItem('lavadero_token');
+
+  const headers = {
+    ...options.headers,
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+
+  const response = await fetch(url, { ...options, headers });
+
+  // Si hay error de auth, manejar y retornar null
+  if (handleApiError(response, router)) {
+    return null;
+  }
+
+  return response;
 }

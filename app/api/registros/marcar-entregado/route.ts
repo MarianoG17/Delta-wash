@@ -69,15 +69,30 @@ export async function POST(request: Request) {
 
                 // Solo crear si no existe
                 if (encuestas.length === 0) {
+                    // Obtener datos completos del registro para la encuesta
+                    const registroCompleto = await db`
+                        SELECT marca_modelo, patente, tipo_limpieza
+                        FROM registros_lavado
+                        WHERE id = ${registro_actualizado.id}
+                    `;
+                    
+                    const reg = Array.isArray(registroCompleto) ? registroCompleto[0] : registroCompleto.rows?.[0];
+                    
                     await db`
                         INSERT INTO surveys (
                             empresa_id,
                             visit_id,
-                            client_phone
+                            client_phone,
+                            vehicle_marca,
+                            vehicle_patente,
+                            vehicle_servicio
                         ) VALUES (
                             ${empresaId},
                             ${registro_actualizado.id},
-                            ${registro_actualizado.celular || null}
+                            ${registro_actualizado.celular || null},
+                            ${reg?.marca_modelo || 'Vehículo'},
+                            ${reg?.patente || ''},
+                            ${reg?.tipo_limpieza || 'Servicio'}
                         )
                     `;
                 }

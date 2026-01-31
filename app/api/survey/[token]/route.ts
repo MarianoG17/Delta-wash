@@ -17,29 +17,31 @@ export async function GET(
             );
         }
 
-        // Conectar a BD central (usamos connectionString directamente)
-        const connectionString = process.env.DATABASE_URL;
+        // Conectar a BD (primero intentar DATABASE_URL, sino POSTGRES_URL de Neon)
+        const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
         if (!connectionString) {
-            throw new Error('DATABASE_URL no configurado');
+            console.error('No database connection string found');
+            return NextResponse.json(
+                { error: 'Configuración de base de datos no disponible' },
+                { status: 500 }
+            );
         }
 
         const sql = neon(connectionString);
 
-        // Obtener datos de la encuesta
+        // Obtener datos de la encuesta (ahora con datos del vehículo guardados en surveys)
         const surveyResult = await sql`
-            SELECT 
-                s.id,
-                s.survey_token,
-                s.empresa_id,
-                s.visit_id,
-                s.responded_at,
-                r.marca_modelo,
-                r.patente,
-                r.tipo_limpieza,
-                r.fecha_entregado
-            FROM surveys s
-            LEFT JOIN registros_lavado r ON r.id = s.visit_id
-            WHERE s.survey_token = ${token}
+            SELECT
+                id,
+                survey_token,
+                empresa_id,
+                visit_id,
+                responded_at,
+                vehicle_marca,
+                vehicle_patente,
+                vehicle_servicio
+            FROM surveys
+            WHERE survey_token = ${token}
         `;
 
         if (surveyResult.length === 0) {
@@ -80,9 +82,9 @@ export async function GET(
                 token: survey.survey_token,
                 alreadyResponded: false,
                 vehicle: {
-                    marca: survey.marca_modelo,
-                    patente: survey.patente,
-                    servicio: survey.tipo_limpieza
+                    marca: survey.vehicle_marca || 'Vehículo',
+                    patente: survey.vehicle_patente || '',
+                    servicio: survey.vehicle_servicio || 'Servicio'
                 },
                 tenant: {
                     name: config.brand_name,

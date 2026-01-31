@@ -79,19 +79,17 @@ export default function ReporteEncuestas() {
     };
 
     const enviarEncuesta = async (encuesta: Encuesta) => {
-        if (!encuesta.surveyUrl || !encuesta.whatsappUrl) {
-            // Generar URLs si no vienen en la respuesta
-            const baseUrl = window.location.origin;
-            const surveyUrl = `${baseUrl}/survey/${encuesta.token}`;
-            const whatsappMessage = `Gracias por confiar en DeltaWash. ¿Nos dejarías tu opinión? Son solo 10 segundos y a nosotros nos ayuda a mejorar :)\n👉 ${surveyUrl}`;
-            const whatsappUrl = `https://wa.me/${encuesta.clientPhone}?text=${encodeURIComponent(whatsappMessage)}`;
-            
-            // Abrir WhatsApp
-            window.open(whatsappUrl, '_blank');
-        } else {
-            // Usar URLs de la respuesta
-            window.open(encuesta.whatsappUrl, '_blank');
-        }
+        // Generar URLs
+        const baseUrl = window.location.origin;
+        const surveyUrl = `${baseUrl}/survey/${encuesta.token}`;
+        const whatsappMessage = `Gracias por confiar en DeltaWash. ¿Nos dejarías tu opinión? Son solo 10 segundos y a nosotros nos ayuda a mejorar :)\n👉 ${surveyUrl}`;
+        
+        // Formatear número de teléfono para Argentina: 549 + número sin el primer 0
+        const phoneClean = encuesta.clientPhone.replace(/\D/g, ''); // Solo dígitos
+        const whatsappUrl = `https://wa.me/549${phoneClean}?text=${encodeURIComponent(whatsappMessage)}`;
+        
+        // Abrir WhatsApp
+        window.open(whatsappUrl, '_blank');
 
         // Marcar como disparada
         try {
