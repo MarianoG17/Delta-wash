@@ -20,9 +20,9 @@ export async function GET(request: Request) {
             ? JSON.parse(configData[0].servicios_premium || '["chasis", "motor", "pulido"]')
             : ["chasis", "motor", "pulido"];
 
-        // 2. Obtener promoción activa para saber el percentil a usar
+        // 2. Obtener promoción activa para saber la frecuencia objetivo
         const promocionResult = await db`
-            SELECT percentil_clientes
+            SELECT frecuencia_dias_max, percentil_clientes
             FROM promociones_upselling
             WHERE activa = true
             ${empresaId ? db`AND (empresa_id = ${empresaId} OR empresa_id IS NULL)` : db`AND empresa_id IS NULL`}
@@ -33,63 +33,69 @@ export async function GET(request: Request) {
         `;
 
         const promocionData = Array.isArray(promocionResult) ? promocionResult : promocionResult.rows || [];
-        const percentilObjetivo = promocionData.length > 0
-            ? (promocionData[0].percentil_clientes || 80)
-            : 80;
+        const frecuenciaMaxDias = promocionData.length > 0
+            ? (promocionData[0].frecuencia_dias_max || promocionData[0].percentil_clientes || 15)
+            : 15;
 
-        const percentilDecimal = percentilObjetivo / 100; // 80 -> 0.80
-
-        // 3. Calcular el percentil según la promoción activa
-        const percentilResult = await db`
-            WITH cliente_visitas AS (
+        // 3. Calcular frecuencias de visita de todos los clientes
+        const frecuenciasResult = await db`
+            WITH cliente_datos AS (
                 SELECT
                     celular,
-                    COUNT(*) as visitas
+                    nombre_cliente,
+                    COUNT(*) as total_visitas,
+                    MIN(fecha_ingreso) as primera_visita,
+                    MAX(fecha_ingreso) as ultima_visita,
+                    EXTRACT(DAY FROM MAX(fecha_ingreso) - MIN(fecha_ingreso)) as dias_totales
                 FROM registros_lavado
                 WHERE (anulado IS NULL OR anulado = FALSE)
-                GROUP BY celular
-            ),
-            percentil_calc AS (
-                SELECT
-                    PERCENTILE_CONT(${percentilDecimal}) WITHIN GROUP (ORDER BY visitas) as percentil_calculado
-                FROM cliente_visitas
+                GROUP BY celular, nombre_cliente
+                HAVING COUNT(*) >= 2
             )
             SELECT
-                p.percentil_calculado,
-                COUNT(*) as total_clientes
-            FROM cliente_visitas cv
-            CROSS JOIN percentil_calc p
-            GROUP BY p.percentil_calculado
+                celular,
+                nombre_cliente,
+                total_visitas,
+                dias_totales,
+                CASE
+                    WHEN total_visitas > 1 THEN dias_totales / (total_visitas - 1)
+                    ELSE NULL
+                END as frecuencia_promedio
+            FROM cliente_datos
         `;
 
-        const percentilData = Array.isArray(percentilResult) ? percentilResult : percentilResult.rows || [];
+        const frecuenciasData = Array.isArray(frecuenciasResult) ? frecuenciasResult : frecuenciasResult.rows || [];
 
-        if (percentilData.length === 0) {
+        if (frecuenciasData.length === 0) {
             return NextResponse.json({
                 success: false,
                 message: 'No hay datos suficientes'
             });
         }
 
-        const percentilCalculado = parseFloat(percentilData[0].percentil_calculado || '0');
-        const totalClientes = parseInt(percentilData[0].total_clientes || '0');
+        const totalClientes = frecuenciasData.length;
 
         // 4. Construir condiciones dinámicas para servicios premium
         const condicionesPremium = serviciosPremium.map((servicio: string) =>
             `LOWER(tipo_limpieza) LIKE '%${servicio.toLowerCase()}%'`
         ).join(' OR ');
 
-        // 5. Contar clientes elegibles que nunca usaron premium
+        // 5. Filtrar clientes elegibles (frecuencia <= max) que nunca usaron premium
         const clientesElegiblesResult = await db.unsafe(`
-            WITH cliente_visitas AS (
+            WITH cliente_frecuencias AS (
                 SELECT
                     celular,
                     nombre_cliente,
-                    COUNT(*) as total_visitas
+                    COUNT(*) as total_visitas,
+                    EXTRACT(DAY FROM MAX(fecha_ingreso) - MIN(fecha_ingreso)) as dias_totales,
+                    CASE
+                        WHEN COUNT(*) > 1 THEN EXTRACT(DAY FROM MAX(fecha_ingreso) - MIN(fecha_ingreso)) / (COUNT(*) - 1)
+                        ELSE NULL
+                    END as frecuencia_promedio
                 FROM registros_lavado
                 WHERE (anulado IS NULL OR anulado = FALSE)
                 GROUP BY celular, nombre_cliente
-                HAVING COUNT(*) >= ${Math.ceil(percentilCalculado)}
+                HAVING COUNT(*) >= 2
             ),
             clientes_con_premium AS (
                 SELECT DISTINCT celular
@@ -98,13 +104,15 @@ export async function GET(request: Request) {
                 AND (${condicionesPremium})
             )
             SELECT
-                cv.celular,
-                cv.nombre_cliente,
-                cv.total_visitas
-            FROM cliente_visitas cv
-            LEFT JOIN clientes_con_premium cp ON cv.celular = cp.celular
+                cf.celular,
+                cf.nombre_cliente,
+                cf.total_visitas,
+                ROUND(cf.frecuencia_promedio) as frecuencia_dias
+            FROM cliente_frecuencias cf
+            LEFT JOIN clientes_con_premium cp ON cf.celular = cp.celular
             WHERE cp.celular IS NULL
-            ORDER BY cv.total_visitas DESC
+            AND cf.frecuencia_promedio <= ${frecuenciaMaxDias}
+            ORDER BY cf.frecuencia_promedio ASC, cf.total_visitas DESC
         `);
 
         const clientesElegiblesData = Array.isArray(clientesElegiblesResult)
@@ -164,8 +172,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
             success: true,
             estadisticas: {
-                umbral_minimo: Math.ceil(percentilCalculado),
-                percentil_configurado: percentilObjetivo,
+                frecuencia_max_dias: frecuenciaMaxDias,
                 total_clientes: totalClientes,
                 clientes_elegibles: clientesElegiblesData.length,
                 top_clientes_elegibles: clientesElegiblesData.slice(0, 10),

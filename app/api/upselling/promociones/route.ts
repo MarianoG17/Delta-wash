@@ -74,6 +74,7 @@ export async function POST(request: Request) {
             activa,
             fecha_inicio,
             fecha_fin,
+            frecuencia_dias_max,
             percentil_clientes,
             periodo_rechazado_dias
         } = await request.json();
@@ -108,6 +109,7 @@ export async function POST(request: Request) {
                 activa,
                 fecha_inicio,
                 fecha_fin,
+                frecuencia_dias_max,
                 percentil_clientes,
                 periodo_rechazado_dias,
                 empresa_id
@@ -120,7 +122,8 @@ export async function POST(request: Request) {
                 ${activa !== undefined ? activa : true},
                 ${fecha_inicio || null},
                 ${fecha_fin || null},
-                ${percentil_clientes || 80},
+                ${frecuencia_dias_max || 15},
+                ${percentil_clientes || null},
                 ${periodo_rechazado_dias || 30},
                 ${empresaId || null}
             )
@@ -168,6 +171,7 @@ export async function PUT(request: Request) {
             activa,
             fecha_inicio,
             fecha_fin,
+            frecuencia_dias_max,
             percentil_clientes,
             periodo_rechazado_dias
         } = await request.json();
@@ -195,6 +199,7 @@ export async function PUT(request: Request) {
                 activa = ${activa !== undefined ? activa : db`activa`},
                 fecha_inicio = ${fecha_inicio !== undefined ? fecha_inicio : db`fecha_inicio`},
                 fecha_fin = ${fecha_fin !== undefined ? fecha_fin : db`fecha_fin`},
+                frecuencia_dias_max = ${frecuencia_dias_max !== undefined ? frecuencia_dias_max : db`frecuencia_dias_max`},
                 percentil_clientes = ${percentil_clientes !== undefined ? percentil_clientes : db`percentil_clientes`},
                 periodo_rechazado_dias = ${periodo_rechazado_dias !== undefined ? periodo_rechazado_dias : db`periodo_rechazado_dias`},
                 updated_at = NOW()

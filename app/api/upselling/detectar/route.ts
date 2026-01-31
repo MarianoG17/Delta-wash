@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
         const serviciosPremium = JSON.parse(configData[0].servicios_premium || '["chasis", "motor", "pulido"]');
 
-        // 1. Obtener promoción activa primero (para saber el percentil específico)
+        // 1. Obtener promoción activa primero
         const promocionResult = await db`
             SELECT *
             FROM promociones_upselling
@@ -61,15 +61,16 @@ export async function POST(request: Request) {
         }
 
         const promocion = promocionData[0];
-        const percentilObjetivo = promocion.percentil_clientes || 80;
+        const frecuenciaMaxDias = promocion.frecuencia_dias_max || promocion.percentil_clientes || 15;
         const periodoRechazo = promocion.periodo_rechazado_dias || 30;
-        const topPorcentaje = 100 - percentilObjetivo;
 
-        // 2. Obtener estadísticas del cliente actual
+        // 2. Calcular frecuencia de visitas del cliente
         const clienteStatsResult = await db`
             SELECT
                 COUNT(*) as total_visitas,
-                COUNT(DISTINCT DATE(fecha_ingreso)) as dias_diferentes
+                MIN(fecha_ingreso) as primera_visita,
+                MAX(fecha_ingreso) as ultima_visita,
+                EXTRACT(DAY FROM MAX(fecha_ingreso) - MIN(fecha_ingreso)) as dias_totales
             FROM registros_lavado
             WHERE celular = ${celular}
             AND (anulado IS NULL OR anulado = FALSE)
@@ -86,52 +87,30 @@ export async function POST(request: Request) {
         }
 
         const totalVisitasCliente = parseInt(clienteStatsData[0].total_visitas);
+        const diasTotales = parseFloat(clienteStatsData[0].dias_totales || '0');
 
-        // 3. Calcular percentil del cliente según la promoción
-        const percentilDecimal = percentilObjetivo / 100; // 80 -> 0.80
-        const percentilResult = await db`
-            WITH cliente_visitas AS (
-                SELECT
-                    celular,
-                    COUNT(*) as visitas
-                FROM registros_lavado
-                WHERE (anulado IS NULL OR anulado = FALSE)
-                GROUP BY celular
-            ),
-            percentiles AS (
-                SELECT
-                    PERCENTILE_CONT(${percentilDecimal}) WITHIN GROUP (ORDER BY visitas) as percentil_calculado
-                FROM cliente_visitas
-            )
-            SELECT
-                (SELECT visitas FROM cliente_visitas WHERE celular = ${celular}) as visitas_cliente,
-                percentil_calculado
-            FROM percentiles
-        `;
-
-        const percentilData = Array.isArray(percentilResult) ? percentilResult : percentilResult.rows || [];
-
-        if (percentilData.length === 0) {
+        // Calcular frecuencia promedio (días entre visitas)
+        // Si solo tiene 1 visita, no podemos calcular frecuencia
+        if (totalVisitasCliente < 2) {
             return NextResponse.json({
                 success: true,
                 elegible: false,
-                razon: 'error_calculo'
+                razon: 'cliente_nuevo'
             });
         }
 
-        const percentilCalculado = parseFloat(percentilData[0].percentil_calculado || '0');
-        const visitasCliente = parseInt(percentilData[0].visitas_cliente || '0');
+        const frecuenciaPromedio = diasTotales / (totalVisitasCliente - 1);
 
-        // Verificar si está en el percentil objetivo de esta promoción
-        if (visitasCliente < percentilCalculado) {
+        // 3. Verificar si cumple con la frecuencia objetivo
+        if (frecuenciaPromedio > frecuenciaMaxDias) {
             return NextResponse.json({
                 success: true,
                 elegible: false,
-                razon: `no_top_${topPorcentaje}`,
+                razon: 'frecuencia_insuficiente',
                 debug: {
-                    visitas_cliente: visitasCliente,
-                    minimo_requerido: Math.ceil(percentilCalculado),
-                    percentil_configurado: percentilObjetivo,
+                    frecuencia_cliente: Math.round(frecuenciaPromedio),
+                    frecuencia_requerida: frecuenciaMaxDias,
+                    total_visitas: totalVisitasCliente,
                     promocion: promocion.nombre
                 }
             });
@@ -193,9 +172,8 @@ export async function POST(request: Request) {
             elegible: true,
             cliente: {
                 total_visitas: totalVisitasCliente,
-                percentil: `top_${topPorcentaje}`,
-                umbral_minimo: Math.ceil(percentilCalculado),
-                percentil_configurado: percentilObjetivo
+                frecuencia_promedio: Math.round(frecuenciaPromedio),
+                frecuencia_requerida: frecuenciaMaxDias
             },
             promocion: {
                 id: promocion.id,
@@ -206,7 +184,7 @@ export async function POST(request: Request) {
                 servicios_objetivo: JSON.parse(promocion.servicios_objetivo)
             },
             promocion_config: {
-                percentil: percentilObjetivo,
+                frecuencia_max_dias: frecuenciaMaxDias,
                 periodo_rechazo_dias: periodoRechazo
             }
         });

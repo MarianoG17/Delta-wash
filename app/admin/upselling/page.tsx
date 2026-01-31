@@ -13,7 +13,8 @@ interface Promocion {
     servicios_objetivo: string[];
     descuento_porcentaje: number;
     descuento_fijo: number;
-    percentil_clientes: number;
+    frecuencia_dias_max: number;
+    percentil_clientes?: number; // Mantener para compatibilidad con promociones antiguas
     periodo_rechazado_dias: number;
     activa: boolean;
     fecha_inicio: string | null;
@@ -30,14 +31,14 @@ interface ConfiguracionUpselling {
 }
 
 interface Estadisticas {
-    umbral_minimo: number;
-    percentil_configurado: number;
+    frecuencia_max_dias: number;
     total_clientes: number;
     clientes_elegibles: number;
     top_clientes_elegibles: Array<{
         celular: string;
         nombre_cliente: string;
         total_visitas: number;
+        frecuencia_dias?: number;
     }>;
     interacciones_30_dias: {
         aceptado: number;
@@ -77,7 +78,7 @@ export default function AdminUpsellingPage() {
         servicios_objetivo: [] as string[],
         descuento_porcentaje: 0,
         descuento_fijo: 0,
-        percentil_clientes: 80,
+        frecuencia_dias_max: 15,
         periodo_rechazado_dias: 30,
         activa: true,
         fecha_inicio: '',
@@ -334,7 +335,7 @@ export default function AdminUpsellingPage() {
             servicios_objetivo: promocion.servicios_objetivo,
             descuento_porcentaje: promocion.descuento_porcentaje,
             descuento_fijo: promocion.descuento_fijo,
-            percentil_clientes: promocion.percentil_clientes || 80,
+            frecuencia_dias_max: promocion.frecuencia_dias_max || promocion.percentil_clientes || 15,
             periodo_rechazado_dias: promocion.periodo_rechazado_dias || 30,
             activa: promocion.activa,
             fecha_inicio: promocion.fecha_inicio || '',
@@ -350,7 +351,7 @@ export default function AdminUpsellingPage() {
             servicios_objetivo: [],
             descuento_porcentaje: 0,
             descuento_fijo: 0,
-            percentil_clientes: 80,
+            frecuencia_dias_max: 15,
             periodo_rechazado_dias: 30,
             activa: true,
             fecha_inicio: '',
@@ -425,13 +426,13 @@ export default function AdminUpsellingPage() {
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                             <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border-2 border-blue-300">
                                 <p className="text-sm text-blue-600 font-semibold mb-1">
-                                    Umbral Mínimo (Top {100 - (estadisticas.percentil_configurado || 80)}%)
+                                    Frecuencia Objetivo
                                 </p>
                                 <p className="text-3xl font-bold text-blue-900">
-                                    {estadisticas.umbral_minimo} visitas
+                                    ≤ {estadisticas.frecuencia_max_dias} días
                                 </p>
                                 <p className="text-xs text-blue-600 mt-1">
-                                    Percentil {estadisticas.percentil_configurado || 80}
+                                    Entre visitas
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border-2 border-purple-300">
@@ -478,15 +479,22 @@ export default function AdminUpsellingPage() {
                                                         <p className="text-xs text-gray-500">{cliente.celular}</p>
                                                     </div>
                                                 </div>
-                                                <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-bold">
-                                                    {cliente.total_visitas} visitas
-                                                </span>
+                                                <div className="text-right">
+                                                    <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-bold">
+                                                        {cliente.total_visitas} visitas
+                                                    </span>
+                                                    {cliente.frecuencia_dias && (
+                                                        <p className="text-xs text-gray-600 mt-1">
+                                                            Cada {cliente.frecuencia_dias} días
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-2">
-                                    💡 Estos clientes están en el top {100 - (estadisticas.percentil_configurado || 80)}% más frecuentes y nunca pidieron servicios premium
+                                    💡 Estos clientes visitan el lavadero cada {estadisticas.frecuencia_max_dias} días o menos y nunca pidieron servicios premium
                                 </p>
                             </div>
                         )}
@@ -673,9 +681,9 @@ export default function AdminUpsellingPage() {
                                                 <div className="bg-white rounded-lg p-3 border border-gray-200">
                                                     <p className="text-xs text-gray-600 mb-1">Público Objetivo:</p>
                                                     <p className="text-lg font-bold text-indigo-600">
-                                                        Top {100 - (promocion.percentil_clientes || 80)}%
+                                                        ≤ {promocion.frecuencia_dias_max || promocion.percentil_clientes || 15} días
                                                     </p>
-                                                    <p className="text-xs text-gray-500">Percentil {promocion.percentil_clientes || 80}</p>
+                                                    <p className="text-xs text-gray-500">Frecuencia de visita</p>
                                                 </div>
                                                 <div className="bg-white rounded-lg p-3 border border-gray-200">
                                                     <p className="text-xs text-gray-600 mb-1">Descuento:</p>
@@ -817,28 +825,26 @@ export default function AdminUpsellingPage() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        🎯 Público Objetivo (Percentil de Clientes)
+                                        🎯 Frecuencia de Visita Objetivo
                                     </label>
                                     <p className="text-xs text-gray-600 mb-3">
-                                        Define qué tan selectiva es esta promoción. Valor 80 = Top 20%, Valor 90 = Top 10%
+                                        Define cada cuántos días (o menos) deben visitar tus clientes para ser elegibles.
+                                        Por ejemplo: 15 días = clientes que vienen cada 15 días o más seguido
                                     </p>
                                     <div className="flex items-center gap-4">
                                         <input
-                                            type="range"
-                                            min="50"
-                                            max="95"
-                                            step="5"
-                                            value={formData.percentil_clientes}
-                                            onChange={(e) => setFormData({ ...formData, percentil_clientes: parseInt(e.target.value) })}
-                                            className="flex-1"
+                                            type="number"
+                                            min="1"
+                                            max="90"
+                                            value={formData.frecuencia_dias_max}
+                                            onChange={(e) => setFormData({ ...formData, frecuencia_dias_max: parseInt(e.target.value) || 1 })}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-lg font-semibold"
                                         />
-                                        <div className="text-center bg-indigo-50 rounded-lg px-4 py-2 border-2 border-indigo-300 min-w-[120px]">
-                                            <div className="text-2xl font-bold text-indigo-600">
-                                                Top {100 - formData.percentil_clientes}%
-                                            </div>
-                                            <div className="text-xs text-gray-600">Percentil {formData.percentil_clientes}</div>
-                                        </div>
+                                        <span className="text-gray-700 font-semibold whitespace-nowrap">días o menos</span>
                                     </div>
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        💡 Valores comunes: 7 días (muy frecuente), 15 días (frecuente), 30 días (moderado)
+                                    </p>
                                 </div>
 
                                 <div>
