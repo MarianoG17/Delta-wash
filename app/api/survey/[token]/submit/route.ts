@@ -72,7 +72,22 @@ export async function POST(
             WHERE id = ${survey.id}
         `;
 
-        // 3. Generar beneficio (10% OFF)
+        // 3. Obtener config del tenant (descuento + Google Maps)
+        const configResult = await sql`
+            SELECT google_maps_url, discount_percentage
+            FROM tenant_survey_config
+            WHERE empresa_id = ${survey.empresa_id}
+        `;
+
+        const discountPercentage = configResult.length > 0 && configResult[0].discount_percentage
+            ? configResult[0].discount_percentage
+            : 10;
+
+        const googleMapsUrl = configResult.length > 0
+            ? configResult[0].google_maps_url
+            : 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36';
+
+        // 4. Generar beneficio con descuento configurable
         let benefitCreated = false;
         if (survey.client_phone) {
             await sql`
@@ -81,35 +96,27 @@ export async function POST(
                     survey_id,
                     client_phone,
                     benefit_type,
+                    discount_percentage,
                     status
                 ) VALUES (
                     ${survey.empresa_id},
                     ${survey.id},
                     ${survey.client_phone},
                     '10_PERCENT_OFF',
+                    ${discountPercentage},
                     'pending'
                 )
             `;
             benefitCreated = true;
         }
 
-        // 4. Obtener config del tenant para Google Maps
-        const configResult = await sql`
-            SELECT google_maps_url
-            FROM tenant_survey_config
-            WHERE empresa_id = ${survey.empresa_id}
-        `;
-
-        const googleMapsUrl = configResult.length > 0
-            ? configResult[0].google_maps_url
-            : 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36';
-
         return NextResponse.json({
             success: true,
             message: 'Gracias por tu respuesta',
             benefit: benefitCreated ? {
                 type: '10_PERCENT_OFF',
-                description: '10% de descuento en cualquier servicio'
+                description: `${discountPercentage}% de descuento en cualquier servicio`,
+                discountPercentage: discountPercentage
             } : null,
             showGoogleMaps: rating >= 4,
             googleMapsUrl: rating >= 4 ? googleMapsUrl : null

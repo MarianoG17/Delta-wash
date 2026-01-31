@@ -19,9 +19,10 @@ export async function GET(request: Request) {
 
         // Buscar beneficios pendientes para este teléfono en esta empresa
         const benefitsResult = await db`
-            SELECT 
+            SELECT
                 b.id,
                 b.benefit_type,
+                b.discount_percentage,
                 b.created_at,
                 s.visit_id,
                 r.marca_modelo,
@@ -44,7 +45,8 @@ export async function GET(request: Request) {
             benefits: benefits.map((b: any) => ({
                 id: b.id,
                 type: b.benefit_type,
-                description: b.benefit_type === '10_PERCENT_OFF' ? '10% de descuento' : 'Beneficio',
+                description: `${b.discount_percentage || 10}% de descuento`,
+                discountPercentage: b.discount_percentage || 10,
                 createdAt: b.created_at,
                 fromVisit: {
                     vehiculo: b.marca_modelo,

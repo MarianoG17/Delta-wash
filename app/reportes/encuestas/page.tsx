@@ -154,7 +154,7 @@ export default function ReporteEncuestas() {
         // Generar URLs
         const baseUrl = window.location.origin;
         const surveyUrl = `${baseUrl}/survey/${encuesta.token}`;
-        const whatsappMessage = `Gracias por confiar en DeltaWash. ¿Nos dejarías tu opinión? Son solo 10 segundos y a nosotros nos ayuda a mejorar :)\n👉 ${surveyUrl}`;
+        const whatsappMessage = `${config.whatsapp_message}\n👉 ${surveyUrl}`;
 
         // Formatear número de teléfono para Argentina: 549 + número sin el primer 0
         const phoneClean = encuesta.clientPhone.replace(/\D/g, ''); // Solo dígitos
@@ -162,9 +162,6 @@ export default function ReporteEncuestas() {
 
         // Abrir WhatsApp (funcionalidad principal)
         window.open(whatsappUrl, '_blank');
-
-        // Nota: El tracking de "enviada" se hace manualmente o podemos agregarlo después
-        // Por ahora la funcionalidad core funciona: abrir WhatsApp con el link
     };
 
     const renderStars = (rating: number | null) => {
@@ -227,10 +224,21 @@ export default function ReporteEncuestas() {
                         <ArrowLeft size={20} />
                         Volver a Reportes
                     </Link>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                        📊 Reporte de Encuestas
-                    </h1>
-                    <p className="text-gray-600">{empresaNombre}</p>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                                📊 Reporte de Encuestas
+                            </h1>
+                            <p className="text-gray-600">{empresaNombre}</p>
+                        </div>
+                        <button
+                            onClick={() => setShowConfig(!showConfig)}
+                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors"
+                        >
+                            <Settings size={20} />
+                            Configuración
+                        </button>
+                    </div>
                 </div>
 
                 {/* Estadísticas */}
@@ -273,6 +281,103 @@ export default function ReporteEncuestas() {
                                         <span className="w-8 text-right">{count}</span>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal de configuración */}
+                {showConfig && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                            <div className="p-6 border-b border-gray-200">
+                                <h2 className="text-2xl font-bold text-gray-900">⚙️ Configuración de Encuestas</h2>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                {/* Nombre de marca */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Nombre de tu marca
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={config.brand_name}
+                                        onChange={(e) => setConfig({ ...config, brand_name: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                        placeholder="DeltaWash"
+                                    />
+                                </div>
+
+                                {/* Mensaje WhatsApp */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Mensaje de WhatsApp
+                                    </label>
+                                    <textarea
+                                        value={config.whatsapp_message}
+                                        onChange={(e) => setConfig({ ...config, whatsapp_message: e.target.value })}
+                                        rows={4}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                        placeholder="Gracias por confiar en nosotros..."
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Se agregará automáticamente el link de la encuesta al final
+                                    </p>
+                                </div>
+
+                                {/* Porcentaje de descuento */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Descuento por completar encuesta (%)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={config.discount_percentage}
+                                        onChange={(e) => setConfig({ ...config, discount_percentage: parseInt(e.target.value) || 0 })}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Este descuento se aplicará en la próxima visita del cliente
+                                    </p>
+                                </div>
+
+                                {/* URL Google Maps */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Link de Google Maps (opcional)
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={config.google_maps_url}
+                                        onChange={(e) => setConfig({ ...config, google_maps_url: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                        placeholder="https://maps.app.goo.gl/..."
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Se mostrará después de encuestas con 4-5 estrellas
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="p-6 border-t border-gray-200 flex gap-3 justify-end">
+                                <button
+                                    onClick={() => {
+                                        setShowConfig(false);
+                                        cargarConfiguracion(); // Recargar config original
+                                    }}
+                                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition-colors"
+                                    disabled={savingConfig}
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={guardarConfiguracion}
+                                    disabled={savingConfig}
+                                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                    {savingConfig ? 'Guardando...' : 'Guardar Configuración'}
+                                </button>
                             </div>
                         </div>
                     </div>

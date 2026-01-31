@@ -38,6 +38,7 @@ interface Benefit {
     type: string;
     description: string;
     createdAt: string;
+    discountPercentage?: number;
 }
 
 export default function Home() {
@@ -443,13 +444,19 @@ export default function Home() {
             precioTotal = Math.max(0, precioTotal);
         }
 
-        // Si hay un beneficio de encuesta seleccionado, aplicar 10% de descuento
+        // Si hay un beneficio de encuesta seleccionado, aplicar descuento variable
         if (beneficioSeleccionado) {
-            precioTotal = precioTotal * 0.9; // 10% OFF
+            const beneficio = beneficiosPendientes.find(b => b.id === beneficioSeleccionado);
+            if (beneficio && beneficio.discountPercentage) {
+                precioTotal = precioTotal * (1 - beneficio.discountPercentage / 100);
+            } else {
+                // Fallback a 10% si no hay porcentaje configurado
+                precioTotal = precioTotal * 0.9;
+            }
         }
 
         setPrecio(precioTotal);
-    }, [tipoVehiculo, tiposLimpieza, extrasValor, preciosDinamicos, descuentoAplicado, upsellPromocion, beneficioSeleccionado]);
+    }, [tipoVehiculo, tiposLimpieza, extrasValor, preciosDinamicos, descuentoAplicado, upsellPromocion, beneficioSeleccionado, beneficiosPendientes]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -1255,18 +1262,22 @@ export default function Home() {
                                     </div>
 
                                     {/* Mostrar descuento de beneficio si hay uno aplicado */}
-                                    {beneficioSeleccionado && beneficiosPendientes.length > 0 && (
-                                        <div className="bg-purple-100 border border-purple-300 rounded-lg p-2 mb-2">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-xs font-bold text-purple-900">
-                                                    🎁 Descuento Beneficio de Encuesta:
-                                                </span>
-                                                <span className="text-xs font-bold text-purple-900">
-                                                    -10%
-                                                </span>
+                                    {beneficioSeleccionado && beneficiosPendientes.length > 0 && (() => {
+                                        const beneficio = beneficiosPendientes.find(b => b.id === beneficioSeleccionado);
+                                        const porcentaje = beneficio?.discountPercentage || 10;
+                                        return (
+                                            <div className="bg-purple-100 border border-purple-300 rounded-lg p-2 mb-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-bold text-purple-900">
+                                                        🎁 Descuento Beneficio de Encuesta:
+                                                    </span>
+                                                    <span className="text-xs font-bold text-purple-900">
+                                                        -{porcentaje}%
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        );
+                                    })()}
 
                                     <div className="border-t border-blue-300 pt-2 flex justify-between items-center">
                                         <span className="text-sm font-medium text-gray-900">Precio Total:</span>
