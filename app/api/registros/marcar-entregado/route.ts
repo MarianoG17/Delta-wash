@@ -45,12 +45,47 @@ export async function POST(request: Request) {
         }
 
         // Actualizar el estado a entregado
-        await db`
+        const result = await db`
       UPDATE registros_lavado
       SET estado = 'entregado',
           fecha_entregado = CURRENT_TIMESTAMP
       WHERE id = ${id}
+      RETURNING id, celular
     `;
+
+        const registro_actualizado = Array.isArray(result) ? result[0] : result.rows?.[0];
+
+        // GENERAR ENCUESTA AUTOMÁTICAMENTE
+        if (registro_actualizado) {
+            try {
+                // Verificar si ya existe una encuesta para esta visita
+                const encuestaExistente = await db`
+                    SELECT id FROM surveys
+                    WHERE visit_id = ${id}
+                    AND empresa_id = ${empresaId}
+                `;
+
+                const encuestas = Array.isArray(encuestaExistente) ? encuestaExistente : encuestaExistente.rows || [];
+
+                // Solo crear si no existe
+                if (encuestas.length === 0) {
+                    await db`
+                        INSERT INTO surveys (
+                            empresa_id,
+                            visit_id,
+                            client_phone
+                        ) VALUES (
+                            ${empresaId},
+                            ${registro_actualizado.id},
+                            ${registro_actualizado.celular || null}
+                        )
+                    `;
+                }
+            } catch (error) {
+                // Log pero no fallar el entregado
+                console.error('Error al generar encuesta:', error);
+            }
+        }
 
         return NextResponse.json({
             success: true,

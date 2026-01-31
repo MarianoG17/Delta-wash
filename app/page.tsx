@@ -25,6 +25,14 @@ interface Registro {
     usa_cuenta_corriente?: boolean;
 }
 
+interface Survey {
+    id: number;
+    token: string;
+    respondedAt: string | null;
+    surveyUrl: string;
+    whatsappUrl: string;
+}
+
 export default function Home() {
     const router = useRouter();
     const [username, setUsername] = useState('');
@@ -66,6 +74,9 @@ export default function Home() {
     // Registros en proceso y listos
     const [registrosEnProceso, setRegistrosEnProceso] = useState<Registro[]>([]);
     const [registrosListos, setRegistrosListos] = useState<Registro[]>([]);
+
+    // Estados para encuestas
+    const [surveys, setSurveys] = useState<Record<number, Survey | null>>({});
 
     useEffect(() => {
         setMounted(true);
@@ -142,6 +153,10 @@ export default function Home() {
             const dataListos = await resListos.json();
             if (dataListos.success && Array.isArray(dataListos.registros)) {
                 setRegistrosListos(dataListos.registros);
+                // Cargar encuestas para cada registro listo
+                dataListos.registros.forEach((registro: Registro) => {
+                    cargarEncuesta(registro.id);
+                });
             } else {
                 setRegistrosListos([]);
             }
@@ -149,6 +164,67 @@ export default function Home() {
             console.error('Error cargando registros:', error);
             setRegistrosEnProceso([]);
             setRegistrosListos([]);
+        }
+    };
+
+    const cargarEncuesta = async (visitId: number) => {
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch(`/api/surveys/get-by-visit?visitId=${visitId}`, {
+                headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+            });
+
+            if (!res.ok) return;
+            
+            const data = await res.json();
+            if (data.survey) {
+                setSurveys(prev => ({
+                    ...prev,
+                    [visitId]: {
+                        id: data.survey.id,
+                        token: data.survey.token,
+                        respondedAt: data.survey.respondedAt,
+                        surveyUrl: data.survey.surveyUrl,
+                        whatsappUrl: data.survey.whatsappUrl
+                    }
+                }));
+            }
+        } catch (error) {
+            console.error('Error al cargar encuesta:', error);
+        }
+    };
+
+    const enviarEncuesta = async (visitId: number) => {
+        const survey = surveys[visitId];
+        if (!survey) return;
+
+        try {
+            // Abrir WhatsApp
+            window.open(survey.whatsappUrl, '_blank');
+
+            // Marcar como disparada
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            await fetch('/api/surveys/mark-sent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
+                body: JSON.stringify({ visitId })
+            });
+
+            // Recargar encuesta
+            cargarEncuesta(visitId);
+        } catch (error) {
+            console.error('Error al enviar encuesta:', error);
         }
     };
 
@@ -1353,6 +1429,21 @@ export default function Home() {
                                                         ✓ Entregado
                                                     </button>
                                                 </div>
+                                                {/* Botón de encuesta - solo si existe y no está respondida */}
+                                                {surveys[registro.id] && !surveys[registro.id]?.respondedAt && (
+                                                    <button
+                                                        onClick={() => enviarEncuesta(registro.id)}
+                                                        className="w-full flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 rounded-lg transition-colors text-sm"
+                                                    >
+                                                        📋 Enviar encuesta
+                                                    </button>
+                                                )}
+                                                {/* Indicador de encuesta respondida */}
+                                                {surveys[registro.id]?.respondedAt && (
+                                                    <div className="w-full flex items-center justify-center gap-2 bg-green-100 text-green-700 font-semibold py-2 rounded-lg text-sm border-2 border-green-300">
+                                                        ✅ Encuesta respondida
+                                                    </div>
+                                                )}
                                                 {/* Mostrar botón de pago solo si no está pagado y no usó cuenta corriente */}
                                                 {!registro.pagado && !registro.usa_cuenta_corriente && (
                                                     <button
