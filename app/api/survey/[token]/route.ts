@@ -29,20 +29,45 @@ export async function GET(
 
         const sql = neon(connectionString);
 
-        // Obtener datos de la encuesta (ahora con datos del vehículo guardados en surveys)
-        const surveyResult = await sql`
-            SELECT
-                id,
-                survey_token,
-                empresa_id,
-                visit_id,
-                responded_at,
-                vehicle_marca,
-                vehicle_patente,
-                vehicle_servicio
-            FROM surveys
-            WHERE survey_token = ${token}
-        `;
+        // Obtener datos de la encuesta (detectar si tiene empresa_id o no)
+        let surveyResult;
+        let empresaId = null;
+        
+        try {
+            // Intentar primero con empresa_id (SaaS)
+            surveyResult = await sql`
+                SELECT
+                    id,
+                    survey_token,
+                    empresa_id,
+                    visit_id,
+                    responded_at,
+                    vehicle_marca,
+                    vehicle_patente,
+                    vehicle_servicio
+                FROM surveys
+                WHERE survey_token = ${token}
+            `;
+            empresaId = surveyResult[0]?.empresa_id;
+        } catch (error: any) {
+            // Si falla (columna no existe), intentar sin empresa_id (DeltaWash Legacy)
+            if (error?.code === '42703') {
+                surveyResult = await sql`
+                    SELECT
+                        id,
+                        survey_token,
+                        visit_id,
+                        responded_at,
+                        vehicle_marca,
+                        vehicle_patente,
+                        vehicle_servicio
+                    FROM surveys
+                    WHERE survey_token = ${token}
+                `;
+            } else {
+                throw error;
+            }
+        }
 
         if (surveyResult.length === 0) {
             return NextResponse.json(
@@ -64,18 +89,42 @@ export async function GET(
             });
         }
 
-        // Obtener configuración del tenant (o usar defaults)
-        const configResult = await sql`
-            SELECT brand_name, logo_url, google_maps_url
-            FROM tenant_survey_config
-            WHERE empresa_id = ${survey.empresa_id}
-        `;
-
-        const config = configResult.length > 0 ? configResult[0] : {
-            brand_name: 'DeltaWash',
-            logo_url: null,
-            google_maps_url: 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36'
-        };
+        // Obtener configuración (tenant_survey_config para SaaS, survey_config para DeltaWash)
+        let config;
+        if (empresaId) {
+            // SaaS: usar tenant_survey_config
+            const configResult = await sql`
+                SELECT brand_name, logo_url, google_maps_url
+                FROM tenant_survey_config
+                WHERE empresa_id = ${empresaId}
+            `;
+            config = configResult.length > 0 ? configResult[0] : {
+                brand_name: 'DeltaWash',
+                logo_url: null,
+                google_maps_url: 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36'
+            };
+        } else {
+            // DeltaWash Legacy: usar survey_config (id=1)
+            try {
+                const configResult = await sql`
+                    SELECT brand_name, logo_url, google_maps_url
+                    FROM survey_config
+                    WHERE id = 1
+                `;
+                config = configResult.length > 0 ? configResult[0] : {
+                    brand_name: 'DeltaWash',
+                    logo_url: null,
+                    google_maps_url: 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36'
+                };
+            } catch (error) {
+                // Si no existe survey_config, usar defaults
+                config = {
+                    brand_name: 'DeltaWash',
+                    logo_url: null,
+                    google_maps_url: 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36'
+                };
+            }
+        }
 
         return NextResponse.json({
             survey: {

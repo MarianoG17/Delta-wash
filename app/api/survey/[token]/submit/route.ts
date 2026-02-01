@@ -26,20 +26,38 @@ export async function POST(
             );
         }
 
-        // Conectar a BD central
-        const connectionString = process.env.DATABASE_URL;
+        // Conectar a BD (priorizar DATABASE_URL, sino POSTGRES_URL)
+        const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
         if (!connectionString) {
-            throw new Error('DATABASE_URL no configurado');
+            throw new Error('No database connection string configured');
         }
 
         const sql = neon(connectionString);
 
-        // Verificar que la encuesta existe y no fue respondida
-        const surveyResult = await sql`
-            SELECT id, empresa_id, client_phone, responded_at
-            FROM surveys
-            WHERE survey_token = ${token}
-        `;
+        // Verificar que la encuesta existe (detectar SaaS vs DeltaWash)
+        let surveyResult;
+        let empresaId = null;
+        
+        try {
+            // Intentar con empresa_id (SaaS)
+            surveyResult = await sql`
+                SELECT id, empresa_id, client_phone, responded_at
+                FROM surveys
+                WHERE survey_token = ${token}
+            `;
+            empresaId = surveyResult[0]?.empresa_id;
+        } catch (error: any) {
+            // Si falla (columna no existe), intentar sin empresa_id (DeltaWash Legacy)
+            if (error?.code === '42703') {
+                surveyResult = await sql`
+                    SELECT id, client_phone, responded_at
+                    FROM surveys
+                    WHERE survey_token = ${token}
+                `;
+            } else {
+                throw error;
+            }
+        }
 
         if (surveyResult.length === 0) {
             return NextResponse.json(
@@ -72,41 +90,78 @@ export async function POST(
             WHERE id = ${survey.id}
         `;
 
-        // 3. Obtener config del tenant (descuento + Google Maps)
-        const configResult = await sql`
-            SELECT google_maps_url, discount_percentage
-            FROM tenant_survey_config
-            WHERE empresa_id = ${survey.empresa_id}
-        `;
+        // 3. Obtener config (tenant_survey_config para SaaS, survey_config para DeltaWash)
+        let discountPercentage = 10;
+        let googleMapsUrl = 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36';
 
-        const discountPercentage = configResult.length > 0 && configResult[0].discount_percentage
-            ? configResult[0].discount_percentage
-            : 10;
-
-        const googleMapsUrl = configResult.length > 0
-            ? configResult[0].google_maps_url
-            : 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36';
+        if (empresaId) {
+            // SaaS: usar tenant_survey_config
+            const configResult = await sql`
+                SELECT google_maps_url, discount_percentage
+                FROM tenant_survey_config
+                WHERE empresa_id = ${empresaId}
+            `;
+            if (configResult.length > 0) {
+                discountPercentage = configResult[0].discount_percentage || 10;
+                googleMapsUrl = configResult[0].google_maps_url || googleMapsUrl;
+            }
+        } else {
+            // DeltaWash Legacy: usar survey_config (id=1)
+            try {
+                const configResult = await sql`
+                    SELECT google_maps_url, discount_percentage
+                    FROM survey_config
+                    WHERE id = 1
+                `;
+                if (configResult.length > 0) {
+                    discountPercentage = configResult[0].discount_percentage || 10;
+                    googleMapsUrl = configResult[0].google_maps_url || googleMapsUrl;
+                }
+            } catch (error) {
+                // Si no existe survey_config, usar defaults
+            }
+        }
 
         // 4. Generar beneficio con descuento configurable
         let benefitCreated = false;
         if (survey.client_phone) {
-            await sql`
-                INSERT INTO benefits (
-                    empresa_id,
-                    survey_id,
-                    client_phone,
-                    benefit_type,
-                    discount_percentage,
-                    status
-                ) VALUES (
-                    ${survey.empresa_id},
-                    ${survey.id},
-                    ${survey.client_phone},
-                    '10_PERCENT_OFF',
-                    ${discountPercentage},
-                    'pending'
-                )
-            `;
+            if (empresaId) {
+                // SaaS: incluir empresa_id
+                await sql`
+                    INSERT INTO benefits (
+                        empresa_id,
+                        survey_id,
+                        client_phone,
+                        benefit_type,
+                        discount_percentage,
+                        status
+                    ) VALUES (
+                        ${empresaId},
+                        ${survey.id},
+                        ${survey.client_phone},
+                        '10_PERCENT_OFF',
+                        ${discountPercentage},
+                        'pending'
+                    )
+                `;
+            } else {
+                // DeltaWash Legacy: sin empresa_id
+                await sql`
+                    INSERT INTO benefits (
+                        survey_id,
+                        client_phone,
+                        benefit_type,
+                        discount_percentage,
+                        status
+                    ) VALUES (
+                        ${survey.id},
+                        ${survey.client_phone},
+                        '10_PERCENT_OFF',
+                        ${discountPercentage},
+                        'pending'
+                    )
+                `;
+            }
             benefitCreated = true;
         }
 

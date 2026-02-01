@@ -17,13 +17,27 @@ export async function POST(request: Request) {
             );
         }
 
-        // Obtener configuración de upselling (solo para verificar si está activo)
-        const configResult = await db`
-            SELECT activo, servicios_premium
-            FROM upselling_configuracion
-            WHERE ${empresaId ? db`empresa_id = ${empresaId}` : db`empresa_id IS NULL`}
-            LIMIT 1
-        `;
+        // Verificar si las tablas de upselling existen (solo en SaaS)
+        let configResult;
+        try {
+            // Obtener configuración de upselling (solo para verificar si está activo)
+            configResult = await db`
+                SELECT activo, servicios_premium
+                FROM upselling_configuracion
+                WHERE ${empresaId ? db`empresa_id = ${empresaId}` : db`empresa_id IS NULL`}
+                LIMIT 1
+            `;
+        } catch (error: any) {
+            // Si la tabla no existe (DeltaWash Legacy), retornar sin upselling
+            if (error?.code === '42P01') { // relation does not exist
+                return NextResponse.json({
+                    success: true,
+                    elegible: false,
+                    razon: 'sistema_no_disponible'
+                });
+            }
+            throw error; // Re-throw si es otro error
+        }
 
         const configData = Array.isArray(configResult) ? configResult : configResult.rows || [];
 
