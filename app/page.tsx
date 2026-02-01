@@ -28,6 +28,7 @@ interface Registro {
 interface Survey {
     id: number;
     token: string;
+    sentAt: string | null;
     respondedAt: string | null;
     surveyUrl: string;
     whatsappUrl: string;
@@ -199,6 +200,7 @@ export default function Home() {
                     [visitId]: {
                         id: data.survey.id,
                         token: data.survey.token,
+                        sentAt: data.survey.sentAt,
                         respondedAt: data.survey.respondedAt,
                         surveyUrl: data.survey.surveyUrl,
                         whatsappUrl: data.survey.whatsappUrl
@@ -1552,8 +1554,10 @@ export default function Home() {
                                                         ✓ Entregado
                                                     </button>
                                                 </div>
-                                                {/* Botón de encuesta - solo si existe y no está respondida */}
-                                                {surveys[registro.id] && !surveys[registro.id]?.respondedAt && (
+                                                {/* ESTADO 1: Encuesta creada pero NO enviada */}
+                                                {surveys[registro.id] &&
+                                                 !surveys[registro.id]?.sentAt &&
+                                                 !surveys[registro.id]?.respondedAt && (
                                                     <button
                                                         onClick={() => enviarEncuesta(registro.id)}
                                                         className="w-full flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 rounded-lg transition-colors text-sm"
@@ -1561,7 +1565,17 @@ export default function Home() {
                                                         📋 Enviar encuesta
                                                     </button>
                                                 )}
-                                                {/* Indicador de encuesta respondida */}
+
+                                                {/* ESTADO 2: Encuesta enviada pero NO respondida */}
+                                                {surveys[registro.id]?.sentAt &&
+                                                 !surveys[registro.id]?.respondedAt && (
+                                                    <div className="w-full flex items-center justify-center gap-2 bg-yellow-100 text-yellow-700 font-semibold py-2 rounded-lg text-sm border-2 border-yellow-300">
+                                                        <span>✅ Encuesta enviada</span>
+                                                        <span className="text-xs">(Esperando respuesta)</span>
+                                                    </div>
+                                                )}
+
+                                                {/* ESTADO 3: Encuesta respondida */}
                                                 {surveys[registro.id]?.respondedAt && (
                                                     <div className="w-full flex items-center justify-center gap-2 bg-green-100 text-green-700 font-semibold py-2 rounded-lg text-sm border-2 border-green-300">
                                                         ✅ Encuesta respondida
