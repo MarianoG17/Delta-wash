@@ -5,7 +5,9 @@ import { getEmpresaIdFromToken, checkTokenStatus } from '@/lib/auth-middleware';
 // GET: Obtener todas las listas de precios con sus precios
 export async function GET(request: Request) {
     try {
-        // Verificar si el token expiró (solo para usuarios SaaS)
+        // Verificar si el token expiró
+        // Permitir: 'valid' (SaaS), 'no_token' (legacy), 'legacy_token' (DeltaWash con JWT)
+        // Rechazar solo: 'expired' (token inválido)
         const tokenStatus = await checkTokenStatus(request);
         if (tokenStatus === 'expired') {
             return NextResponse.json(
@@ -13,6 +15,9 @@ export async function GET(request: Request) {
                 { status: 401 }
             );
         }
+        
+        // Si es DeltaWash legacy (no_token o legacy_token), continuar sin problema
+        console.log(`[Listas Precios API] Token status: ${tokenStatus}`);
 
         // Obtener conexión apropiada (DeltaWash o empresa específica)
         const empresaId = await getEmpresaIdFromToken(request);
