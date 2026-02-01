@@ -149,17 +149,19 @@ export async function checkTokenStatus(request: Request): Promise<'valid' | 'exp
     return 'legacy_token';
 
   } catch (error) {
-    // Distinguir entre token expirado vs token con secret incorrecto (DeltaWash legacy)
+    // Distinguir entre token legacy vs token SaaS expirado
     const errorMsg = error instanceof Error ? error.message : '';
-
-    // Si es error de signature (secret incorrecto), tratarlo como legacy
-    // Esto permite que DeltaWash funcione incluso si usa un JWT con diferente secret
-    if (errorMsg.includes('invalid signature') || errorMsg.includes('invalid token')) {
-      console.log(`[Auth] Token con signature inválida → Modo Legacy (DeltaWash)`);
+    
+    // Tokens legacy de DeltaWash: malformed, invalid signature, invalid token
+    // Estos NO son tokens expirados, son tokens con formato diferente → permitir acceso legacy
+    if (errorMsg.includes('jwt malformed') ||
+        errorMsg.includes('invalid signature') ||
+        errorMsg.includes('invalid token')) {
+      console.log(`[Auth] Token legacy detectado (${errorMsg}) → Modo Legacy (DeltaWash)`);
       return 'no_token'; // Tratarlo como si no hubiera token (legacy mode)
     }
-
-    // Si realmente expiró o es inválido por otra razón, marcarlo como expired
+    
+    // Si realmente expiró (token SaaS con formato correcto pero vencido), marcarlo como expired
     console.log(`[Auth] Token expirado o inválido: ${errorMsg}`);
     return 'expired';
   }
