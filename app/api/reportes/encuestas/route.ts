@@ -7,27 +7,74 @@ export async function GET(request: Request) {
         const empresaId = await getEmpresaIdFromToken(request);
         const db = await getDBConnection(empresaId);
 
-        // Obtener encuestas con respuestas y datos del registro
-        const result = await db`
-            SELECT 
-                s.id,
-                s.survey_token,
-                s.created_at,
-                s.sent_at,
-                s.responded_at,
-                s.client_phone,
-                sr.rating,
-                sr.comment,
-                sr.submitted_at,
-                r.marca_modelo,
-                r.patente,
-                r.nombre_cliente
-            FROM surveys s
-            LEFT JOIN survey_responses sr ON sr.survey_id = s.id
-            LEFT JOIN registros_lavado r ON r.id = s.visit_id
-            WHERE s.empresa_id = ${empresaId}
-            ORDER BY s.created_at DESC
-        `;
+        let result;
+
+        try {
+            // Obtener encuestas con respuestas y datos del registro
+            if (empresaId) {
+                // SaaS: filtrar por empresa_id
+                result = await db`
+                    SELECT
+                        s.id,
+                        s.survey_token,
+                        s.created_at,
+                        s.sent_at,
+                        s.responded_at,
+                        s.client_phone,
+                        sr.rating,
+                        sr.comment,
+                        sr.created_at as submitted_at,
+                        r.marca_modelo,
+                        r.patente,
+                        r.nombre_cliente
+                    FROM surveys s
+                    LEFT JOIN survey_responses sr ON sr.survey_id = s.id
+                    LEFT JOIN registros_lavado r ON r.id = s.visit_id
+                    WHERE s.empresa_id = ${empresaId}
+                    ORDER BY s.created_at DESC
+                `;
+            } else {
+                // DeltaWash Legacy: sin filtro de empresa_id (single-tenant)
+                result = await db`
+                    SELECT
+                        s.id,
+                        s.survey_token,
+                        s.created_at,
+                        s.sent_at,
+                        s.responded_at,
+                        s.client_phone,
+                        sr.rating,
+                        sr.comment,
+                        sr.created_at as submitted_at,
+                        r.marca_modelo,
+                        r.patente,
+                        r.nombre_cliente
+                    FROM surveys s
+                    LEFT JOIN survey_responses sr ON sr.survey_id = s.id
+                    LEFT JOIN registros_lavado r ON r.id = s.visit_id
+                    ORDER BY s.created_at DESC
+                `;
+            }
+        } catch (queryError: any) {
+            // Manejar error de tabla no existente
+            if (queryError.message && queryError.message.includes('relation "surveys" does not exist')) {
+                return NextResponse.json({
+                    success: true,
+                    error: 'TABLES_NOT_CREATED',
+                    message: 'Las tablas del sistema de encuestas no existen aún. Por favor ejecuta la migración migration-sistema-encuestas-deltawash.sql en la base de datos.',
+                    estadisticas: {
+                        totalEncuestas: 0,
+                        encuestasRespondidas: 0,
+                        encuestasEnviadas: 0,
+                        promedioRating: 0,
+                        tasaRespuesta: 0,
+                        distribucionRatings: { '5': 0, '4': 0, '3': 0, '2': 0, '1': 0 }
+                    },
+                    encuestas: []
+                });
+            }
+            throw queryError;
+        }
 
         const surveys = Array.isArray(result) ? result : result.rows || [];
 
