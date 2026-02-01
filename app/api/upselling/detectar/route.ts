@@ -142,15 +142,29 @@ export async function POST(request: Request) {
         }
 
         // 5. Verificar si ya rechazó la oferta recientemente (según configuración)
-        const interaccionRecienteResult = await db`
-            SELECT accion, fecha_interaccion
-            FROM upselling_interacciones
-            WHERE cliente_celular = ${celular}
-            ${empresaId ? db`AND empresa_id = ${empresaId}` : db`AND empresa_id IS NULL`}
-            AND fecha_interaccion > NOW() - INTERVAL '${periodoRechazo} days'
-            ORDER BY fecha_interaccion DESC
-            LIMIT 1
-        `;
+        let interaccionRecienteResult;
+        if (empresaId) {
+            // SaaS: filtrar por empresa_id
+            interaccionRecienteResult = await db`
+                SELECT accion, fecha_interaccion
+                FROM upselling_interacciones
+                WHERE cliente_celular = ${celular}
+                AND empresa_id = ${empresaId}
+                AND fecha_interaccion > NOW() - INTERVAL '${periodoRechazo} days'
+                ORDER BY fecha_interaccion DESC
+                LIMIT 1
+            `;
+        } else {
+            // DeltaWash Legacy: sin empresa_id (single-tenant, no filtra)
+            interaccionRecienteResult = await db`
+                SELECT accion, fecha_interaccion
+                FROM upselling_interacciones
+                WHERE cliente_celular = ${celular}
+                AND fecha_interaccion > NOW() - INTERVAL '${periodoRechazo} days'
+                ORDER BY fecha_interaccion DESC
+                LIMIT 1
+            `;
+        }
 
         const interaccionRecienteData = Array.isArray(interaccionRecienteResult) ? interaccionRecienteResult : interaccionRecienteResult.rows || [];
 

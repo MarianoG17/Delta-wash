@@ -17,25 +17,48 @@ export async function GET(request: Request) {
             );
         }
 
-        // Buscar beneficios pendientes para este teléfono en esta empresa
-        const benefitsResult = await db`
-            SELECT
-                b.id,
-                b.benefit_type,
-                b.discount_percentage,
-                b.created_at,
-                s.visit_id,
-                r.marca_modelo,
-                r.patente,
-                r.fecha_entregado
-            FROM benefits b
-            INNER JOIN surveys s ON s.id = b.survey_id
-            LEFT JOIN registros_lavado r ON r.id = s.visit_id
-            WHERE b.client_phone = ${phone}
-            AND b.empresa_id = ${empresaId}
-            AND b.status = 'pending'
-            ORDER BY b.created_at DESC
-        `;
+        // Buscar beneficios pendientes para este teléfono
+        let benefitsResult;
+        if (empresaId) {
+            // SaaS: filtrar por empresa_id
+            benefitsResult = await db`
+                SELECT
+                    b.id,
+                    b.benefit_type,
+                    b.discount_percentage,
+                    b.created_at,
+                    s.visit_id,
+                    r.marca_modelo,
+                    r.patente,
+                    r.fecha_entregado
+                FROM benefits b
+                INNER JOIN surveys s ON s.id = b.survey_id
+                LEFT JOIN registros_lavado r ON r.id = s.visit_id
+                WHERE b.client_phone = ${phone}
+                AND b.empresa_id = ${empresaId}
+                AND b.status = 'pending'
+                ORDER BY b.created_at DESC
+            `;
+        } else {
+            // DeltaWash Legacy: sin empresa_id
+            benefitsResult = await db`
+                SELECT
+                    b.id,
+                    b.benefit_type,
+                    b.discount_percentage,
+                    b.created_at,
+                    s.visit_id,
+                    r.marca_modelo,
+                    r.patente,
+                    r.fecha_entregado
+                FROM benefits b
+                INNER JOIN surveys s ON s.id = b.survey_id
+                LEFT JOIN registros_lavado r ON r.id = s.visit_id
+                WHERE b.client_phone = ${phone}
+                AND b.status = 'pending'
+                ORDER BY b.created_at DESC
+            `;
+        }
 
         const benefits = Array.isArray(benefitsResult) ? benefitsResult : benefitsResult.rows || [];
 
