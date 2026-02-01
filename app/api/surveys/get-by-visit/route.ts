@@ -18,20 +18,39 @@ export async function GET(request: Request) {
         }
 
         // Obtener encuesta con respuesta si existe
-        const surveyResult = await db`
-            SELECT 
-                s.id,
-                s.survey_token,
-                s.created_at,
-                s.sent_at,
-                s.responded_at,
-                sr.rating,
-                sr.comment
-            FROM surveys s
-            LEFT JOIN survey_responses sr ON sr.survey_id = s.id
-            WHERE s.visit_id = ${visitId} 
-            AND s.empresa_id = ${empresaId}
-        `;
+        let surveyResult;
+        if (empresaId) {
+            // SaaS: filtrar por empresa_id
+            surveyResult = await db`
+                SELECT
+                    s.id,
+                    s.survey_token,
+                    s.created_at,
+                    s.sent_at,
+                    s.responded_at,
+                    sr.rating,
+                    sr.comment
+                FROM surveys s
+                LEFT JOIN survey_responses sr ON sr.survey_id = s.id
+                WHERE s.visit_id = ${visitId}
+                AND s.empresa_id = ${empresaId}
+            `;
+        } else {
+            // DeltaWash Legacy: sin empresa_id
+            surveyResult = await db`
+                SELECT
+                    s.id,
+                    s.survey_token,
+                    s.created_at,
+                    s.sent_at,
+                    s.responded_at,
+                    sr.rating,
+                    sr.comment
+                FROM surveys s
+                LEFT JOIN survey_responses sr ON sr.survey_id = s.id
+                WHERE s.visit_id = ${visitId}
+            `;
+        }
 
         const surveys = Array.isArray(surveyResult) ? surveyResult : surveyResult.rows || [];
 

@@ -59,11 +59,21 @@ export async function POST(request: Request) {
         if (registro_actualizado) {
             try {
                 // Verificar si ya existe una encuesta para esta visita
-                const encuestaExistente = await db`
-                    SELECT id FROM surveys
-                    WHERE visit_id = ${id}
-                    AND empresa_id = ${empresaId}
-                `;
+                let encuestaExistente;
+                if (empresaId) {
+                    // SaaS: filtrar por empresa_id
+                    encuestaExistente = await db`
+                        SELECT id FROM surveys
+                        WHERE visit_id = ${id}
+                        AND empresa_id = ${empresaId}
+                    `;
+                } else {
+                    // DeltaWash Legacy: sin empresa_id
+                    encuestaExistente = await db`
+                        SELECT id FROM surveys
+                        WHERE visit_id = ${id}
+                    `;
+                }
 
                 const encuestas = Array.isArray(encuestaExistente) ? encuestaExistente : encuestaExistente.rows || [];
 
@@ -78,23 +88,43 @@ export async function POST(request: Request) {
                     
                     const reg = Array.isArray(registroCompleto) ? registroCompleto[0] : registroCompleto.rows?.[0];
                     
-                    await db`
-                        INSERT INTO surveys (
-                            empresa_id,
-                            visit_id,
-                            client_phone,
-                            vehicle_marca,
-                            vehicle_patente,
-                            vehicle_servicio
-                        ) VALUES (
-                            ${empresaId},
-                            ${registro_actualizado.id},
-                            ${registro_actualizado.celular || null},
-                            ${reg?.marca_modelo || 'Vehículo'},
-                            ${reg?.patente || ''},
-                            ${reg?.tipo_limpieza || 'Servicio'}
-                        )
-                    `;
+                    if (empresaId) {
+                        // SaaS: incluir empresa_id
+                        await db`
+                            INSERT INTO surveys (
+                                empresa_id,
+                                visit_id,
+                                client_phone,
+                                vehicle_marca,
+                                vehicle_patente,
+                                vehicle_servicio
+                            ) VALUES (
+                                ${empresaId},
+                                ${registro_actualizado.id},
+                                ${registro_actualizado.celular || null},
+                                ${reg?.marca_modelo || 'Vehículo'},
+                                ${reg?.patente || ''},
+                                ${reg?.tipo_limpieza || 'Servicio'}
+                            )
+                        `;
+                    } else {
+                        // DeltaWash Legacy: sin empresa_id
+                        await db`
+                            INSERT INTO surveys (
+                                visit_id,
+                                client_phone,
+                                vehicle_marca,
+                                vehicle_patente,
+                                vehicle_servicio
+                            ) VALUES (
+                                ${registro_actualizado.id},
+                                ${registro_actualizado.celular || null},
+                                ${reg?.marca_modelo || 'Vehículo'},
+                                ${reg?.patente || ''},
+                                ${reg?.tipo_limpieza || 'Servicio'}
+                            )
+                        `;
+                    }
                 }
             } catch (error) {
                 // Log pero no fallar el entregado
