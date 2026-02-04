@@ -81,7 +81,7 @@ export async function POST(request: Request) {
       ) VALUES (
         ${userData.user_id},
         ${token},
-        ${expiresAt}
+        ${expiresAt.toISOString()}
       )
     `;
 
