@@ -10,9 +10,10 @@ import { getDBConnection } from '@/lib/db-saas';
 // PUT: Actualizar tipo de vehículo
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // Verificar que sea SaaS
     if (!(await isSaaSRequest(request))) {
       return NextResponse.json(
@@ -32,7 +33,7 @@ export async function PUT(
       );
     }
 
-    const tipoId = parseInt(params.id);
+    const tipoId = parseInt(id);
     if (isNaN(tipoId)) {
       return NextResponse.json(
         { success: false, message: 'ID inválido' },
@@ -118,9 +119,10 @@ export async function PUT(
 // DELETE: Eliminar tipo de vehículo
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // Verificar que sea SaaS
     if (!(await isSaaSRequest(request))) {
       return NextResponse.json(
@@ -140,7 +142,7 @@ export async function DELETE(
       );
     }
 
-    const tipoId = parseInt(params.id);
+    const tipoId = parseInt(id);
     if (isNaN(tipoId)) {
       return NextResponse.json(
         { success: false, message: 'ID inválido' },
