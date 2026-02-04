@@ -131,9 +131,9 @@ export default function LoginSaaSPage() {
                                 />
                                 <span className="text-gray-600">Recordarme</span>
                             </label>
-                            <a href="#" className="text-blue-600 hover:underline font-medium">
+                            <Link href="/forgot-password" className="text-blue-600 hover:underline font-medium">
                                 ¿Olvidaste tu contraseña?
-                            </a>
+                            </Link>
                         </div>
 
                         {/* Error message */}
