@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createPool } from '@vercel/postgres';
+import { Resend } from 'resend';
 import crypto from 'crypto';
 
 /**
@@ -90,8 +91,7 @@ export async function POST(request: Request) {
 
     // Enviar email con Resend
     try {
-      // TODO: Configurar Resend cuando tengas la API key
-      // Por ahora, solo logueamos el link (para development)
+      // Log para debugging
       console.log('=====================================');
       console.log(`[Forgot Password] Email: ${email}`);
       console.log(`[Forgot Password] Link de reseteo:`);
@@ -99,28 +99,37 @@ export async function POST(request: Request) {
       console.log(`[Forgot Password] Token válido hasta: ${expiresAt.toLocaleString('es-AR')}`);
       console.log('=====================================');
 
-      // Cuando tengamos Resend configurado, descomentar esto:
-      /*
-      const { Resend } = await import('resend');
-      const resend = new Resend(process.env.RESEND_API_KEY);
+      // Verificar si tenemos la API key de Resend
+      if (process.env.RESEND_API_KEY) {
+        const resend = new Resend(process.env.RESEND_API_KEY);
 
-      await resend.emails.send({
-        from: 'LAVAPP <noreply@lavapp.com.ar>', // O el dominio que configures
-        to: email,
-        subject: 'Recuperá tu contraseña - LAVAPP',
-        html: `
-          <h2>Recuperación de contraseña</h2>
-          <p>Hola ${userData.nombre},</p>
-          <p>Recibimos una solicitud para recuperar tu contraseña de <strong>${userData.empresa_nombre}</strong>.</p>
-          <p>Hacé clic en el siguiente enlace para crear una nueva contraseña:</p>
-          <p><a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background-color: #0ea5e9; color: white; text-decoration: none; border-radius: 6px;">Cambiar mi contraseña</a></p>
-          <p>Este enlace es válido por 1 hora.</p>
-          <p>Si no solicitaste recuperar tu contraseña, ignorá este email.</p>
-          <hr />
-          <p style="color: #666; font-size: 12px;">LAVAPP - Sistema de gestión para lavaderos</p>
-        `
-      });
-      */
+        const result = await resend.emails.send({
+          from: 'LAVAPP <onboarding@resend.dev>', // Dominio de prueba de Resend
+          to: email,
+          subject: 'Recuperá tu contraseña - LAVAPP',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #0ea5e9;">Recuperación de contraseña</h2>
+              <p>Hola <strong>${userData.nombre}</strong>,</p>
+              <p>Recibimos una solicitud para recuperar tu contraseña de <strong>${userData.empresa_nombre}</strong>.</p>
+              <p>Hacé clic en el siguiente enlace para crear una nueva contraseña:</p>
+              <p style="margin: 30px 0;">
+                <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background-color: #0ea5e9; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Cambiar mi contraseña</a>
+              </p>
+              <p style="color: #666;">O copiá y pegá este enlace en tu navegador:</p>
+              <p style="color: #0ea5e9; word-break: break-all;">${resetLink}</p>
+              <p style="margin-top: 30px;"><strong>Este enlace es válido por 1 hora.</strong></p>
+              <p style="color: #666;">Si no solicitaste recuperar tu contraseña, ignorá este email.</p>
+              <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;" />
+              <p style="color: #999; font-size: 12px; text-align: center;">LAVAPP - Sistema de gestión para lavaderos</p>
+            </div>
+          `
+        });
+
+        console.log('[Forgot Password] Email enviado exitosamente:', result);
+      } else {
+        console.warn('[Forgot Password] RESEND_API_KEY no configurada - Email no enviado');
+      }
     } catch (emailError) {
       console.error('[Forgot Password] Error al enviar email:', emailError);
       // No fallar la request por error de email
