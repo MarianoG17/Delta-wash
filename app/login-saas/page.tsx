@@ -42,6 +42,10 @@ export default function LoginSaaSPage() {
                 localStorage.setItem('userEmail', data.usuario.email);
                 localStorage.setItem('userNombre', data.usuario.nombre);
                 localStorage.setItem('userRol', data.usuario.rol);
+                
+                // IMPORTANTE: Marcar preferencia persistente para PWA
+                // Esto asegura que al hacer logout, la PWA recuerde que es versión SaaS
+                localStorage.setItem('preferredLoginType', 'saas');
 
                 // Mostrar mensaje de bienvenida
                 alert(`✅ ¡Bienvenido ${data.usuario.nombre}!\n\n🏢 ${data.empresa.nombre}\n📦 Plan: ${data.empresa.plan.toUpperCase()}\n⏰ Días restantes: ${data.empresa.diasRestantes}\n\nSerás redirigido a tu panel...`);

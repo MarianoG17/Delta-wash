@@ -67,6 +67,7 @@ export function getAuthUser(): AuthUser | null {
 
 /**
  * Limpia toda la sesión (SaaS y legacy)
+ * IMPORTANTE: NO limpia 'preferredLoginType' para que la PWA recuerde qué versión usar
  */
 export function clearAuth(): void {
   if (typeof window === 'undefined') {
@@ -87,6 +88,8 @@ export function clearAuth(): void {
 
   // Limpiar sesión DeltaWash legacy
   localStorage.removeItem('lavadero_user');
+  
+  // NO eliminamos 'preferredLoginType' - es persistente para PWA
 }
 
 /**
@@ -103,6 +106,15 @@ export function getLoginUrl(afterLogout: boolean = false): string {
   }
 
   // Para redirecciones normales (sin logout)
+  // IMPORTANTE: Primero verificar la preferencia persistente (para PWA)
+  const preferredLoginType = localStorage.getItem('preferredLoginType');
+  if (preferredLoginType === 'saas') {
+    return '/login-saas';
+  } else if (preferredLoginType === 'legacy') {
+    return '/login';
+  }
+  
+  // Fallback: detectar por authToken (comportamiento anterior)
   const authToken = localStorage.getItem('authToken');
   return authToken ? '/login-saas' : '/login';
 }

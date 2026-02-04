@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS survey_responses (
   survey_id INTEGER NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
   rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
   comment TEXT,
-  submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Índice para buscar respuestas por encuesta

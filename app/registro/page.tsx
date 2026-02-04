@@ -56,6 +56,10 @@ export default function RegistroPage() {
         localStorage.setItem('userId', data.usuario.id);
         localStorage.setItem('userEmail', data.usuario.email);
         
+        // IMPORTANTE: Marcar preferencia persistente para PWA
+        // Al registrarse en SaaS, guardar esta preferencia
+        localStorage.setItem('preferredLoginType', 'saas');
+        
         // Mostrar modal de bienvenida con info de usuarios
         setRegistroData(data);
         setShowWelcome(true);

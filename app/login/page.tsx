@@ -27,6 +27,11 @@ export default function Login() {
 
             if (data.success) {
                 localStorage.setItem('lavadero_user', JSON.stringify(data.user));
+                
+                // IMPORTANTE: Marcar preferencia persistente para PWA
+                // Esto asegura que al hacer logout, la PWA recuerde que es versión Legacy
+                localStorage.setItem('preferredLoginType', 'legacy');
+                
                 router.push('/');
             } else {
                 setError(data.message || 'Error al iniciar sesión');
