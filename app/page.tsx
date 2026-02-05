@@ -95,6 +95,13 @@ export default function Home() {
     // Estados para encuestas
     const [surveys, setSurveys] = useState<Record<number, Survey | null>>({});
 
+    // Helper function para formatear nombres de tipos personalizados
+    const formatearNombreTipo = (nombre: string): string => {
+        return nombre.split('_').map((word: string) =>
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+    };
+
     useEffect(() => {
         setMounted(true);
         if (typeof window !== 'undefined') {
@@ -1114,9 +1121,7 @@ export default function Home() {
                                                           tipo.nombre === 'pulido' ? 'Pulido' :
                                                           tipo.nombre === 'limpieza_chasis' ? 'Limpieza de Chasis' :
                                                           tipo.nombre === 'limpieza_motor' ? 'Limpieza de Motor' :
-                                                          tipo.nombre.split('_').map(word =>
-                                                              word.charAt(0).toUpperCase() + word.slice(1)
-                                                          ).join(' ');
+                                                          formatearNombreTipo(tipo.nombre);
                                         
                                         return (
                                             <label key={tipo.id} className="flex items-center gap-2 cursor-pointer">
