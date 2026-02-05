@@ -45,6 +45,7 @@ export default function ReporteEncuestas() {
     const [encuestas, setEncuestas] = useState<Encuesta[]>([]);
     const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
     const [empresaNombre, setEmpresaNombre] = useState<string>('DeltaWash');
+    const [empresaSlug, setEmpresaSlug] = useState<string>('lavadero');
 
     // Estados para configuración
     const [showConfig, setShowConfig] = useState(false);
@@ -67,6 +68,9 @@ export default function ReporteEncuestas() {
         if (user.isSaas) {
             const nombreEmpresa = localStorage.getItem('empresaNombre');
             if (nombreEmpresa) setEmpresaNombre(nombreEmpresa);
+            
+            const slug = localStorage.getItem('empresaSlug');
+            if (slug) setEmpresaSlug(slug);
         }
 
         cargarReporte();
@@ -151,9 +155,9 @@ export default function ReporteEncuestas() {
     };
 
     const enviarEncuesta = async (encuesta: Encuesta) => {
-        // Generar URLs
+        // Generar URLs con slug de empresa
         const baseUrl = window.location.origin;
-        const surveyUrl = `${baseUrl}/survey/${encuesta.token}`;
+        const surveyUrl = `${baseUrl}/survey/${empresaSlug}/${encuesta.token}`;
         const whatsappMessage = `${config.whatsapp_message}\n👉 ${surveyUrl}`;
 
         // Formatear número de teléfono para Argentina: 549 + número sin el primer 0

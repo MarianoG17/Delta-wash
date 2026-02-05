@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDBConnection } from '@/lib/db-saas';
 import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
+import { neon } from '@neondatabase/serverless';
 
 export async function GET(request: Request) {
     try {
@@ -41,11 +42,30 @@ export async function GET(request: Request) {
 
         const survey = surveys[0];
 
-        // Generar URL de WhatsApp
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        const surveyUrl = `${baseUrl}/survey/${survey.survey_token}`;
+        // Obtener slug de la empresa desde BD central
+        let empresaSlug = 'lavadero'; // default fallback
+        if (empresaId) {
+            try {
+                const centralConnectionString = process.env.CENTRAL_DB_URL;
+                if (centralConnectionString) {
+                    const centralSql = neon(centralConnectionString);
+                    const empresaResult = await centralSql`
+                        SELECT slug FROM empresas WHERE id = ${empresaId}
+                    `;
+                    if (empresaResult.length > 0) {
+                        empresaSlug = empresaResult[0].slug;
+                    }
+                }
+            } catch (slugError) {
+                console.error('[get-by-visit] Error al obtener slug:', slugError);
+            }
+        }
 
-        const whatsappMessage = `Gracias por confiar en DeltaWash. ¿Nos dejarías tu opinión? Son solo 10 segundos y a nosotros nos ayuda a mejorar :)\n👉 ${surveyUrl}`;
+        // Generar URL de WhatsApp con slug
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const surveyUrl = `${baseUrl}/survey/${empresaSlug}/${survey.survey_token}`;
+
+        const whatsappMessage = `Gracias por confiar en nosotros. ¿Nos dejarías tu opinión? Son solo 10 segundos y nos ayuda a mejorar :)\n👉 ${surveyUrl}`;
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
 
         return NextResponse.json({

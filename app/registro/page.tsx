@@ -53,6 +53,7 @@ export default function RegistroPage() {
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('empresaId', data.empresa.id);
         localStorage.setItem('empresaNombre', data.empresa.nombre);
+        localStorage.setItem('empresaSlug', data.empresa.slug);
         localStorage.setItem('userId', data.usuario.id);
         localStorage.setItem('userEmail', data.usuario.email);
 
