@@ -649,31 +649,33 @@ export default function ListasPrecios() {
                                 </table>
                             </div>
 
-                            {/* Botones de gestión de tipos */}
-                            <div className="mt-6 pt-6 border-t border-gray-200">
-                                <p className="text-sm text-gray-600 mb-3 font-medium">
-                                    Gestionar tipos de vehículos y servicios:
-                                </p>
-                                <div className="flex gap-3 flex-wrap">
-                                    <button
-                                        onClick={() => setModalVehiculosAbierto(true)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-sm font-medium"
-                                    >
-                                        <Settings size={16} />
-                                        Gestionar Tipos de Vehículo
-                                    </button>
-                                    <button
-                                        onClick={() => setModalLimpiezaAbierto(true)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors text-sm font-medium"
-                                    >
-                                        <Settings size={16} />
-                                        Gestionar Tipos de Limpieza
-                                    </button>
+                            {/* Botones de gestión de tipos - Solo para SaaS */}
+                            {getAuthUser()?.isSaas && (
+                                <div className="mt-6 pt-6 border-t border-gray-200">
+                                    <p className="text-sm text-gray-600 mb-3 font-medium">
+                                        Gestionar tipos de vehículos y servicios:
+                                    </p>
+                                    <div className="flex gap-3 flex-wrap">
+                                        <button
+                                            onClick={() => setModalVehiculosAbierto(true)}
+                                            className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-sm font-medium"
+                                        >
+                                            <Settings size={16} />
+                                            Gestionar Tipos de Vehículo
+                                        </button>
+                                        <button
+                                            onClick={() => setModalLimpiezaAbierto(true)}
+                                            className="flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors text-sm font-medium"
+                                        >
+                                            <Settings size={16} />
+                                            Gestionar Tipos de Limpieza
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        💡 Personaliza los tipos de vehículos y servicios según tu lavadero
+                                    </p>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-2">
-                                    💡 Personaliza los tipos de vehículos y servicios según tu lavadero
-                                </p>
-                            </div>
+                            )}
                         </div>
                     ))}
                 </div>
