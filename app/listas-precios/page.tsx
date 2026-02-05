@@ -141,10 +141,10 @@ export default function ListasPrecios() {
                 } : {}
             });
             const data = await res.json();
-            if (res.ok && Array.isArray(data)) {
-                const tiposActivos = data
-                    .filter(t => t.activo)
-                    .sort((a, b) => a.orden - b.orden);
+            if (res.ok && data.success && Array.isArray(data.tipos)) {
+                const tiposActivos = data.tipos
+                    .filter((t: any) => t.activo)
+                    .sort((a: any, b: any) => a.orden - b.orden);
                 setTiposVehiculoDinamicos(tiposActivos);
             }
         } catch (error) {
@@ -165,10 +165,10 @@ export default function ListasPrecios() {
                 } : {}
             });
             const data = await res.json();
-            if (res.ok && Array.isArray(data)) {
-                const tiposActivos = data
-                    .filter(t => t.activo)
-                    .sort((a, b) => a.orden - b.orden);
+            if (res.ok && data.success && Array.isArray(data.tipos)) {
+                const tiposActivos = data.tipos
+                    .filter((t: any) => t.activo)
+                    .sort((a: any, b: any) => a.orden - b.orden);
                 setTiposLimpiezaDinamicos(tiposActivos);
             }
         } catch (error) {
