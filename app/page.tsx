@@ -50,6 +50,10 @@ export default function Home() {
     const [mounted, setMounted] = useState(false);
     const [preciosDinamicos, setPreciosDinamicos] = useState<any>(null);
     const [empresaNombre, setEmpresaNombre] = useState<string>('DeltaWash');
+    
+    // Estados para tipos dinámicos
+    const [tiposVehiculoDinamicos, setTiposVehiculoDinamicos] = useState<any[]>([]);
+    const [tiposLimpiezaDinamicos, setTiposLimpiezaDinamicos] = useState<any[]>([]);
 
     // Form states
     const [marca, setMarca] = useState('');
@@ -117,6 +121,8 @@ export default function Home() {
                 }
 
                 cargarPreciosDinamicos();
+                cargarTiposVehiculo();
+                cargarTiposLimpieza();
                 cargarRegistrosEnProceso();
             }
         }
@@ -141,6 +147,58 @@ export default function Home() {
         } catch (error) {
             console.error('Error cargando precios:', error);
             // Si falla, quedará null y usará los precios hardcodeados como fallback
+        }
+    };
+
+    const cargarTiposVehiculo = async () => {
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/tipos-vehiculo', {
+                headers: authToken ? {
+                    'Authorization': `Bearer ${authToken}`
+                } : {}
+            });
+            const data = await res.json();
+            if (res.ok && Array.isArray(data)) {
+                // Ordenar por campo 'orden' y filtrar solo activos
+                const tiposActivos = data
+                    .filter(t => t.activo)
+                    .sort((a, b) => a.orden - b.orden);
+                setTiposVehiculoDinamicos(tiposActivos);
+            }
+        } catch (error) {
+            console.error('Error cargando tipos de vehículo:', error);
+            // Si falla, quedará vacío y usará los hardcodeados como fallback
+        }
+    };
+
+    const cargarTiposLimpieza = async () => {
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/tipos-limpieza', {
+                headers: authToken ? {
+                    'Authorization': `Bearer ${authToken}`
+                } : {}
+            });
+            const data = await res.json();
+            if (res.ok && Array.isArray(data)) {
+                // Ordenar por campo 'orden' y filtrar solo activos
+                const tiposActivos = data
+                    .filter(t => t.activo)
+                    .sort((a, b) => a.orden - b.orden);
+                setTiposLimpiezaDinamicos(tiposActivos);
+            }
+        } catch (error) {
+            console.error('Error cargando tipos de limpieza:', error);
+            // Si falla, quedará vacío y usará los hardcodeados como fallback
         }
     };
 
@@ -1014,11 +1072,26 @@ export default function Home() {
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                                     required
                                 >
-                                    <option value="auto">Auto</option>
-                                    <option value="mono">Mono (SUV)</option>
-                                    <option value="camioneta">Camioneta</option>
-                                    <option value="camioneta_xl">Camioneta XL</option>
-                                    <option value="moto">Moto</option>
+                                    {tiposVehiculoDinamicos.length > 0 ? (
+                                        tiposVehiculoDinamicos.map((tipo) => (
+                                            <option key={tipo.id} value={tipo.nombre}>
+                                                {tipo.nombre === 'auto' ? 'Auto' :
+                                                 tipo.nombre === 'mono' ? 'Mono (SUV)' :
+                                                 tipo.nombre === 'camioneta' ? 'Camioneta' :
+                                                 tipo.nombre === 'camioneta_xl' ? 'Camioneta XL' :
+                                                 tipo.nombre === 'moto' ? 'Moto' :
+                                                 tipo.nombre.toUpperCase()}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <>
+                                            <option value="auto">Auto</option>
+                                            <option value="mono">Mono (SUV)</option>
+                                            <option value="camioneta">Camioneta</option>
+                                            <option value="camioneta_xl">Camioneta XL</option>
+                                            <option value="moto">Moto</option>
+                                        </>
+                                    )}
                                 </select>
                             </div>
 
@@ -1027,30 +1100,42 @@ export default function Home() {
                                     Tipos de Limpieza (puedes seleccionar varios)
                                 </label>
                                 <div className="space-y-2">
-                                    {[
-                                        { value: 'simple_exterior', label: 'Simple Exterior (solo por fuera)' },
-                                        { value: 'simple', label: 'Simple' },
-                                        { value: 'con_cera', label: 'Con Cera' },
-                                        { value: 'pulido', label: 'Pulido' },
-                                        { value: 'limpieza_chasis', label: 'Limpieza de Chasis' },
-                                        { value: 'limpieza_motor', label: 'Limpieza de Motor' },
-                                    ].map((tipo) => (
-                                        <label key={tipo.value} className="flex items-center gap-2 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={tiposLimpieza.includes(tipo.value)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setTiposLimpieza([...tiposLimpieza, tipo.value]);
-                                                    } else {
-                                                        setTiposLimpieza(tiposLimpieza.filter(t => t !== tipo.value));
-                                                    }
-                                                }}
-                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                            />
-                                            <span className="text-sm text-gray-900">{tipo.label}</span>
-                                        </label>
-                                    ))}
+                                    {(tiposLimpiezaDinamicos.length > 0 ? tiposLimpiezaDinamicos : [
+                                        { nombre: 'simple_exterior', id: 1 },
+                                        { nombre: 'simple', id: 2 },
+                                        { nombre: 'con_cera', id: 3 },
+                                        { nombre: 'pulido', id: 4 },
+                                        { nombre: 'limpieza_chasis', id: 5 },
+                                        { nombre: 'limpieza_motor', id: 6 },
+                                    ]).map((tipo) => {
+                                        const displayName = tipo.nombre === 'simple_exterior' ? 'Simple Exterior (solo por fuera)' :
+                                                          tipo.nombre === 'simple' ? 'Simple' :
+                                                          tipo.nombre === 'con_cera' ? 'Con Cera' :
+                                                          tipo.nombre === 'pulido' ? 'Pulido' :
+                                                          tipo.nombre === 'limpieza_chasis' ? 'Limpieza de Chasis' :
+                                                          tipo.nombre === 'limpieza_motor' ? 'Limpieza de Motor' :
+                                                          tipo.nombre.split('_').map(word =>
+                                                              word.charAt(0).toUpperCase() + word.slice(1)
+                                                          ).join(' ');
+                                        
+                                        return (
+                                            <label key={tipo.id} className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={tiposLimpieza.includes(tipo.nombre)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setTiposLimpieza([...tiposLimpieza, tipo.nombre]);
+                                                        } else {
+                                                            setTiposLimpieza(tiposLimpieza.filter(t => t !== tipo.nombre));
+                                                        }
+                                                    }}
+                                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                />
+                                                <span className="text-sm text-gray-900">{displayName}</span>
+                                            </label>
+                                        );
+                                    })}
                                 </div>
                                 {tiposLimpieza.length === 0 && (
                                     <p className="text-xs text-red-600 mt-2">Selecciona al menos un tipo de limpieza</p>

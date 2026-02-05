@@ -37,23 +37,49 @@ export default function ListasPrecios() {
     const [redondear, setRedondear] = useState<boolean>(true);
     const [modalVehiculosAbierto, setModalVehiculosAbierto] = useState(false);
     const [modalLimpiezaAbierto, setModalLimpiezaAbierto] = useState(false);
+    const [tiposVehiculoDinamicos, setTiposVehiculoDinamicos] = useState<any[]>([]);
+    const [tiposLimpiezaDinamicos, setTiposLimpiezaDinamicos] = useState<any[]>([]);
 
-    const tiposVehiculo = [
-        { value: 'auto', label: '🚗 Auto' },
-        { value: 'mono', label: '🚙 Mono (SUV)' },
-        { value: 'camioneta', label: '🚐 Camioneta' },
-        { value: 'camioneta_xl', label: '🚐 Camioneta XL' },
-        { value: 'moto', label: '🏍️ Moto' }
-    ];
+    // Fallback a valores hardcodeados si no se cargan los dinámicos
+    const tiposVehiculo = tiposVehiculoDinamicos.length > 0
+        ? tiposVehiculoDinamicos.map(t => ({
+            value: t.nombre,
+            label: t.nombre === 'auto' ? '🚗 Auto' :
+                   t.nombre === 'mono' ? '🚙 Mono (SUV)' :
+                   t.nombre === 'camioneta' ? '🚐 Camioneta' :
+                   t.nombre === 'camioneta_xl' ? '🚐 Camioneta XL' :
+                   t.nombre === 'moto' ? '🏍️ Moto' :
+                   '🚗 ' + t.nombre.toUpperCase()
+          }))
+        : [
+            { value: 'auto', label: '🚗 Auto' },
+            { value: 'mono', label: '🚙 Mono (SUV)' },
+            { value: 'camioneta', label: '🚐 Camioneta' },
+            { value: 'camioneta_xl', label: '🚐 Camioneta XL' },
+            { value: 'moto', label: '🏍️ Moto' }
+          ];
 
-    const tiposServicio = [
-        { value: 'simple_exterior', label: 'Simple Exterior' },
-        { value: 'simple', label: 'Simple (completo)' },
-        { value: 'con_cera', label: 'Con Cera (incremento)' },
-        { value: 'pulido', label: 'Pulido' },
-        { value: 'limpieza_chasis', label: 'Limpieza de Chasis' },
-        { value: 'limpieza_motor', label: 'Limpieza de Motor' }
-    ];
+    const tiposServicio = tiposLimpiezaDinamicos.length > 0
+        ? tiposLimpiezaDinamicos.map(t => ({
+            value: t.nombre,
+            label: t.nombre === 'simple_exterior' ? 'Simple Exterior' :
+                   t.nombre === 'simple' ? 'Simple (completo)' :
+                   t.nombre === 'con_cera' ? 'Con Cera (incremento)' :
+                   t.nombre === 'pulido' ? 'Pulido' :
+                   t.nombre === 'limpieza_chasis' ? 'Limpieza de Chasis' :
+                   t.nombre === 'limpieza_motor' ? 'Limpieza de Motor' :
+                   t.nombre.split('_').map(word =>
+                       word.charAt(0).toUpperCase() + word.slice(1)
+                   ).join(' ')
+          }))
+        : [
+            { value: 'simple_exterior', label: 'Simple Exterior' },
+            { value: 'simple', label: 'Simple (completo)' },
+            { value: 'con_cera', label: 'Con Cera (incremento)' },
+            { value: 'pulido', label: 'Pulido' },
+            { value: 'limpieza_chasis', label: 'Limpieza de Chasis' },
+            { value: 'limpieza_motor', label: 'Limpieza de Motor' }
+          ];
 
     useEffect(() => {
         setMounted(true);
@@ -65,6 +91,8 @@ export default function ListasPrecios() {
                 if (user.rol !== 'admin') {
                     router.push('/');
                 } else {
+                    cargarTiposVehiculo();
+                    cargarTiposLimpieza();
                     cargarListas();
                 }
             }
@@ -92,6 +120,54 @@ export default function ListasPrecios() {
             console.error('Error cargando listas:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const cargarTiposVehiculo = async () => {
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/tipos-vehiculo', {
+                headers: authToken ? {
+                    'Authorization': `Bearer ${authToken}`
+                } : {}
+            });
+            const data = await res.json();
+            if (res.ok && Array.isArray(data)) {
+                const tiposActivos = data
+                    .filter(t => t.activo)
+                    .sort((a, b) => a.orden - b.orden);
+                setTiposVehiculoDinamicos(tiposActivos);
+            }
+        } catch (error) {
+            console.error('Error cargando tipos de vehículo:', error);
+        }
+    };
+
+    const cargarTiposLimpieza = async () => {
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/tipos-limpieza', {
+                headers: authToken ? {
+                    'Authorization': `Bearer ${authToken}`
+                } : {}
+            });
+            const data = await res.json();
+            if (res.ok && Array.isArray(data)) {
+                const tiposActivos = data
+                    .filter(t => t.activo)
+                    .sort((a, b) => a.orden - b.orden);
+                setTiposLimpiezaDinamicos(tiposActivos);
+            }
+        } catch (error) {
+            console.error('Error cargando tipos de limpieza:', error);
         }
     };
 
@@ -694,16 +770,16 @@ export default function ListasPrecios() {
                     isOpen={modalVehiculosAbierto}
                     onClose={() => setModalVehiculosAbierto(false)}
                     onUpdate={() => {
+                        cargarTiposVehiculo();
                         cargarListas();
-                        // Aquí podrías recargar dinámicamente los tipos si lo necesitas
                     }}
                 />
                 <ModalTiposLimpieza
                     isOpen={modalLimpiezaAbierto}
                     onClose={() => setModalLimpiezaAbierto(false)}
                     onUpdate={() => {
+                        cargarTiposLimpieza();
                         cargarListas();
-                        // Aquí podrías recargar dinámicamente los tipos si lo necesitas
                     }}
                 />
             </div>
