@@ -62,16 +62,45 @@ export async function POST(request: NextRequest) {
 
         const nuevoOrden = (maxOrden[0]?.max_orden || 0) + 1;
 
-        // Crear
+        // Crear el tipo
         const resultado = await sql`
             INSERT INTO tipos_limpieza (nombre, orden)
             VALUES (${nombre.trim()}, ${nuevoOrden})
             RETURNING *
         `;
 
+        const nuevoTipo = resultado[0];
+
+        // Crear precios automáticamente para todas las listas y tipos de vehículo
+        try {
+            // Obtener todas las listas de precios
+            const listas = await sql`SELECT id FROM listas_precios`;
+            
+            // Obtener todos los tipos de vehículo activos
+            const tiposVehiculo = await sql`
+                SELECT nombre FROM tipos_vehiculo WHERE activo = true
+            `;
+
+            // Crear una fila de precio ($0) para cada combinación
+            for (const lista of listas) {
+                for (const tipoVehiculo of tiposVehiculo) {
+                    await sql`
+                        INSERT INTO precios (lista_id, tipo_vehiculo, tipo_servicio, precio)
+                        VALUES (${lista.id}, ${tipoVehiculo.nombre}, ${nuevoTipo.nombre}, 0)
+                        ON CONFLICT DO NOTHING
+                    `;
+                }
+            }
+
+            console.log(`[API tipos-limpieza POST] Creados ${listas.length * tiposVehiculo.length} precios para ${nuevoTipo.nombre}`);
+        } catch (preciosError) {
+            console.error('[API tipos-limpieza POST] Error creando precios:', preciosError);
+            // No falla todo el request si falla la creación de precios
+        }
+
         return NextResponse.json({
             success: true,
-            tipo: resultado[0]
+            tipo: nuevoTipo
         });
     } catch (error: any) {
         console.error('[API tipos-limpieza POST] Error:', error);
