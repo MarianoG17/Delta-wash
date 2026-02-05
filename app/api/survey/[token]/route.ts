@@ -2,25 +2,41 @@ import { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 
 // Esta API es PÚBLICA - no requiere autenticación
+// SMART ROUTING: Detecta si el parámetro es un slug (SaaS) o un token UUID (DeltaWash)
 export async function GET(
     request: Request,
     context: { params: Promise<{ token: string }> }
 ) {
     try {
         const params = await context.params;
-        const token = params.token;
+        const tokenOrSlug = params.token;
 
-        if (!token) {
+        if (!tokenOrSlug) {
             return NextResponse.json(
-                { error: 'Token inválido' },
+                { error: 'Parámetro inválido' },
                 { status: 400 }
             );
         }
 
-        // Conectar a BD (primero intentar DATABASE_URL, sino POSTGRES_URL de Neon)
-        const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+        // Detectar si es un UUID (token) o un slug (empresa)
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tokenOrSlug);
+        
+        if (!isUUID) {
+            // Es un slug de empresa → redirigir a mensaje de error
+            // (la ruta correcta debería ser /survey/[empresaSlug]/[token])
+            return NextResponse.json(
+                { error: 'URL inválida. El formato correcto es /survey/[empresa]/[token]' },
+                { status: 400 }
+            );
+        }
+
+        // Es un token UUID → DeltaWash Legacy
+        const token = tokenOrSlug;
+
+        // Conectar a BD (DeltaWash Legacy DATABASE_URL)
+        const connectionString = process.env.DATABASE_URL;
         if (!connectionString) {
-            console.error('No database connection string found');
+            console.error('[Survey Legacy] DATABASE_URL no configurada');
             return NextResponse.json(
                 { error: 'Configuración de base de datos no disponible' },
                 { status: 500 }
