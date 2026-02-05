@@ -20,7 +20,7 @@ export async function GET() {
         id SERIAL PRIMARY KEY,
         marca_modelo VARCHAR(100) NOT NULL,
         patente VARCHAR(20) NOT NULL,
-        tipo_limpieza VARCHAR(50) NOT NULL,
+        tipo_limpieza VARCHAR(500) NOT NULL,
         nombre_cliente VARCHAR(100) NOT NULL,
         celular VARCHAR(20) NOT NULL,
         fecha_ingreso TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
