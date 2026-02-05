@@ -365,7 +365,68 @@ export async function initializeBranchSchema(
     await sql`CREATE INDEX IF NOT EXISTS idx_precios_lista ON precios(lista_id)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_cuentas_lista_precio ON cuentas_corrientes(lista_precio_id)`;
 
-    console.log('[Neon API] ✅ Tablas creadas exitosamente');
+    // ============================================
+    // SISTEMA DE TIPOS EDITABLES
+    // ============================================
+
+    console.log('[Neon API] Creando tabla tipos_vehiculo...');
+    await sql`
+      CREATE TABLE IF NOT EXISTS tipos_vehiculo (
+        id SERIAL PRIMARY KEY,
+        nombre VARCHAR(100) NOT NULL UNIQUE,
+        orden INTEGER NOT NULL DEFAULT 0,
+        activo BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+
+    console.log('[Neon API] Creando tabla tipos_limpieza...');
+    await sql`
+      CREATE TABLE IF NOT EXISTS tipos_limpieza (
+        id SERIAL PRIMARY KEY,
+        nombre VARCHAR(100) NOT NULL UNIQUE,
+        orden INTEGER NOT NULL DEFAULT 0,
+        activo BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `;
+
+    console.log('[Neon API] Agregando columnas de tipos a tabla precios...');
+    await sql`
+      ALTER TABLE precios
+      ADD COLUMN IF NOT EXISTS tipo_vehiculo_id INTEGER REFERENCES tipos_vehiculo(id)
+    `;
+    await sql`
+      ALTER TABLE precios
+      ADD COLUMN IF NOT EXISTS tipo_limpieza_id INTEGER REFERENCES tipos_limpieza(id)
+    `;
+
+    console.log('[Neon API] Insertando tipos de vehículo por defecto...');
+    await sql`
+      INSERT INTO tipos_vehiculo (nombre, orden, activo) VALUES
+      ('auto', 1, true),
+      ('mono', 2, true),
+      ('camioneta', 3, true),
+      ('camioneta_xl', 4, true),
+      ('moto', 5, true)
+      ON CONFLICT (nombre) DO NOTHING
+    `;
+
+    console.log('[Neon API] Insertando tipos de limpieza por defecto...');
+    await sql`
+      INSERT INTO tipos_limpieza (nombre, orden, activo) VALUES
+      ('simple_exterior', 1, true),
+      ('simple', 2, true),
+      ('con_cera', 3, true),
+      ('pulido', 4, true),
+      ('limpieza_chasis', 5, true),
+      ('limpieza_motor', 6, true)
+      ON CONFLICT (nombre) DO NOTHING
+    `;
+
+    console.log('[Neon API] ✅ Tablas creadas exitosamente (incluye tipos editables)');
 
     // ============================================
     // VERIFICAR DATOS (Schema Only no requiere limpieza)
