@@ -42,7 +42,7 @@ export default function LoginSaaSPage() {
                 localStorage.setItem('userEmail', data.usuario.email);
                 localStorage.setItem('userNombre', data.usuario.nombre);
                 localStorage.setItem('userRol', data.usuario.rol);
-                
+
                 // IMPORTANTE: Marcar preferencia persistente para PWA
                 // Esto asegura que al hacer logout, la PWA recuerde que es versión SaaS
                 localStorage.setItem('preferredLoginType', 'saas');
@@ -77,7 +77,7 @@ export default function LoginSaaSPage() {
                 <div className="text-center mb-8">
                     <Link href="/home" className="inline-flex items-center space-x-2 mb-4">
                         <div className="text-4xl">🧺</div>
-                        <h1 className="text-3xl font-bold text-blue-600">lavapp</h1>
+                        <h1 className="text-3xl font-bold text-blue-600">Chasis</h1>
                     </Link>
                     <h2 className="text-2xl font-bold text-gray-900 mt-4">
                         Bienvenido de vuelta

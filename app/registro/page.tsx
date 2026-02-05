@@ -55,11 +55,11 @@ export default function RegistroPage() {
         localStorage.setItem('empresaNombre', data.empresa.nombre);
         localStorage.setItem('userId', data.usuario.id);
         localStorage.setItem('userEmail', data.usuario.email);
-        
+
         // IMPORTANTE: Marcar preferencia persistente para PWA
         // Al registrarse en SaaS, guardar esta preferencia
         localStorage.setItem('preferredLoginType', 'saas');
-        
+
         // Mostrar modal de bienvenida con info de usuarios
         setRegistroData(data);
         setShowWelcome(true);
@@ -81,7 +81,7 @@ export default function RegistroPage() {
         <div className="text-center mb-8">
           <Link href="/home" className="inline-flex items-center space-x-2 mb-4">
             <div className="text-4xl">🧺</div>
-            <h1 className="text-3xl font-bold text-blue-600">lavapp</h1>
+            <h1 className="text-3xl font-bold text-blue-600">Chasis</h1>
           </Link>
           <h2 className="text-2xl font-bold text-gray-900 mt-4">
             Empezá tu prueba gratis
@@ -233,10 +233,10 @@ export default function RegistroPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white rounded-t-2xl">
-              <h3 className="text-3xl font-bold mb-2">🎉 ¡Bienvenido a lavapp!</h3>
+              <h3 className="text-3xl font-bold mb-2">🎉 ¡Bienvenido a Chasis!</h3>
               <p className="text-blue-100">Tu cuenta {registroData.empresa.nombre} está lista</p>
             </div>
-            
+
             <div className="p-6">
               <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-6">
                 <p className="text-green-800 font-semibold mb-1">✅ Cuenta creada exitosamente</p>
@@ -317,7 +317,7 @@ export default function RegistroPage() {
                 onClick={() => router.push('/login-saas')}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-lg font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
               >
-                Empezar a usar lavapp →
+                Empezar a usar Chasis →
               </button>
             </div>
           </div>
