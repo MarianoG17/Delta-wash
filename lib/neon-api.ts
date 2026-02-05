@@ -429,6 +429,93 @@ export async function initializeBranchSchema(
     console.log('[Neon API] ✅ Tablas creadas exitosamente (incluye tipos editables)');
 
     // ============================================
+    // SISTEMA DE ENCUESTAS - Tablas
+    // ============================================
+    console.log('[Neon API] Creando tablas del sistema de encuestas...');
+    
+    // Tabla principal de encuestas
+    await sql`CREATE TABLE IF NOT EXISTS surveys (
+      id SERIAL PRIMARY KEY,
+      survey_token UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
+      visit_id INTEGER NOT NULL UNIQUE,
+      client_phone VARCHAR(20),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      sent_at TIMESTAMP,
+      responded_at TIMESTAMP
+    )`;
+
+    await sql`CREATE INDEX IF NOT EXISTS idx_surveys_token ON surveys(survey_token)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_surveys_phone ON surveys(client_phone)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_surveys_visit ON surveys(visit_id)`;
+
+    // Tabla de respuestas de encuestas
+    await sql`CREATE TABLE IF NOT EXISTS survey_responses (
+      id SERIAL PRIMARY KEY,
+      survey_id INTEGER NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+      rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+      comment TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`;
+
+    await sql`CREATE INDEX IF NOT EXISTS idx_survey_responses_survey ON survey_responses(survey_id)`;
+
+    // Tabla de beneficios generados
+    await sql`CREATE TABLE IF NOT EXISTS benefits (
+      id SERIAL PRIMARY KEY,
+      survey_id INTEGER NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
+      client_phone VARCHAR(20) NOT NULL,
+      benefit_type VARCHAR(50) NOT NULL DEFAULT '10_PERCENT_OFF',
+      status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'redeemed')),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      redeemed_at TIMESTAMP,
+      redeemed_by_user_id INTEGER,
+      notes TEXT
+    )`;
+
+    await sql`CREATE INDEX IF NOT EXISTS idx_benefits_phone_status ON benefits(client_phone, status)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_benefits_survey ON benefits(survey_id)`;
+
+    // Tabla de configuración de encuestas
+    await sql`CREATE TABLE IF NOT EXISTS configuracion_encuestas (
+      id SERIAL PRIMARY KEY,
+      google_maps_link VARCHAR(500),
+      nombre_negocio VARCHAR(100),
+      mensaje_agradecimiento TEXT DEFAULT 'Gracias por tu opinión, nos ayuda a mejorar',
+      texto_invitacion TEXT DEFAULT '¿Cómo fue tu experiencia?',
+      texto_boton_google TEXT DEFAULT 'Dejanos tu opinión en Google',
+      dias_para_responder INT DEFAULT 7,
+      enviar_automatico BOOLEAN DEFAULT TRUE,
+      requiere_calificacion_minima INT DEFAULT 4,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )`;
+
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_config_encuestas_singleton ON configuracion_encuestas ((1))`;
+
+    // Insertar configuración por defecto
+    await sql`INSERT INTO configuracion_encuestas (
+      nombre_negocio,
+      google_maps_link,
+      mensaje_agradecimiento,
+      texto_invitacion,
+      texto_boton_google,
+      dias_para_responder,
+      enviar_automatico,
+      requiere_calificacion_minima
+    ) VALUES (
+      'Mi Lavadero',
+      NULL,
+      'Gracias por tu opinión, nos ayuda a mejorar',
+      '¿Cómo fue tu experiencia con nuestro servicio?',
+      'Dejanos tu opinión en Google',
+      7,
+      TRUE,
+      4
+    ) ON CONFLICT DO NOTHING`;
+
+    console.log('[Neon API] ✅ Sistema de encuestas creado (surveys, survey_responses, benefits, configuracion_encuestas)');
+
+    // ============================================
     // VERIFICAR DATOS (Schema Only no requiere limpieza)
     // ============================================
     // HARDCODED: Mismo template ID que en createBranchForEmpresa (línea 78)
