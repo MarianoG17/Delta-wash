@@ -42,9 +42,13 @@ export async function GET(request: Request) {
 
         const survey = surveys[0];
 
-        // Obtener slug de la empresa desde BD central
-        let empresaSlug = 'lavadero'; // default fallback
+        // Generar URL según tipo de sistema
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        let surveyUrl: string;
+        
         if (empresaId) {
+            // SaaS: Obtener slug y usar nueva ruta con slug
+            let empresaSlug = 'lavadero'; // default fallback
             try {
                 const centralConnectionString = process.env.CENTRAL_DB_URL;
                 if (centralConnectionString) {
@@ -59,11 +63,11 @@ export async function GET(request: Request) {
             } catch (slugError) {
                 console.error('[get-by-visit] Error al obtener slug:', slugError);
             }
+            surveyUrl = `${baseUrl}/survey/${empresaSlug}/${survey.survey_token}`;
+        } else {
+            // DeltaWash Legacy: usar ruta vieja sin slug
+            surveyUrl = `${baseUrl}/survey/${survey.survey_token}`;
         }
-
-        // Generar URL de WhatsApp con slug
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        const surveyUrl = `${baseUrl}/survey/${empresaSlug}/${survey.survey_token}`;
 
         const whatsappMessage = `Gracias por confiar en nosotros. ¿Nos dejarías tu opinión? Son solo 10 segundos y nos ayuda a mejorar :)\n👉 ${surveyUrl}`;
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
