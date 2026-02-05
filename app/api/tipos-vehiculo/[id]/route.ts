@@ -36,26 +36,21 @@ export async function PUT(
             );
         }
 
-        // PROTECCIÓN: Verificar si el tipo ya se usó en precios o registros
-        const enUsoPrecios = await sql`
-            SELECT COUNT(*) as count
-            FROM precios
-            WHERE tipo_vehiculo = ${tipo[0].nombre}
-        `;
-
+        // PROTECCIÓN: Verificar si el tipo ya se usó en registros REALES de lavados
+        // NO bloqueamos por precios, solo por registros históricos
         const enUsoRegistros = await sql`
             SELECT COUNT(*) as count
             FROM registros
             WHERE tipo_vehiculo = ${tipo[0].nombre}
         `;
 
-        const totalUsos = parseInt(enUsoPrecios[0]?.count || '0') + parseInt(enUsoRegistros[0]?.count || '0');
+        const totalRegistros = parseInt(enUsoRegistros[0]?.count || '0');
 
-        if (totalUsos > 0) {
+        if (totalRegistros > 0) {
             return NextResponse.json(
                 {
                     error: 'No se puede editar: Este tipo ya se usó en registros históricos',
-                    detalles: `Hay ${totalUsos} registro(s) usando este tipo. Editar el nombre rompería el historial.`,
+                    detalles: `Hay ${totalRegistros} registro(s) de lavados usando este tipo. Editar el nombre rompería el historial.`,
                     sugerencia: 'Puedes agregar un nuevo tipo en lugar de editar este.'
                 },
                 { status: 400 }
