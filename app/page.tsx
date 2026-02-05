@@ -96,7 +96,8 @@ export default function Home() {
         if (typeof window !== 'undefined') {
             const user = getAuthUser();
             if (!user) {
-                router.push(getLoginUrl());
+                // Si no hay usuario logueado, redirigir a /home (landing page)
+                router.push('/home');
             } else {
                 console.log(`[App] Usuario ${user.isSaas ? 'SaaS' : 'DeltaWash legacy'} detectado`);
                 setUsername(user.nombre);
@@ -1556,24 +1557,24 @@ export default function Home() {
                                                 </div>
                                                 {/* ESTADO 1: Encuesta creada pero NO enviada */}
                                                 {surveys[registro.id] &&
-                                                 !surveys[registro.id]?.sentAt &&
-                                                 !surveys[registro.id]?.respondedAt && (
-                                                    <button
-                                                        onClick={() => enviarEncuesta(registro.id)}
-                                                        className="w-full flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 rounded-lg transition-colors text-sm"
-                                                    >
-                                                        📋 Enviar encuesta
-                                                    </button>
-                                                )}
+                                                    !surveys[registro.id]?.sentAt &&
+                                                    !surveys[registro.id]?.respondedAt && (
+                                                        <button
+                                                            onClick={() => enviarEncuesta(registro.id)}
+                                                            className="w-full flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 rounded-lg transition-colors text-sm"
+                                                        >
+                                                            📋 Enviar encuesta
+                                                        </button>
+                                                    )}
 
                                                 {/* ESTADO 2: Encuesta enviada pero NO respondida */}
                                                 {surveys[registro.id]?.sentAt &&
-                                                 !surveys[registro.id]?.respondedAt && (
-                                                    <div className="w-full flex items-center justify-center gap-2 bg-yellow-100 text-yellow-700 font-semibold py-2 rounded-lg text-sm border-2 border-yellow-300">
-                                                        <span>✅ Encuesta enviada</span>
-                                                        <span className="text-xs">(Esperando respuesta)</span>
-                                                    </div>
-                                                )}
+                                                    !surveys[registro.id]?.respondedAt && (
+                                                        <div className="w-full flex items-center justify-center gap-2 bg-yellow-100 text-yellow-700 font-semibold py-2 rounded-lg text-sm border-2 border-yellow-300">
+                                                            <span>✅ Encuesta enviada</span>
+                                                            <span className="text-xs">(Esperando respuesta)</span>
+                                                        </div>
+                                                    )}
 
                                                 {/* ESTADO 3: Encuesta respondida */}
                                                 {surveys[registro.id]?.respondedAt && (
