@@ -432,13 +432,16 @@ export async function initializeBranchSchema(
     // SISTEMA DE ENCUESTAS - Tablas
     // ============================================
     console.log('[Neon API] Creando tablas del sistema de encuestas...');
-    
+
     // Tabla principal de encuestas
     await sql`CREATE TABLE IF NOT EXISTS surveys (
       id SERIAL PRIMARY KEY,
       survey_token UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
       visit_id INTEGER NOT NULL UNIQUE,
       client_phone VARCHAR(20),
+      vehicle_marca VARCHAR(200),
+      vehicle_patente VARCHAR(20),
+      vehicle_servicio VARCHAR(300),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       sent_at TIMESTAMP,
       responded_at TIMESTAMP
@@ -714,7 +717,7 @@ export async function sincronizarUsuariosEmpresa(
       // 1. Obtener usuarios de BD Central usando driver Neon (compatible con conexiones directas)
       const { neon: neonDriver } = await import('@neondatabase/serverless');
       const centralSql = neonDriver(process.env.CENTRAL_DB_URL!);
-      
+
       const usuariosCentralResult = await centralSql`
         SELECT id, email, password_hash, nombre, rol, activo, created_at
         FROM usuarios_sistema
@@ -741,24 +744,24 @@ export async function sincronizarUsuariosEmpresa(
       // Esto maneja branches creados con schema viejo (DeltaWash legacy) vs nuevo (SaaS)
       try {
         console.log('[Sync Usuarios] 📋 Verificando schema de tabla usuarios...');
-        
+
         // Verificar si tiene la columna 'email' (indicador de schema nuevo SaaS)
         const schemaCheck = await branchSql`
           SELECT column_name
           FROM information_schema.columns
           WHERE table_name = 'usuarios' AND column_name = 'email'
         `;
-        
+
         console.log(`[Sync Usuarios] Resultado schema check: ${schemaCheck.length} columnas 'email' encontradas`);
-        
+
         if (schemaCheck.length === 0) {
           // Schema legacy detectado (tiene 'username' en vez de 'email')
           console.log('[Sync Usuarios] ⚠️ Schema LEGACY detectado - Migrando a schema SaaS...');
-          
+
           // Hacer constraint de username NULLABLE (para permitir migración)
           await branchSql`ALTER TABLE usuarios ALTER COLUMN username DROP NOT NULL`;
           console.log('[Sync Usuarios] ✓ Constraint username removido');
-          
+
           // Agregar columnas nuevas
           await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE`;
           console.log('[Sync Usuarios] ✓ Columna email agregada');
@@ -768,7 +771,7 @@ export async function sincronizarUsuariosEmpresa(
           console.log('[Sync Usuarios] ✓ Columna activo agregada');
           await branchSql`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`;
           console.log('[Sync Usuarios] ✓ Columna updated_at agregada');
-          
+
           // Renombrar password a password_legacy si existe
           try {
             await branchSql`ALTER TABLE usuarios RENAME COLUMN password TO password_legacy`;
@@ -779,7 +782,7 @@ export async function sincronizarUsuariosEmpresa(
           } catch (e) {
             console.log('[Sync Usuarios] ℹ️  Columna password ya migrada o no existe');
           }
-          
+
           console.log('[Sync Usuarios] ✅ Schema migrado de LEGACY a SaaS exitosamente');
         } else {
           console.log('[Sync Usuarios] ✅ Schema SaaS ya está actualizado');
@@ -805,9 +808,9 @@ export async function sincronizarUsuariosEmpresa(
       let usuariosCreados = 0;
       let usuariosFallidos = 0;
       const usuariosPorCrear = usuariosCentral.filter(u => !idsExistentes.has(u.id));
-      
+
       console.log(`[Sync Usuarios] Usuarios a crear: ${usuariosPorCrear.length}`);
-      
+
       for (const usuario of usuariosCentral) {
         if (idsExistentes.has(usuario.id)) {
           console.log(`[Sync Usuarios] Usuario ${usuario.id} ya existe, saltando...`);
@@ -862,7 +865,7 @@ export async function sincronizarUsuariosEmpresa(
 
     } catch (error: any) {
       console.error(`[Sync Usuarios] ❌ Intento ${intento} falló:`, error.message);
-      
+
       if (intento < maxRetries) {
         const delay = Math.pow(2, intento - 1) * 1000; // 1s, 2s, 4s
         console.log(`[Sync Usuarios] Esperando ${delay}ms antes de reintentar...`);
