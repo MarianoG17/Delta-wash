@@ -40,6 +40,13 @@ export default function ListasPrecios() {
     const [tiposVehiculoDinamicos, setTiposVehiculoDinamicos] = useState<any[]>([]);
     const [tiposLimpiezaDinamicos, setTiposLimpiezaDinamicos] = useState<any[]>([]);
 
+    // Helper function para formatear nombres de tipos
+    const formatearNombreTipo = (nombre: string): string => {
+        return nombre.split('_').map(word =>
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+    };
+
     // Fallback a valores hardcodeados si no se cargan los dinámicos
     const tiposVehiculo = tiposVehiculoDinamicos.length > 0
         ? tiposVehiculoDinamicos.map(t => ({
@@ -68,9 +75,7 @@ export default function ListasPrecios() {
                    t.nombre === 'pulido' ? 'Pulido' :
                    t.nombre === 'limpieza_chasis' ? 'Limpieza de Chasis' :
                    t.nombre === 'limpieza_motor' ? 'Limpieza de Motor' :
-                   t.nombre.split('_').map(word =>
-                       word.charAt(0).toUpperCase() + word.slice(1)
-                   ).join(' ')
+                   formatearNombreTipo(t.nombre)
           }))
         : [
             { value: 'simple_exterior', label: 'Simple Exterior' },
