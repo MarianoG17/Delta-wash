@@ -5,10 +5,11 @@ import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 // PUT - Editar tipo de vehículo
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         const empresaId = await getEmpresaIdFromToken(request);
+        const params = await context.params;
 
         const { nombre } = await request.json();
         const tipoId = parseInt(params.id);
@@ -74,10 +75,11 @@ export async function PUT(
 // DELETE - Eliminar tipo de vehículo
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         const empresaId = await getEmpresaIdFromToken(request);
+        const params = await context.params;
 
         const tipoId = parseInt(params.id);
         const sql = await getDBConnection(empresaId);
