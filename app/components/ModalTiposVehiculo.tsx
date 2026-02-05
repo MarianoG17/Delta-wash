@@ -31,7 +31,7 @@ export default function ModalTiposVehiculo({ isOpen, onClose, onUpdate }: ModalT
     const cargarTipos = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken') || localStorage.getItem('lavadero_token');
             const response = await fetch('/api/tipos-vehiculo', {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -67,7 +67,7 @@ export default function ModalTiposVehiculo({ isOpen, onClose, onUpdate }: ModalT
         }
 
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken') || localStorage.getItem('lavadero_token');
             const response = await fetch(`/api/tipos-vehiculo/${id}`, {
                 method: 'PUT',
                 headers: {
@@ -100,7 +100,7 @@ export default function ModalTiposVehiculo({ isOpen, onClose, onUpdate }: ModalT
         }
 
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken') || localStorage.getItem('lavadero_token');
             const response = await fetch('/api/tipos-vehiculo', {
                 method: 'POST',
                 headers: {
@@ -132,7 +132,7 @@ export default function ModalTiposVehiculo({ isOpen, onClose, onUpdate }: ModalT
         }
 
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken') || localStorage.getItem('lavadero_token');
             const response = await fetch(`/api/tipos-vehiculo/${id}`, {
                 method: 'DELETE',
                 headers: {
