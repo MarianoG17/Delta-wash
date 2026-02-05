@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, DollarSign, Plus, Edit, Trash2, Copy, TrendingUp } from 'lucide-react';
+import { ArrowLeft, DollarSign, Plus, Edit, Trash2, Copy, TrendingUp, Settings } from 'lucide-react';
 import { getAuthUser, getLoginUrl } from '@/lib/auth-utils';
+import ModalTiposVehiculo from '@/app/components/ModalTiposVehiculo';
+import ModalTiposLimpieza from '@/app/components/ModalTiposLimpieza';
 
 interface Precio {
     id: number;
@@ -33,6 +35,8 @@ export default function ListasPrecios() {
     const [mostrarAumento, setMostrarAumento] = useState<number | null>(null);
     const [porcentajeAumento, setPorcentajeAumento] = useState<string>('');
     const [redondear, setRedondear] = useState<boolean>(true);
+    const [modalVehiculosAbierto, setModalVehiculosAbierto] = useState(false);
+    const [modalLimpiezaAbierto, setModalLimpiezaAbierto] = useState(false);
 
     const tiposVehiculo = [
         { value: 'auto', label: '🚗 Auto' },
@@ -177,11 +181,11 @@ export default function ListasPrecios() {
                 // Parsear el key correctamente buscando coincidencia con valores conocidos
                 let tipo_vehiculo = '';
                 let tipo_servicio = '';
-                
+
                 // IMPORTANTE: Ordenar de más largo a más corto para evitar matches incorrectos
                 // Ejemplo: 'camioneta_xl' debe verificarse ANTES que 'camioneta'
                 const vehiculosOrdenados = [...tiposVehiculo].sort((a, b) => b.value.length - a.value.length);
-                
+
                 // Buscar qué tipo de vehículo coincide con el inicio del key
                 for (const vehiculo of vehiculosOrdenados) {
                     if (key.startsWith(vehiculo.value + '_')) {
@@ -191,15 +195,15 @@ export default function ListasPrecios() {
                         break;
                     }
                 }
-                
+
                 // Validar que se encontraron ambos valores
                 if (!tipo_vehiculo || !tipo_servicio) {
                     console.error(`No se pudo parsear el key: ${key}`);
                     continue;
                 }
-                
+
                 console.log(`Guardando: ${key} → vehiculo=${tipo_vehiculo}, servicio=${tipo_servicio}, precio=${valor}`);
-                
+
                 await fetch('/api/listas-precios/actualizar-precio', {
                     method: 'POST',
                     headers: {
@@ -265,7 +269,7 @@ export default function ListasPrecios() {
 
         // Determinar la fuente de precios según si está editando o no
         let preciosBase: { [key: string]: number } = {};
-        
+
         if (listaEditando === listaId) {
             // Ya está editando: usar preciosEditando actual
             preciosBase = { ...preciosEditando };
@@ -282,7 +286,7 @@ export default function ListasPrecios() {
             tiposServicio.forEach(servicio => {
                 const key = `${vehiculo.value}_${servicio.value}`;
                 const precioActual = preciosBase[key] || 0;
-                
+
                 // Solo incluir precios > 0 en el objeto (no sobrescribir con 0s)
                 if (precioActual > 0) {
                     const aumento = precioActual * (porcentaje / 100);
@@ -374,11 +378,10 @@ export default function ListasPrecios() {
                                             <button
                                                 onClick={() => guardarPrecios(lista.id)}
                                                 disabled={guardando}
-                                                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                                                    guardando
+                                                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${guardando
                                                         ? 'bg-green-400 cursor-not-allowed'
                                                         : 'bg-green-500 hover:bg-green-600'
-                                                } text-white`}
+                                                    } text-white`}
                                             >
                                                 {guardando && (
                                                     <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -394,11 +397,10 @@ export default function ListasPrecios() {
                                                     setPreciosEditando({});
                                                 }}
                                                 disabled={guardando}
-                                                className={`px-4 py-2 rounded-lg transition-colors ${
-                                                    guardando
+                                                className={`px-4 py-2 rounded-lg transition-colors ${guardando
                                                         ? 'bg-gray-400 cursor-not-allowed'
                                                         : 'bg-gray-500 hover:bg-gray-600'
-                                                } text-white`}
+                                                    } text-white`}
                                             >
                                                 Cancelar
                                             </button>
@@ -565,6 +567,32 @@ export default function ListasPrecios() {
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* Botones de gestión de tipos */}
+                            <div className="mt-6 pt-6 border-t border-gray-200">
+                                <p className="text-sm text-gray-600 mb-3 font-medium">
+                                    Gestionar tipos de vehículos y servicios:
+                                </p>
+                                <div className="flex gap-3 flex-wrap">
+                                    <button
+                                        onClick={() => setModalVehiculosAbierto(true)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors text-sm font-medium"
+                                    >
+                                        <Settings size={16} />
+                                        Gestionar Tipos de Vehículo
+                                    </button>
+                                    <button
+                                        onClick={() => setModalLimpiezaAbierto(true)}
+                                        className="flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors text-sm font-medium"
+                                    >
+                                        <Settings size={16} />
+                                        Gestionar Tipos de Limpieza
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    💡 Personaliza los tipos de vehículos y servicios según tu lavadero
+                                </p>
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -660,6 +688,24 @@ export default function ListasPrecios() {
                         </div>
                     </div>
                 )}
+
+                {/* Modales de gestión de tipos */}
+                <ModalTiposVehiculo
+                    isOpen={modalVehiculosAbierto}
+                    onClose={() => setModalVehiculosAbierto(false)}
+                    onUpdate={() => {
+                        cargarListas();
+                        // Aquí podrías recargar dinámicamente los tipos si lo necesitas
+                    }}
+                />
+                <ModalTiposLimpieza
+                    isOpen={modalLimpiezaAbierto}
+                    onClose={() => setModalLimpiezaAbierto(false)}
+                    onUpdate={() => {
+                        cargarListas();
+                        // Aquí podrías recargar dinámicamente los tipos si lo necesitas
+                    }}
+                />
             </div>
         </div>
     );
