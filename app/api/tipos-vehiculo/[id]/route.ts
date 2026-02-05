@@ -23,9 +23,9 @@ export async function PUT(
 
         const sql = await getDBConnection(empresaId);
 
-        // Verificar que el tipo existe
+        // Verificar que el tipo existe y obtener el nombre actual
         const tipo = await sql`
-            SELECT id FROM tipos_vehiculo
+            SELECT id, nombre FROM tipos_vehiculo
             WHERE id = ${tipoId}
         `;
 
@@ -33,6 +33,32 @@ export async function PUT(
             return NextResponse.json(
                 { error: 'Tipo no encontrado' },
                 { status: 404 }
+            );
+        }
+
+        // PROTECCIÓN: Verificar si el tipo ya se usó en precios o registros
+        const enUsoPrecios = await sql`
+            SELECT COUNT(*) as count
+            FROM precios
+            WHERE tipo_vehiculo = ${tipo[0].nombre}
+        `;
+
+        const enUsoRegistros = await sql`
+            SELECT COUNT(*) as count
+            FROM registros
+            WHERE tipo_vehiculo = ${tipo[0].nombre}
+        `;
+
+        const totalUsos = parseInt(enUsoPrecios[0]?.count || '0') + parseInt(enUsoRegistros[0]?.count || '0');
+
+        if (totalUsos > 0) {
+            return NextResponse.json(
+                {
+                    error: 'No se puede editar: Este tipo ya se usó en registros históricos',
+                    detalles: `Hay ${totalUsos} registro(s) usando este tipo. Editar el nombre rompería el historial.`,
+                    sugerencia: 'Puedes agregar un nuevo tipo en lugar de editar este.'
+                },
+                { status: 400 }
             );
         }
 
