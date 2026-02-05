@@ -9,33 +9,18 @@ export async function GET(request: Request) {
         const empresaId = await getEmpresaIdFromToken(request);
         const db = await getDBConnection(empresaId);
 
-        let configResult;
-
-        if (empresaId) {
-            // SaaS: Usar tenant_survey_config con empresa_id
-            configResult = await db`
-                SELECT
-                    brand_name,
-                    logo_url,
-                    google_maps_url,
-                    whatsapp_message,
-                    discount_percentage
-                FROM tenant_survey_config
-                WHERE empresa_id = ${empresaId}
-            `;
-        } else {
-            // DeltaWash Legacy: Usar survey_config (tabla global, id=1)
-            configResult = await db`
-                SELECT
-                    brand_name,
-                    logo_url,
-                    google_maps_url,
-                    whatsapp_message,
-                    discount_percentage
-                FROM survey_config
-                WHERE id = 1
-            `;
-        }
+        // SaaS: Cada branch tiene su propia tabla configuracion_encuestas
+        // Legacy: Usa la misma tabla configuracion_encuestas
+        let configResult = await db`
+            SELECT
+                nombre_negocio as brand_name,
+                google_maps_link as google_maps_url,
+                mensaje_agradecimiento as whatsapp_message,
+                dias_para_responder,
+                requiere_calificacion_minima
+            FROM configuracion_encuestas
+            LIMIT 1
+        `;
 
         const configs = Array.isArray(configResult) ? configResult : configResult.rows || [];
 
@@ -68,7 +53,6 @@ export async function GET(request: Request) {
 }
 
 // POST: Guardar/actualizar configuración de encuestas
-// Compatible con SaaS (tenant_survey_config) y DeltaWash legacy (survey_config)
 export async function POST(request: Request) {
     try {
         const empresaId = await getEmpresaIdFromToken(request);
@@ -76,73 +60,18 @@ export async function POST(request: Request) {
 
         const {
             brand_name,
-            logo_url,
             google_maps_url,
-            whatsapp_message,
-            discount_percentage
+            whatsapp_message
         } = await request.json();
 
-        // Validar porcentaje
-        if (discount_percentage < 0 || discount_percentage > 100) {
-            return NextResponse.json(
-                { error: 'El porcentaje debe estar entre 0 y 100' },
-                { status: 400 }
-            );
-        }
-
-        if (empresaId) {
-            // SaaS: Usar tenant_survey_config con empresa_id
-            // Verificar si ya existe configuración
-            const existingConfig = await db`
-                SELECT empresa_id FROM tenant_survey_config WHERE empresa_id = ${empresaId}
-            `;
-
-            const hasConfig = Array.isArray(existingConfig) ? existingConfig.length > 0 : (existingConfig.rows || []).length > 0;
-
-            if (hasConfig) {
-                // Actualizar
-                await db`
-                    UPDATE tenant_survey_config
-                    SET brand_name = ${brand_name || 'DeltaWash'},
-                        logo_url = ${logo_url || null},
-                        google_maps_url = ${google_maps_url || 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36'},
-                        whatsapp_message = ${whatsapp_message || 'Gracias por confiar en nosotros'},
-                        discount_percentage = ${discount_percentage || 10},
-                        updated_at = NOW()
-                    WHERE empresa_id = ${empresaId}
-                `;
-            } else {
-                // Insertar
-                await db`
-                    INSERT INTO tenant_survey_config (
-                        empresa_id,
-                        brand_name,
-                        logo_url,
-                        google_maps_url,
-                        whatsapp_message,
-                        discount_percentage
-                    ) VALUES (
-                        ${empresaId},
-                        ${brand_name || 'DeltaWash'},
-                        ${logo_url || null},
-                        ${google_maps_url || 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36'},
-                        ${whatsapp_message || 'Gracias por confiar en nosotros'},
-                        ${discount_percentage || 10}
-                    )
-                `;
-            }
-        } else {
-            // DeltaWash Legacy: Actualizar survey_config (siempre UPDATE, id=1)
-            await db`
-                UPDATE survey_config
-                SET brand_name = ${brand_name || 'DeltaWash'},
-                    logo_url = ${logo_url || null},
-                    google_maps_url = ${google_maps_url || 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36'},
-                    whatsapp_message = ${whatsapp_message || 'Gracias por confiar en nosotros'},
-                    discount_percentage = ${discount_percentage || 10}
-                WHERE id = 1
-            `;
-        }
+        // Actualizar configuracion_encuestas (siempre hay UNA fila por branch)
+        await db`
+            UPDATE configuracion_encuestas
+            SET nombre_negocio = ${brand_name || 'Mi Lavadero'},
+                google_maps_link = ${google_maps_url || null},
+                mensaje_agradecimiento = ${whatsapp_message || 'Gracias por tu opinión, nos ayuda a mejorar'},
+                updated_at = NOW()
+        `;
 
         return NextResponse.json({
             success: true,
