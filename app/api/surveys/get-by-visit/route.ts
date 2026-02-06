@@ -44,30 +44,10 @@ export async function GET(request: Request) {
 
         // Generar URL según tipo de sistema
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        let surveyUrl: string;
         
-        if (empresaId) {
-            // SaaS: Obtener slug y usar nueva ruta con slug
-            let empresaSlug = 'lavadero'; // default fallback
-            try {
-                const centralConnectionString = process.env.CENTRAL_DB_URL;
-                if (centralConnectionString) {
-                    const centralSql = neon(centralConnectionString);
-                    const empresaResult = await centralSql`
-                        SELECT slug FROM empresas WHERE id = ${empresaId}
-                    `;
-                    if (empresaResult.length > 0) {
-                        empresaSlug = empresaResult[0].slug;
-                    }
-                }
-            } catch (slugError) {
-                console.error('[get-by-visit] Error al obtener slug:', slugError);
-            }
-            surveyUrl = `${baseUrl}/survey/${empresaSlug}/${survey.survey_token}`;
-        } else {
-            // DeltaWash Legacy: usar ruta vieja sin slug
-            surveyUrl = `${baseUrl}/survey/${survey.survey_token}`;
-        }
+        // SIMPLIFICADO: Todos usan ruta directa /survey/[token]
+        // La API /survey/[token] ya maneja tanto Legacy como SaaS internamente
+        const surveyUrl = `${baseUrl}/survey/${survey.survey_token}`;
 
         const whatsappMessage = `Gracias por confiar en nosotros. ¿Nos dejarías tu opinión? Son solo 10 segundos y nos ayuda a mejorar :)\n👉 ${surveyUrl}`;
         const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`;
