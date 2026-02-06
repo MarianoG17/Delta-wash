@@ -155,9 +155,9 @@ export default function ReporteEncuestas() {
     };
 
     const enviarEncuesta = async (encuesta: Encuesta) => {
-        // Generar URLs con slug de empresa
+        // Generar URLs - ruta directa sin slug para compatibilidad universal
         const baseUrl = window.location.origin;
-        const surveyUrl = `${baseUrl}/survey/${empresaSlug}/${encuesta.token}`;
+        const surveyUrl = `${baseUrl}/survey/${encuesta.token}`;
         const whatsappMessage = `${config.whatsapp_message}\n👉 ${surveyUrl}`;
 
         // Formatear número de teléfono para Argentina: 549 + número sin el primer 0
