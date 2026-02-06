@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getDBConnection, getCentralDB } from '@/lib/db-saas';
+import { getDBConnection } from '@/lib/db-saas';
 import { getTokenPayload } from '@/lib/auth-middleware';
+import { neon } from '@neondatabase/serverless';
 
 export async function POST(request: Request) {
     try {
@@ -105,10 +106,11 @@ export async function POST(request: Request) {
                     // tokenPayload contiene empresaId y branchUrl si el usuario está autenticado vía SaaS
                     if (tokenPayload && tokenPayload.empresaId && tokenPayload.branchUrl) {
                         try {
-                            const centralDB = getCentralDB();
+                            // Usar neon() directamente porque CENTRAL_DB_URL es conexión directa (no pooled)
+                            const centralSql = neon(process.env.CENTRAL_DB_URL!);
                             
                             // Usar branchUrl directamente del JWT (no requiere query adicional)
-                            await centralDB`
+                            await centralSql`
                                 INSERT INTO survey_lookup (survey_token, empresa_id, branch_url)
                                 VALUES (${surveyToken}, ${tokenPayload.empresaId}, ${tokenPayload.branchUrl})
                             `;
