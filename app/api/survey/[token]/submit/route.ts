@@ -103,18 +103,23 @@ export async function POST(
                     WHERE id = ${survey.id}
                 `;
 
-                // 3. Obtener config
+                // 3. Obtener config (opcional, usar defaults si no existe)
                 let discountPercentage = 10;
                 let googleMapsUrl = 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36';
 
-                const configResult = await sql`
-                    SELECT google_maps_url, discount_percentage
-                    FROM survey_config
-                    WHERE id = 1
-                `;
-                if (configResult.length > 0) {
-                    discountPercentage = configResult[0].discount_percentage || 10;
-                    googleMapsUrl = configResult[0].google_maps_url || googleMapsUrl;
+                try {
+                    const configResult = await sql`
+                        SELECT google_maps_url, discount_percentage
+                        FROM survey_config
+                        WHERE id = 1
+                    `;
+                    if (configResult.length > 0) {
+                        discountPercentage = configResult[0].discount_percentage || 10;
+                        googleMapsUrl = configResult[0].google_maps_url || googleMapsUrl;
+                    }
+                } catch (error) {
+                    // Si no existe survey_config, usar defaults (tabla opcional)
+                    console.log('[Survey Submit SaaS] survey_config not found, using defaults');
                 }
 
                 // 4. Generar beneficio con descuento configurable
