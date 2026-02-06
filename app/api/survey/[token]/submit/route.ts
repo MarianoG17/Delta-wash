@@ -122,7 +122,7 @@ export async function POST(
                     console.log('[Survey Submit SaaS] survey_config not found, using defaults');
                 }
 
-                // 4. Generar beneficio con descuento configurable
+                // 4. Generar beneficio (sin discount_percentage en branch schema)
                 let benefitCreated = false;
                 if (survey.client_phone) {
                     await sql`
@@ -130,13 +130,11 @@ export async function POST(
                             survey_id,
                             client_phone,
                             benefit_type,
-                            discount_percentage,
                             status
                         ) VALUES (
                             ${survey.id},
                             ${survey.client_phone},
                             '10_PERCENT_OFF',
-                            ${discountPercentage},
                             'pending'
                         )
                     `;
