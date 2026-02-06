@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getDBConnection } from '@/lib/db-saas';
-import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
+import { getDBConnection, getCentralDB } from '@/lib/db-saas';
+import { getTokenPayload } from '@/lib/auth-middleware';
 
 export async function POST(request: Request) {
     try {
-        // Obtener conexión apropiada (DeltaWash o empresa específica)
-        const empresaId = await getEmpresaIdFromToken(request);
+        // Obtener token payload (contiene empresaId y branchUrl si es SaaS)
+        const tokenPayload = await getTokenPayload(request);
+        const empresaId = tokenPayload?.empresaId;
         const db = await getDBConnection(empresaId);
 
         const { id } = await request.json();
@@ -78,15 +79,20 @@ export async function POST(request: Request) {
                     
                     const reg = Array.isArray(registroCompleto) ? registroCompleto[0] : registroCompleto.rows?.[0];
                     
+                    // Generar token UUID explícitamente
+                    const surveyToken = crypto.randomUUID();
+                    
                     // Branch-per-company: sin empresa_id en la tabla
                     await db`
                         INSERT INTO surveys (
+                            survey_token,
                             visit_id,
                             client_phone,
                             vehicle_marca,
                             vehicle_patente,
                             vehicle_servicio
                         ) VALUES (
+                            ${surveyToken},
                             ${registro_actualizado.id},
                             ${registro_actualizado.celular || null},
                             ${reg?.marca_modelo || 'Vehículo'},
@@ -94,6 +100,28 @@ export async function POST(request: Request) {
                             ${reg?.tipo_limpieza || 'Servicio'}
                         )
                     `;
+                    
+                    // SOLO EN SAAS: Registrar en survey_lookup en base central
+                    // tokenPayload contiene empresaId y branchUrl si el usuario está autenticado vía SaaS
+                    if (tokenPayload && tokenPayload.empresaId && tokenPayload.branchUrl) {
+                        try {
+                            const centralDB = getCentralDB();
+                            
+                            // Usar branchUrl directamente del JWT (no requiere query adicional)
+                            await centralDB`
+                                INSERT INTO survey_lookup (survey_token, empresa_id, branch_url)
+                                VALUES (${surveyToken}, ${tokenPayload.empresaId}, ${tokenPayload.branchUrl})
+                            `;
+                            
+                            console.log(`[Survey] ✅ Registrado en survey_lookup: token=${surveyToken.substring(0,8)}... empresa=${tokenPayload.empresaId}`);
+                        } catch (lookupError) {
+                            // Log pero no fallar - Legacy no necesita survey_lookup
+                            console.error('[Survey] ⚠️ Error al registrar survey_lookup (solo afecta SaaS):', lookupError);
+                        }
+                    } else if (!tokenPayload) {
+                        // Legacy mode - no tiene token, es normal
+                        console.log('[Survey] Modo Legacy: no se registra en survey_lookup (normal)');
+                    }
                 }
             } catch (error) {
                 // Log pero no fallar el entregado
