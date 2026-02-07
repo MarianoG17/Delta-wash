@@ -26,10 +26,13 @@ export async function GET(request: Request) {
                     sr.created_at as submitted_at,
                     r.marca_modelo,
                     r.patente,
-                    r.nombre_cliente
+                    r.nombre_cliente,
+                    sb.estado as beneficio_estado,
+                    sb.fecha_canje as beneficio_fecha_canje
                 FROM surveys s
                 LEFT JOIN survey_responses sr ON sr.survey_id = s.id
                 LEFT JOIN registros_lavado r ON r.id = s.visit_id
+                LEFT JOIN survey_benefits sb ON sb.survey_id = s.id
                 ORDER BY s.created_at DESC
             `;
         } catch (queryError: any) {
@@ -101,7 +104,9 @@ export async function GET(request: Request) {
                 patente: s.patente,
                 rating: s.rating,
                 comment: s.comment,
-                status: s.responded_at ? 'respondida' : (s.sent_at ? 'disparada' : 'creada')
+                status: s.responded_at ? 'respondida' : (s.sent_at ? 'disparada' : 'creada'),
+                beneficioEstado: s.beneficio_estado,
+                beneficioFechaCanje: s.beneficio_fecha_canje
             }))
         });
 

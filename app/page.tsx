@@ -911,31 +911,35 @@ export default function Home() {
                         <div className="flex flex-wrap gap-2">
                             <Link
                                 href="/reportes"
-                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
+                                className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm relative"
                             >
                                 <TrendingUp size={16} />
                                 <span>Reportes</span>
+                                <span className="absolute -top-1 -right-1 bg-yellow-400 text-purple-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">PRO</span>
                             </Link>
                             <Link
                                 href="/reportes/encuestas"
-                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
+                                className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm relative"
                             >
                                 <MessageSquare size={16} />
                                 <span>Encuestas</span>
+                                <span className="absolute -top-1 -right-1 bg-yellow-400 text-purple-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">PRO</span>
                             </Link>
                             <Link
                                 href="/cuentas-corrientes"
-                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
+                                className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm relative"
                             >
                                 <Wallet size={16} />
                                 <span>Cuentas</span>
+                                <span className="absolute -top-1 -right-1 bg-yellow-400 text-purple-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">PRO</span>
                             </Link>
                             <Link
                                 href="/listas-precios"
-                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
+                                className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm relative"
                             >
                                 <DollarSign size={16} />
                                 <span>Precios</span>
+                                <span className="absolute -top-1 -right-1 bg-yellow-400 text-purple-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">PRO</span>
                             </Link>
                             <Link
                                 href="/usuarios"
@@ -962,10 +966,11 @@ export default function Home() {
                             {getAuthUser()?.isSaas && (
                                 <Link
                                     href="/admin/upselling"
-                                    className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm"
+                                    className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm relative"
                                 >
                                     <TrendingUp size={16} />
                                     <span>Upselling</span>
+                                    <span className="absolute -top-1 -right-1 bg-yellow-400 text-purple-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">PRO</span>
                                 </Link>
                             )}
                         </div>

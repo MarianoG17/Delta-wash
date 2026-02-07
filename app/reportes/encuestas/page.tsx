@@ -21,6 +21,8 @@ interface Encuesta {
     status: 'creada' | 'disparada' | 'respondida';
     surveyUrl?: string;
     whatsappUrl?: string;
+    beneficioEstado?: string | null;
+    beneficioFechaCanje?: string | null;
 }
 
 interface Estadisticas {
@@ -412,6 +414,9 @@ export default function ReporteEncuestas() {
                                         Comentario
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Beneficio
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Acción
                                     </th>
                                 </tr>
@@ -419,7 +424,7 @@ export default function ReporteEncuestas() {
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {encuestas.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                                             No hay encuestas registradas
                                         </td>
                                     </tr>
@@ -444,6 +449,26 @@ export default function ReporteEncuestas() {
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
                                                 {encuesta.comment || <span className="text-gray-400">Sin comentario</span>}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                {encuesta.beneficioEstado === 'canjeado' ? (
+                                                    <div>
+                                                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                                                            ✓ Canjeado
+                                                        </span>
+                                                        {encuesta.beneficioFechaCanje && (
+                                                            <div className="text-xs text-gray-600 mt-1">
+                                                                {new Date(encuesta.beneficioFechaCanje).toLocaleDateString('es-AR')}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : encuesta.beneficioEstado === 'pendiente' ? (
+                                                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
+                                                        ⏳ Pendiente
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-400 text-xs">—</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {encuesta.respondedAt ? (
