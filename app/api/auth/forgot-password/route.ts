@@ -87,7 +87,7 @@ export async function POST(request: Request) {
     `;
 
     // Construir link de reseteo
-    const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://lavapp-pi.vercel.app'}/reset-password/${token}`;
+    const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://lavapp.ar'}/reset-password/${token}`;
 
     // Enviar email con Resend
     try {
@@ -104,7 +104,7 @@ export async function POST(request: Request) {
         const resend = new Resend(process.env.RESEND_API_KEY);
 
         const result = await resend.emails.send({
-          from: 'LAVAPP <onboarding@resend.dev>', // Dominio de prueba de Resend
+          from: 'LAVAPP <noreply@lavapp.ar>',
           to: email,
           subject: 'Recuperá tu contraseña - LAVAPP',
           html: `
