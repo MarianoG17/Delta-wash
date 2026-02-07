@@ -38,7 +38,7 @@ export default function HomePage() {
           Gestión digital<br />
           <span className="text-blue-600">para tu lavadero</span>
         </h2>
-        <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
+        <p className="text-xl text-gray-800 mb-10 max-w-2xl mx-auto">
           Dejá el papel atrás. Controlá autos, turnos y estadísticas desde tu celular.
           Simple, rápido y profesional. 📱
         </p>
@@ -61,87 +61,6 @@ export default function HomePage() {
         </p>
       </section>
 
-      {/* Demo Visual - Cómo se ve la app */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-700 py-16">
-        <div className="max-w-6xl mx-auto px-4">
-          <h3 className="text-3xl font-bold text-white text-center mb-12">
-            Visualizá todos los autos en tiempo real
-          </h3>
-          <div className="bg-white rounded-2xl shadow-2xl p-8">
-            {/* Ejemplo de interface */}
-            <div className="grid md:grid-cols-3 gap-6">
-              {/* Columna En Proceso */}
-              <div className="bg-yellow-50 rounded-lg p-6 border-2 border-yellow-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-bold text-lg text-gray-900">🔄 En Proceso</h4>
-                  <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-semibold">3</span>
-                </div>
-                <div className="space-y-3">
-                  <div className="bg-white p-4 rounded-lg shadow">
-                    <div className="font-semibold text-gray-900">AA 123 BC</div>
-                    <div className="text-sm text-gray-600">Lavado Completo</div>
-                    <div className="text-xs text-gray-500 mt-1">10:30 AM</div>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg shadow">
-                    <div className="font-semibold text-gray-900">AB 456 CD</div>
-                    <div className="text-sm text-gray-600">Lavado + Encerado</div>
-                    <div className="text-xs text-gray-500 mt-1">11:15 AM</div>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg shadow">
-                    <div className="font-semibold text-gray-900">AC 789 EF</div>
-                    <div className="text-sm text-gray-600">Solo Lavado</div>
-                    <div className="text-xs text-gray-500 mt-1">12:00 PM</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Columna Listo */}
-              <div className="bg-green-50 rounded-lg p-6 border-2 border-green-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-bold text-lg text-gray-900">✅ Listo</h4>
-                  <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">2</span>
-                </div>
-                <div className="space-y-3">
-                  <div className="bg-white p-4 rounded-lg shadow">
-                    <div className="font-semibold text-gray-900">AD 111 GH</div>
-                    <div className="text-sm text-gray-600">Lavado Express</div>
-                    <div className="text-xs text-green-600 font-semibold mt-1">Completado 12:45 PM</div>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg shadow">
-                    <div className="font-semibold text-gray-900">AE 222 IJ</div>
-                    <div className="text-sm text-gray-600">Lavado + Aspirado</div>
-                    <div className="text-xs text-green-600 font-semibold mt-1">Completado 1:10 PM</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Columna Entregado */}
-              <div className="bg-gray-50 rounded-lg p-6 border-2 border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="font-bold text-lg text-gray-900">📦 Entregado</h4>
-                  <span className="bg-gray-500 text-white px-3 py-1 rounded-full text-sm font-semibold">5</span>
-                </div>
-                <div className="space-y-3">
-                  <div className="bg-white p-4 rounded-lg shadow opacity-75">
-                    <div className="font-semibold text-gray-900">AF 333 KL</div>
-                    <div className="text-sm text-gray-600">Lavado Completo</div>
-                    <div className="text-xs text-gray-500 mt-1">Entregado</div>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg shadow opacity-75">
-                    <div className="font-semibold text-gray-900">AG 444 MN</div>
-                    <div className="text-sm text-gray-600">Solo Aspirado</div>
-                    <div className="text-xs text-gray-500 mt-1">Entregado</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-6 text-center text-gray-600 text-sm">
-              👆 Control total del flujo de trabajo • Actualizaciones en tiempo real
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Demo Animado con Celular */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
@@ -149,7 +68,7 @@ export default function HomePage() {
             <h3 className="text-4xl font-bold text-gray-900 mb-4">
               Así de simple es gestionar tu lavadero
             </h3>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-800">
               Desde que ingresa un auto hasta que se entrega: todo en segundos
             </p>
           </div>
@@ -183,10 +102,10 @@ export default function HomePage() {
                           <p className="text-xs text-green-600 mt-2 font-semibold animate-pulse">✓ Cliente encontrado - datos cargados automáticamente</p>
                         </div>
                         <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3 space-y-1">
-                          <p className="text-xs text-gray-600 font-semibold mb-2">Datos del cliente:</p>
+                          <p className="text-xs text-gray-800 font-semibold mb-2">Datos del cliente:</p>
                           <p className="text-sm font-semibold text-gray-900">Juan Pérez</p>
-                          <p className="text-xs text-gray-600">Toyota Corolla</p>
-                          <p className="text-xs text-gray-600">11 2345-6789</p>
+                          <p className="text-xs text-gray-800">Toyota Corolla</p>
+                          <p className="text-xs text-gray-800">11 2345-6789</p>
                         </div>
                       </div>
                     </div>
@@ -204,7 +123,7 @@ export default function HomePage() {
                           </div>
                           <div className="bg-white p-3 rounded-lg shadow">
                             <div className="font-bold text-sm text-gray-900">AA 123 BC</div>
-                            <div className="text-xs text-gray-600">Juan Pérez</div>
+                            <div className="text-xs text-gray-800">Juan Pérez</div>
                             <div className="text-xs text-gray-500">Lavado Completo</div>
                             <div className="text-xs text-blue-600 font-semibold mt-1">$18.000</div>
                           </div>
@@ -237,7 +156,7 @@ export default function HomePage() {
                           </div>
                           <div className="bg-white p-3 rounded-lg shadow">
                             <div className="font-bold text-sm text-gray-900">AA 123 BC</div>
-                            <div className="text-xs text-gray-600">Juan Pérez</div>
+                            <div className="text-xs text-gray-800">Juan Pérez</div>
                             <div className="text-xs text-gray-500">Lavado Completo</div>
                             <div className="text-xs text-blue-600 font-semibold mt-1">$18.000</div>
                             <button className="mt-2 w-full bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold">
@@ -260,7 +179,7 @@ export default function HomePage() {
                   <div className="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">1</div>
                   <div>
                     <h4 className="font-bold text-lg text-gray-900 mb-2">Ingreso ultrarrápido</h4>
-                    <p className="text-gray-600 text-sm">
+                    <p className="text-gray-800 text-sm">
                       Escribís la patente y si el cliente ya vino antes, <strong>todos sus datos se cargan automáticamente</strong>:
                       nombre, teléfono, marca y modelo. Elegís el servicio y listo.
                     </p>
@@ -273,7 +192,7 @@ export default function HomePage() {
                   <div className="bg-yellow-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">2</div>
                   <div>
                     <h4 className="font-bold text-lg text-gray-900 mb-2">Seguimiento en tiempo real</h4>
-                    <p className="text-gray-600 text-sm">
+                    <p className="text-gray-800 text-sm">
                       El auto aparece en <strong>"En Proceso"</strong>. Con un toque lo movés a <strong>"Listo"</strong> cuando terminaste.
                       Todo visual, sin papel.
                     </p>
@@ -286,7 +205,7 @@ export default function HomePage() {
                   <div className="bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">3</div>
                   <div>
                     <h4 className="font-bold text-lg text-gray-900 mb-2">Aviso por WhatsApp</h4>
-                    <p className="text-gray-600 text-sm">
+                    <p className="text-gray-800 text-sm">
                       Cuando está listo, <strong>un botón te arma el mensaje completo</strong> con todos los datos del cliente.
                       Lo avisás en 2 segundos. Los autos entregados se guardan automáticamente en el Historial.
                     </p>
@@ -305,7 +224,7 @@ export default function HomePage() {
             <h3 className="text-4xl font-bold text-gray-900 mb-4">
               Todo lo que necesita tu lavadero
             </h3>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-800">
               Dejá de usar papel y calculadora. Modernizá tu lavadero hoy.
             </p>
           </div>
@@ -318,10 +237,10 @@ export default function HomePage() {
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">BÁSICO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Gestión de Vehículos</h4>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-800 mb-4">
                 Registrá patentes, marca, modelo y servicio. Control de estados: En Proceso → Listo → Entregado.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <ul className="space-y-2 text-sm text-gray-800">
                 <li>✓ Registro rápido de autos</li>
                 <li>✓ Autocompletado de clientes</li>
                 <li>✓ Estados visuales claros</li>
@@ -335,10 +254,10 @@ export default function HomePage() {
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">BÁSICO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Gestión de Precios</h4>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-800 mb-4">
                 Precios automáticos según tipo de vehículo y servicio. Calculadora integrada con extras.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <ul className="space-y-2 text-sm text-gray-800">
                 <li>✓ 5 tipos de vehículo (Auto, SUV, Camioneta, XL, Moto)</li>
                 <li>✓ 6 tipos de lavado</li>
                 <li>✓ Cálculo automático de precios</li>
@@ -352,10 +271,10 @@ export default function HomePage() {
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">BÁSICO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">App Móvil (PWA)</h4>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-800 mb-4">
                 Usalo desde tu celular sin instalar nada. Funciona como app nativa en iPhone y Android.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <ul className="space-y-2 text-sm text-gray-800">
                 <li>✓ Sin instalación de tienda</li>
                 <li>✓ Funciona offline</li>
                 <li>✓ Acceso instantáneo</li>
@@ -369,10 +288,10 @@ export default function HomePage() {
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">BÁSICO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Notificaciones WhatsApp</h4>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-800 mb-4">
                 Avisá a tus clientes automáticamente cuando su auto está listo con un solo click.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <ul className="space-y-2 text-sm text-gray-800">
                 <li>✓ Mensajes personalizados</li>
                 <li>✓ Un click para notificar</li>
                 <li>✓ Mejora la experiencia del cliente</li>
@@ -386,10 +305,10 @@ export default function HomePage() {
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">BÁSICO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Historial Completo</h4>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-800 mb-4">
                 Acceso a todos los registros históricos con búsqueda por patente, fecha o cliente.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <ul className="space-y-2 text-sm text-gray-800">
                 <li>✓ Búsqueda avanzada</li>
                 <li>✓ Filtros por fecha</li>
                 <li>✓ Exportar a Excel</li>
@@ -403,10 +322,10 @@ export default function HomePage() {
                 <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">PRO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Cuentas Corrientes</h4>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-800 mb-4">
                 Clientes frecuentes pueden pagar a fin de mes. Genera anticipos de pago para empresas. Control total de saldos y movimientos.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <ul className="space-y-2 text-sm text-gray-800">
                 <li>✓ Saldos actualizados automáticamente</li>
                 <li>✓ Historial de movimientos</li>
                 <li>✓ Anticipos de pago</li>
@@ -420,10 +339,10 @@ export default function HomePage() {
                 <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">PRO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Reportes y Estadísticas</h4>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-800 mb-4">
                 Visualización de cantidad de autos por día y por franja horaria. Reportes de ventas, caja diaria y estadísticas de clientes.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <ul className="space-y-2 text-sm text-gray-800">
                 <li>✓ Facturación diaria/semanal/mensual</li>
                 <li>✓ Autos por día y franja horaria</li>
                 <li>✓ Top clientes y servicios</li>
@@ -437,10 +356,10 @@ export default function HomePage() {
                 <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">PRO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Multi-usuario con Roles</h4>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-800 mb-4">
                 Accesos diferenciados: Admin (dueño) y Operadores (lavadores). Usuarios ilimitados y trazabilidad de acciones.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <ul className="space-y-2 text-sm text-gray-800">
                 <li>✓ Usuarios ilimitados</li>
                 <li>✓ Roles: Admin y Operador</li>
                 <li>✓ Trazabilidad de acciones</li>
@@ -454,10 +373,10 @@ export default function HomePage() {
                 <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">PRO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Control de Caja</h4>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-800 mb-4">
                 Reporte de caja diaria discriminado por efectivo, transferencia y cancelados.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <ul className="space-y-2 text-sm text-gray-800">
                 <li>✓ Efectivo vs Transferencias</li>
                 <li>✓ Registros anulados/cancelados</li>
                 <li>✓ Cierre de caja diario</li>
@@ -471,10 +390,10 @@ export default function HomePage() {
                 <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">PRO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Encuestas de Satisfacción</h4>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-800 mb-4">
                 Generación de links de encuestas para enviar por WhatsApp. Recibí feedback de tus clientes y mejorá la calidad del servicio.
               </p>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <ul className="space-y-2 text-sm text-gray-800">
                 <li>✓ Link listo para compartir</li>
                 <li>✓ Integración con WhatsApp</li>
                 <li>✓ Reportes de satisfacción</li>
@@ -558,7 +477,7 @@ export default function HomePage() {
             <h3 className="text-4xl font-bold text-gray-900 mb-4">
               ¿Cómo funciona?
             </h3>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-800">
               Empezá a usar LAVAPP en 3 simples pasos
             </p>
           </div>
@@ -569,7 +488,7 @@ export default function HomePage() {
                 1
               </div>
               <h4 className="text-xl font-bold mb-2">Registrate</h4>
-              <p className="text-gray-600">
+              <p className="text-gray-800">
                 Creá tu cuenta en 2 minutos. Solo necesitás un email.
               </p>
             </div>
@@ -579,7 +498,7 @@ export default function HomePage() {
                 2
               </div>
               <h4 className="text-xl font-bold mb-2">Configurá tu lavadero</h4>
-              <p className="text-gray-600">
+              <p className="text-gray-800">
                 Agregá tus precios y usuarios. Todo listo para operar.
               </p>
             </div>
@@ -589,7 +508,7 @@ export default function HomePage() {
                 3
               </div>
               <h4 className="text-xl font-bold mb-2">¡Listo!</h4>
-              <p className="text-gray-600">
+              <p className="text-gray-800">
                 Empezá a cargar autos y dejá el papel para siempre.
               </p>
             </div>
@@ -602,7 +521,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
             <h3 className="text-4xl font-bold text-gray-900 mb-4">Elegí el plan para tu lavadero</h3>
-            <p className="text-xl text-gray-600">Sin costos ocultos. Cancelá cuando quieras.</p>
+            <p className="text-xl text-gray-800">Sin costos ocultos. Cancelá cuando quieras.</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -610,13 +529,13 @@ export default function HomePage() {
             <div className="bg-white p-8 rounded-2xl shadow-xl border-2 border-blue-200 hover:shadow-2xl transition-shadow">
               <div className="text-center mb-6">
                 <h4 className="text-2xl font-bold text-gray-900 mb-2">Plan Básico</h4>
-                <p className="text-gray-600">Ideal para lavaderos pequeños</p>
+                <p className="text-gray-800">Ideal para lavaderos pequeños</p>
               </div>
               <div className="text-center mb-8">
                 <div className="text-5xl font-bold text-blue-600 mb-2">
                   $40.000
                 </div>
-                <div className="text-xl text-gray-600">
+                <div className="text-xl text-gray-800">
                   por mes
                 </div>
               </div>
@@ -671,13 +590,13 @@ export default function HomePage() {
               </div>
               <div className="text-center mb-6 mt-4">
                 <h4 className="text-2xl font-bold text-gray-900 mb-2">Plan Pro</h4>
-                <p className="text-gray-600">Para lavaderos profesionales</p>
+                <p className="text-gray-800">Para lavaderos profesionales</p>
               </div>
               <div className="text-center mb-8">
                 <div className="text-5xl font-bold text-purple-600 mb-2">
                   $65.000
                 </div>
-                <div className="text-xl text-gray-600">
+                <div className="text-xl text-gray-800">
                   por mes
                 </div>
               </div>
@@ -724,7 +643,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <p className="text-center text-gray-600 mt-8">
+          <p className="text-center text-gray-800 mt-8">
             💳 Ambos planes incluyen 15 días de prueba gratis. Sin tarjeta de crédito.
           </p>
         </div>
