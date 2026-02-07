@@ -915,7 +915,7 @@ export default function Home() {
                             >
                                 <TrendingUp size={16} />
                                 <span>Reportes</span>
-                                <span className="absolute -top-1 -right-1 bg-yellow-400 text-purple-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">PRO</span>
+                                <span className="absolute -top-0.5 -right-0.5 bg-white/20 text-white text-[8px] font-semibold px-1 py-0.5 rounded-full">PRO</span>
                             </Link>
                             <Link
                                 href="/reportes/encuestas"
@@ -923,7 +923,7 @@ export default function Home() {
                             >
                                 <MessageSquare size={16} />
                                 <span>Encuestas</span>
-                                <span className="absolute -top-1 -right-1 bg-yellow-400 text-purple-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">PRO</span>
+                                <span className="absolute -top-0.5 -right-0.5 bg-white/20 text-white text-[8px] font-semibold px-1 py-0.5 rounded-full">PRO</span>
                             </Link>
                             <Link
                                 href="/cuentas-corrientes"
@@ -931,7 +931,7 @@ export default function Home() {
                             >
                                 <Wallet size={16} />
                                 <span>Cuentas</span>
-                                <span className="absolute -top-1 -right-1 bg-yellow-400 text-purple-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">PRO</span>
+                                <span className="absolute -top-0.5 -right-0.5 bg-white/20 text-white text-[8px] font-semibold px-1 py-0.5 rounded-full">PRO</span>
                             </Link>
                             <Link
                                 href="/listas-precios"
@@ -939,7 +939,7 @@ export default function Home() {
                             >
                                 <DollarSign size={16} />
                                 <span>Precios</span>
-                                <span className="absolute -top-1 -right-1 bg-yellow-400 text-purple-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">PRO</span>
+                                <span className="absolute -top-0.5 -right-0.5 bg-white/20 text-white text-[8px] font-semibold px-1 py-0.5 rounded-full">PRO</span>
                             </Link>
                             <Link
                                 href="/usuarios"
@@ -970,7 +970,7 @@ export default function Home() {
                                 >
                                     <TrendingUp size={16} />
                                     <span>Upselling</span>
-                                    <span className="absolute -top-1 -right-1 bg-yellow-400 text-purple-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full">PRO</span>
+                                    <span className="absolute -top-0.5 -right-0.5 bg-white/20 text-white text-[8px] font-semibold px-1 py-0.5 rounded-full">PRO</span>
                                 </Link>
                             )}
                         </div>

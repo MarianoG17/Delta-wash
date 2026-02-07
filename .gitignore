@@ -35,3 +35,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+EJECUTAR_AHORA.sql  
+FIX_BRANCH_URL_LO_DE_NANO.sql 

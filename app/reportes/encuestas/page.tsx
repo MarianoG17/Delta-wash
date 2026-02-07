@@ -451,7 +451,7 @@ export default function ReporteEncuestas() {
                                                 {encuesta.comment || <span className="text-gray-400">Sin comentario</span>}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                {encuesta.beneficioEstado === 'canjeado' ? (
+                                                {encuesta.beneficioEstado === 'redeemed' ? (
                                                     <div>
                                                         <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
                                                             ✓ Canjeado
@@ -462,7 +462,7 @@ export default function ReporteEncuestas() {
                                                             </div>
                                                         )}
                                                     </div>
-                                                ) : encuesta.beneficioEstado === 'pendiente' ? (
+                                                ) : encuesta.beneficioEstado === 'pending' ? (
                                                     <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
                                                         ⏳ Pendiente
                                                     </span>

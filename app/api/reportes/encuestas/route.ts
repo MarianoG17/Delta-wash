@@ -27,12 +27,12 @@ export async function GET(request: Request) {
                     r.marca_modelo,
                     r.patente,
                     r.nombre_cliente,
-                    sb.estado as beneficio_estado,
-                    sb.fecha_canje as beneficio_fecha_canje
+                    b.status as beneficio_estado,
+                    b.redeemed_at as beneficio_fecha_canje
                 FROM surveys s
                 LEFT JOIN survey_responses sr ON sr.survey_id = s.id
                 LEFT JOIN registros_lavado r ON r.id = s.visit_id
-                LEFT JOIN survey_benefits sb ON sb.survey_id = s.id
+                LEFT JOIN benefits b ON b.survey_id = s.id
                 ORDER BY s.created_at DESC
             `;
         } catch (queryError: any) {
