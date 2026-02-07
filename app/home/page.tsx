@@ -142,223 +142,198 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Paso a Paso con Screenshots */}
+      {/* Demo Animado con Celular */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-gray-900 mb-4">
-              Mirá cómo funciona en 3 pasos
+              Así de simple es gestionar tu lavadero
             </h3>
             <p className="text-xl text-gray-600">
-              Desde que ingresa el auto hasta el reporte final
+              Desde que ingresa un auto hasta que se entrega: todo en segundos
             </p>
           </div>
 
-          {/* Paso 1: Carga de Auto */}
-          <div className="mb-20">
-            <div className="text-center mb-8">
-              <div className="inline-block bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mb-4">
-                1
-              </div>
-              <h4 className="text-2xl font-bold text-gray-900 mb-2">Carga rápida de autos</h4>
-              <p className="text-gray-600">Registrá un auto en menos de 30 segundos</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-4xl mx-auto border-2 border-gray-200">
-              <div className="bg-gradient-to-br from-blue-500 to-cyan-500 p-4 rounded-t-xl -mt-6 -mx-6 mb-6">
-                <h5 className="text-white font-bold text-lg">📋 Nuevo Registro</h5>
-              </div>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Patente</label>
-                  <input type="text" value="AA 123 BC" readOnly className="w-full px-4 py-2 border-2 border-blue-300 rounded-lg bg-blue-50 text-gray-900 font-mono font-bold" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Cliente</label>
-                  <input type="text" value="Juan Pérez" readOnly className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg bg-gray-50 text-gray-900" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Marca</label>
-                  <input type="text" value="Toyota" readOnly className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg bg-gray-50 text-gray-900" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Modelo</label>
-                  <input type="text" value="Corolla" readOnly className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg bg-gray-50 text-gray-900" />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Vehículo</label>
-                  <select className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg bg-gray-50 text-gray-900" disabled>
-                    <option>🚗 Auto</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Servicio</label>
-                  <div className="bg-gray-50 border-2 border-gray-300 rounded-lg px-4 py-2 text-gray-900">
-                    ✓ Simple + Con Cera
-                  </div>
-                </div>
-              </div>
-              <div className="mt-6 bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-700 font-semibold">Precio Total:</span>
-                  <span className="text-3xl font-bold text-blue-600">$24.000</span>
-                </div>
-              </div>
-              <button className="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg text-lg shadow-lg">
-                ✓ Registrar Auto
-              </button>
-            </div>
-          </div>
+          <div className="flex flex-col lg:flex-row items-start justify-center gap-12">
+            {/* Phone Mockup with Animation */}
+            <div className="relative flex-shrink-0">
+              {/* Hand holding phone (decorative SVG at bottom) */}
+              <div className="relative inline-block">
+                {/* Phone Frame */}
+                <div className="relative w-[320px] h-[640px] bg-gray-900 rounded-[50px] shadow-2xl p-3 border-8 border-gray-800">
+                  {/* Notch */}
+                  <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-6 bg-gray-900 rounded-b-3xl z-10"></div>
+                  
+                  {/* Screen Content - animated cycle */}
+                  <div className="relative w-full h-full bg-white rounded-[40px] overflow-hidden">
+                    {/* Step 1: Entering License Plate with Auto-fill */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-blue-50 to-white p-4 demo-step demo-step-1">
+                      <div className="bg-blue-600 text-white p-3 rounded-t-2xl -mx-4 -mt-4 mb-4">
+                        <h5 className="font-bold text-sm">📝 Nuevo Auto</h5>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">Patente</label>
+                          <input 
+                            type="text" 
+                            value="AA 123 BC" 
+                            readOnly 
+                            className="w-full px-3 py-2 border-2 border-blue-500 rounded-lg bg-blue-50 text-gray-900 font-mono font-bold text-center text-lg"
+                          />
+                          <p className="text-xs text-green-600 mt-2 font-semibold animate-pulse">✓ Cliente encontrado - datos cargados automáticamente</p>
+                        </div>
+                        <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3 space-y-1">
+                          <p className="text-xs text-gray-600 font-semibold mb-2">Datos del cliente:</p>
+                          <p className="text-sm font-semibold text-gray-900">Juan Pérez</p>
+                          <p className="text-xs text-gray-600">Toyota Corolla</p>
+                          <p className="text-xs text-gray-600">11 2345-6789</p>
+                        </div>
+                      </div>
+                    </div>
 
-          {/* Paso 2: WhatsApp */}
-          <div className="mb-20">
-            <div className="text-center mb-8">
-              <div className="inline-block bg-green-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mb-4">
-                2
-              </div>
-              <h4 className="text-2xl font-bold text-gray-900 mb-2">Notificación automática</h4>
-              <p className="text-gray-600">Un click para avisar que el auto está listo</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-4xl mx-auto border-2 border-gray-200">
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-4 rounded-t-xl -mt-6 -mx-6 mb-6">
-                <h5 className="text-white font-bold text-lg">✅ Autos Listos</h5>
-              </div>
-              <div className="space-y-4">
-                <div className="border-2 border-orange-200 bg-orange-50 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h6 className="font-bold text-lg text-gray-900">Toyota Corolla</h6>
-                      <p className="text-sm text-gray-600">Patente: <span className="font-mono font-bold">AA 123 BC</span></p>
-                      <p className="text-sm text-gray-600">Cliente: Juan Pérez</p>
+                    {/* Step 2: Car in "En Proceso" */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-blue-50 to-white p-4 demo-step demo-step-2">
+                      <div className="bg-blue-600 text-white p-3 rounded-t-2xl -mx-4 -mt-4 mb-4">
+                        <h5 className="font-bold text-sm">🚗 Panel Principal</h5>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="bg-yellow-50 rounded-lg p-3 border-2 border-yellow-200">
+                          <div className="flex items-center justify-between mb-2">
+                            <h6 className="font-bold text-sm">🔄 En Proceso</h6>
+                            <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold">1</span>
+                          </div>
+                          <div className="bg-white p-3 rounded-lg shadow">
+                            <div className="font-bold text-sm text-gray-900">AA 123 BC</div>
+                            <div className="text-xs text-gray-600">Juan Pérez</div>
+                            <div className="text-xs text-gray-500">Lavado Completo</div>
+                            <div className="text-xs text-blue-600 font-semibold mt-1">$18.000</div>
+                          </div>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-3 border-2 border-green-200 opacity-40">
+                          <div className="flex items-center justify-between">
+                            <h6 className="font-bold text-sm">✅ Listo</h6>
+                            <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">0</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="bg-orange-200 text-orange-800 px-3 py-1 rounded-full text-sm font-bold block mb-2">
-                        LISTO
-                      </span>
-                      <span className="text-lg font-bold text-blue-600">$24.000</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <button className="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg shadow-lg flex items-center justify-center gap-2">
-                      <span className="text-xl">📲</span>
-                      Enviar WhatsApp
-                    </button>
-                    <button className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg shadow-lg">
-                      ✓ Entregado
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-6 bg-green-50 border-2 border-green-200 rounded-lg p-4">
-                <p className="text-green-800 text-sm font-semibold mb-2">💬 Mensaje que recibirá el cliente:</p>
-                <div className="bg-white rounded-lg p-3 border border-green-300">
-                  <p className="text-gray-800 text-sm">
-                    Hola Juan! Tu <strong>Toyota Corolla (AA 123 BC)</strong> ya está listo. Podés pasar a retirarlo cuando quieras. ¡Gracias! 🚗✨
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Paso 3: Reportes */}
-          <div>
-            <div className="text-center mb-8">
-              <div className="inline-block bg-purple-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mb-4">
-                3
-              </div>
-              <h4 className="text-2xl font-bold text-gray-900 mb-2">Reportes automáticos</h4>
-              <p className="text-gray-600">Estadísticas completas en tiempo real</p>
-            </div>
-            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {/* Reporte de Ventas */}
-              <div className="bg-white rounded-xl shadow-xl p-6 border-2 border-gray-200">
-                <h5 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">📊</span>
-                  Ventas del Día
-                </h5>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span className="text-gray-600">Autos lavados:</span>
-                    <span className="font-bold text-xl text-blue-600">12</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span className="text-gray-600">Total efectivo:</span>
-                    <span className="font-bold text-lg text-green-600">$180.000</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                    <span className="text-gray-600">Transferencias:</span>
-                    <span className="font-bold text-lg text-blue-600">$96.000</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 bg-green-50 rounded-lg px-3 mt-3">
-                    <span className="text-gray-900 font-semibold">Total:</span>
-                    <span className="font-bold text-2xl text-green-600">$276.000</span>
+                    {/* Step 3: Moving to "Listo" */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-blue-50 to-white p-4 demo-step demo-step-3">
+                      <div className="bg-blue-600 text-white p-3 rounded-t-2xl -mx-4 -mt-4 mb-4">
+                        <h5 className="font-bold text-sm">🚗 Panel Principal</h5>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="bg-yellow-50 rounded-lg p-3 border-2 border-yellow-200 opacity-40">
+                          <div className="flex items-center justify-between">
+                            <h6 className="font-bold text-sm">🔄 En Proceso</h6>
+                            <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-bold">0</span>
+                          </div>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-3 border-2 border-green-200">
+                          <div className="flex items-center justify-between mb-2">
+                            <h6 className="font-bold text-sm">✅ Listo</h6>
+                            <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold">1</span>
+                          </div>
+                          <div className="bg-white p-3 rounded-lg shadow">
+                            <div className="font-bold text-sm text-gray-900">AA 123 BC</div>
+                            <div className="text-xs text-gray-600">Juan Pérez</div>
+                            <div className="text-xs text-gray-500">Lavado Completo</div>
+                            <div className="text-xs text-blue-600 font-semibold mt-1">$18.000</div>
+                            <button className="mt-2 w-full bg-green-500 text-white px-2 py-1 rounded text-xs font-semibold">
+                              💬 Avisar por WhatsApp
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Step 4: Delivered - Shown in Historial only */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-purple-50 to-white p-4 demo-step demo-step-4">
+                      <div className="bg-purple-600 text-white p-3 rounded-t-2xl -mx-4 -mt-4 mb-4">
+                        <h5 className="font-bold text-sm">📋 Historial</h5>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="bg-white p-3 rounded-lg shadow border border-gray-200">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="font-bold text-sm text-gray-900">AA 123 BC</div>
+                            <span className="bg-gray-500 text-white px-2 py-1 rounded text-xs font-bold">Entregado</span>
+                          </div>
+                          <div className="text-xs text-gray-600">Juan Pérez • Toyota Corolla</div>
+                          <div className="text-xs text-gray-500 mt-1">Lavado Completo</div>
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200">
+                            <span className="text-xs text-gray-600">Total:</span>
+                            <span className="text-sm font-bold text-green-600">$18.000</span>
+                          </div>
+                          <div className="text-xs text-gray-400 mt-1">Hoy 14:30</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Reporte por Horario */}
-              <div className="bg-white rounded-xl shadow-xl p-6 border-2 border-gray-200">
-                <h5 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">⏰</span>
-                  Autos por Franja Horaria
-                </h5>
-                <div className="space-y-2">
-                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-700 font-medium">9:00 - 11:00</span>
-                      <span className="font-bold text-blue-600">5 autos</span>
-                    </div>
-                    <div className="mt-1 bg-blue-200 rounded-full h-2">
-                      <div className="bg-blue-600 rounded-full h-2 w-5/6"></div>
-                    </div>
-                  </div>
-                  <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-700 font-medium">14:00 - 16:00</span>
-                      <span className="font-bold text-green-600">4 autos</span>
-                    </div>
-                    <div className="mt-1 bg-green-200 rounded-full h-2">
-                      <div className="bg-green-600 rounded-full h-2 w-4/6"></div>
-                    </div>
-                  </div>
-                  <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-700 font-medium">17:00 - 19:00</span>
-                      <span className="font-bold text-yellow-600">3 autos</span>
-                    </div>
-                    <div className="mt-1 bg-yellow-200 rounded-full h-2">
-                      <div className="bg-yellow-600 rounded-full h-2 w-3/6"></div>
-                    </div>
+                {/* Hand SVG - positioned at bottom right */}
+                <div className="absolute -bottom-16 -right-12 z-0">
+                  <svg width="180" height="200" viewBox="0 0 180 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M90 50 L90 180 L70 180 Q60 180 60 170 L60 80 Q60 70 70 70 L80 70 Q85 70 85 65 L85 30 Q85 20 95 20 Q105 20 105 30 L105 50 L90 50Z" fill="#FDB4A8" stroke="#333" strokeWidth="2"/>
+                    <path d="M105 50 L105 30 Q105 20 115 20 Q125 20 125 30 L125 60" fill="#FDB4A8" stroke="#333" strokeWidth="2"/>
+                    <path d="M125 60 L125 40 Q125 30 135 30 Q145 30 145 40 L145 70" fill="#FDB4A8" stroke="#333" strokeWidth="2"/>
+                    <path d="M145 70 L145 50 Q145 40 155 40 Q165 40 165 50 L165 90 Q165 100 155 100 L90 100" fill="#FDB4A8" stroke="#333" strokeWidth="2"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* Explanation Cards */}
+            <div className="flex-1 max-w-md space-y-6">
+              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-blue-200">
+                <div className="flex items-start gap-4">
+                  <div className="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">1</div>
+                  <div>
+                    <h4 className="font-bold text-lg text-gray-900 mb-2">Ingreso ultrarrápido</h4>
+                    <p className="text-gray-600 text-sm">
+                      Escribís la patente y si el cliente ya vino antes, <strong>todos sus datos se cargan automáticamente</strong>: 
+                      nombre, teléfono, marca y modelo. Elegís el servicio y listo.
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Top Clientes */}
-              <div className="bg-white rounded-xl shadow-xl p-6 border-2 border-gray-200">
-                <h5 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">👥</span>
-                  Top Clientes
-                </h5>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-2 bg-yellow-50 rounded-lg border border-yellow-300">
-                    <span className="text-2xl">🥇</span>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">Juan Pérez</p>
-                      <p className="text-xs text-gray-600">8 lavados este mes</p>
-                    </div>
+              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-yellow-200">
+                <div className="flex items-start gap-4">
+                  <div className="bg-yellow-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">2</div>
+                  <div>
+                    <h4 className="font-bold text-lg text-gray-900 mb-2">Seguimiento en tiempo real</h4>
+                    <p className="text-gray-600 text-sm">
+                      El auto aparece en <strong>"En Proceso"</strong>. Con un toque lo movés a <strong>"Listo"</strong> cuando terminaste.
+                      Todo visual, sin papel.
+                    </p>
                   </div>
-                  <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border border-gray-300">
-                    <span className="text-2xl">🥈</span>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">María García</p>
-                      <p className="text-xs text-gray-600">6 lavados este mes</p>
-                    </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-green-200">
+                <div className="flex items-start gap-4">
+                  <div className="bg-green-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">3</div>
+                  <div>
+                    <h4 className="font-bold text-lg text-gray-900 mb-2">Aviso por WhatsApp</h4>
+                    <p className="text-gray-600 text-sm">
+                      Cuando está listo, <strong>un botón te arma el mensaje completo</strong> con todos los datos del cliente.
+                      Lo avisás en 2 segundos.
+                    </p>
                   </div>
-                  <div className="flex items-center gap-3 p-2 bg-orange-50 rounded-lg border border-orange-300">
-                    <span className="text-2xl">🥉</span>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-900">Carlos Rodríguez</p>
-                      <p className="text-xs text-gray-600">5 lavados este mes</p>
-                    </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
+                <div className="flex items-start gap-4">
+                  <div className="bg-purple-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">4</div>
+                  <div>
+                    <h4 className="font-bold text-lg text-gray-900 mb-2">Todo queda registrado</h4>
+                    <p className="text-gray-600 text-sm">
+                      Los autos entregados se van al <strong>Historial</strong> automáticamente.
+                      Tu panel queda limpio y ordenado. Podés ver reportes cuando quieras.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -366,6 +341,39 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <style jsx>{`
+        @keyframes fadeInOut {
+          0%, 20% {
+            opacity: 1;
+            visibility: visible;
+          }
+          25%, 100% {
+            opacity: 0;
+            visibility: hidden;
+          }
+        }
+
+        .demo-step {
+          animation: fadeInOut 16s infinite;
+        }
+
+        .demo-step-1 {
+          animation-delay: 0s;
+        }
+
+        .demo-step-2 {
+          animation-delay: 4s;
+        }
+
+        .demo-step-3 {
+          animation-delay: 8s;
+        }
+
+        .demo-step-4 {
+          animation-delay: 12s;
+        }
+      `}</style>
 
       {/* Features Section */}
       <section id="features" className="bg-white py-20">
