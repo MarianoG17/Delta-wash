@@ -248,38 +248,7 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* Step 4: Delivered - Shown in Historial only */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-purple-50 to-white p-4 demo-step demo-step-4">
-                      <div className="bg-purple-600 text-white p-3 rounded-t-2xl -mx-4 -mt-4 mb-4">
-                        <h5 className="font-bold text-sm">📋 Historial</h5>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="bg-white p-3 rounded-lg shadow border border-gray-200">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="font-bold text-sm text-gray-900">AA 123 BC</div>
-                            <span className="bg-gray-500 text-white px-2 py-1 rounded text-xs font-bold">Entregado</span>
-                          </div>
-                          <div className="text-xs text-gray-600">Juan Pérez • Toyota Corolla</div>
-                          <div className="text-xs text-gray-500 mt-1">Lavado Completo</div>
-                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-200">
-                            <span className="text-xs text-gray-600">Total:</span>
-                            <span className="text-sm font-bold text-green-600">$18.000</span>
-                          </div>
-                          <div className="text-xs text-gray-400 mt-1">Hoy 14:30</div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
-                </div>
-
-                {/* Hand SVG - positioned at bottom right */}
-                <div className="absolute -bottom-16 -right-12 z-0">
-                  <svg width="180" height="200" viewBox="0 0 180 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M90 50 L90 180 L70 180 Q60 180 60 170 L60 80 Q60 70 70 70 L80 70 Q85 70 85 65 L85 30 Q85 20 95 20 Q105 20 105 30 L105 50 L90 50Z" fill="#FDB4A8" stroke="#333" strokeWidth="2" />
-                    <path d="M105 50 L105 30 Q105 20 115 20 Q125 20 125 30 L125 60" fill="#FDB4A8" stroke="#333" strokeWidth="2" />
-                    <path d="M125 60 L125 40 Q125 30 135 30 Q145 30 145 40 L145 70" fill="#FDB4A8" stroke="#333" strokeWidth="2" />
-                    <path d="M145 70 L145 50 Q145 40 155 40 Q165 40 165 50 L165 90 Q165 100 155 100 L90 100" fill="#FDB4A8" stroke="#333" strokeWidth="2" />
-                  </svg>
                 </div>
               </div>
             </div>
@@ -319,20 +288,7 @@ export default function HomePage() {
                     <h4 className="font-bold text-lg text-gray-900 mb-2">Aviso por WhatsApp</h4>
                     <p className="text-gray-600 text-sm">
                       Cuando está listo, <strong>un botón te arma el mensaje completo</strong> con todos los datos del cliente.
-                      Lo avisás en 2 segundos.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-lg p-6 border-2 border-purple-200">
-                <div className="flex items-start gap-4">
-                  <div className="bg-purple-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">4</div>
-                  <div>
-                    <h4 className="font-bold text-lg text-gray-900 mb-2">Todo queda registrado</h4>
-                    <p className="text-gray-600 text-sm">
-                      Los autos entregados se van al <strong>Historial</strong> automáticamente.
-                      Tu panel queda limpio y ordenado. Podés ver reportes cuando quieras.
+                      Lo avisás en 2 segundos. Los autos entregados se guardan automáticamente en el Historial.
                     </p>
                   </div>
                 </div>

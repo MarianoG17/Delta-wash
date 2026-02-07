@@ -26,20 +26,24 @@ body {
   }
 }
 
-/* Animated phone demo styles */
+/* Animated phone demo styles - faster 10s cycle */
 @keyframes fadeInOut {
-  0%, 20% {
+
+  0%,
+  28% {
     opacity: 1;
     visibility: visible;
   }
-  25%, 100% {
+
+  33%,
+  100% {
     opacity: 0;
     visibility: hidden;
   }
 }
 
 .demo-step {
-  animation: fadeInOut 16s infinite;
+  animation: fadeInOut 10s infinite;
 }
 
 .demo-step-1 {
@@ -47,13 +51,9 @@ body {
 }
 
 .demo-step-2 {
-  animation-delay: 4s;
+  animation-delay: 3.33s;
 }
 
 .demo-step-3 {
-  animation-delay: 8s;
-}
-
-.demo-step-4 {
-  animation-delay: 12s;
+  animation-delay: 6.66s;
 }
