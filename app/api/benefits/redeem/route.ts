@@ -21,8 +21,10 @@ export async function POST(request: Request) {
         }
 
         // Verificar que el beneficio existe y está pendiente
+        // Para SaaS: verificar empresa_id si existe
+        // Para DeltaWash: no hay empresa_id (cada branch es una empresa)
         const benefitResult = await db`
-            SELECT id, status, empresa_id
+            SELECT id, status
             FROM benefits
             WHERE id = ${benefitId}
         `;
@@ -37,14 +39,6 @@ export async function POST(request: Request) {
         }
 
         const benefit = benefits[0];
-
-        // Verificar que pertenece a esta empresa
-        if (benefit.empresa_id !== empresaId) {
-            return NextResponse.json(
-                { error: 'Beneficio no válido para esta empresa' },
-                { status: 403 }
-            );
-        }
 
         // Verificar que está pendiente
         if (benefit.status !== 'pending') {
