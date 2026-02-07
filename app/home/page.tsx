@@ -299,7 +299,7 @@ export default function HomePage() {
               <div className="bg-white rounded-xl shadow-xl p-6 border-2 border-gray-200">
                 <h5 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
                   <span className="text-2xl">⏰</span>
-                  Horarios Pico
+                  Autos por Franja Horaria
                 </h5>
                 <div className="space-y-2">
                   <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
@@ -473,12 +473,12 @@ export default function HomePage() {
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Cuentas Corrientes</h4>
               <p className="text-gray-600 mb-4">
-                Clientes frecuentes pueden pagar a fin de mes. Control total de saldos y movimientos.
+                Clientes frecuentes pueden pagar a fin de mes. Genera anticipos de pago para empresas. Control total de saldos y movimientos.
               </p>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li>✓ Saldos actualizados automáticamente</li>
                 <li>✓ Historial de movimientos</li>
-                <li>✓ Cargas y descargas de saldo</li>
+                <li>✓ Anticipos de pago</li>
               </ul>
             </div>
 
@@ -490,12 +490,12 @@ export default function HomePage() {
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Reportes y Estadísticas</h4>
               <p className="text-gray-600 mb-4">
-                Reportes de ventas, caja diaria, horarios pico y estadísticas de clientes.
+                Visualización de cantidad de autos por día y por franja horaria. Reportes de ventas, caja diaria y estadísticas de clientes.
               </p>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li>✓ Facturación diaria/semanal/mensual</li>
-                <li>✓ Análisis de horarios pico</li>
-                <li>✓ Top clientes</li>
+                <li>✓ Autos por día y franja horaria</li>
+                <li>✓ Top clientes y servicios</li>
               </ul>
             </div>
 
@@ -507,11 +507,11 @@ export default function HomePage() {
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Multi-usuario con Roles</h4>
               <p className="text-gray-600 mb-4">
-                Accesos diferenciados: Admin (dueño) y Operadores (lavadores). Control de permisos.
+                Accesos diferenciados: Admin (dueño) y Operadores (lavadores). Usuarios ilimitados y trazabilidad de acciones.
               </p>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li>✓ Usuarios ilimitados</li>
-                <li>✓ Permisos personalizados</li>
+                <li>✓ Roles: Admin y Operador</li>
                 <li>✓ Trazabilidad de acciones</li>
               </ul>
             </div>
@@ -530,6 +530,23 @@ export default function HomePage() {
                 <li>✓ Efectivo vs Transferencias</li>
                 <li>✓ Registros anulados/cancelados</li>
                 <li>✓ Cierre de caja diario</li>
+              </ul>
+            </div>
+
+            {/* Feature 10 - PRO */}
+            <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border-2 border-green-300">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-4xl">📋</div>
+                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">PRO</span>
+              </div>
+              <h4 className="text-xl font-bold mb-3 text-gray-900">Encuestas de Satisfacción</h4>
+              <p className="text-gray-600 mb-4">
+                Recibí feedback automático de tus clientes después de cada servicio. Mejorá la calidad y fidelizá clientes.
+              </p>
+              <ul className="space-y-2 text-sm text-gray-600">
+                <li>✓ Envío automático por email</li>
+                <li>✓ Reportes de satisfacción</li>
+                <li>✓ Análisis de comentarios</li>
               </ul>
             </div>
           </div>
@@ -756,7 +773,7 @@ export default function HomePage() {
                 </li>
                 <li className="flex items-start">
                   <span className="text-purple-500 mr-3 text-xl flex-shrink-0">★</span>
-                  <span><strong>Análisis de horarios</strong> pico</span>
+                  <span><strong>Autos por día</strong> y franja horaria</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-purple-500 mr-3 text-xl flex-shrink-0">★</span>
