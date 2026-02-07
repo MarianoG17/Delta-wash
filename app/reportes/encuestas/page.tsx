@@ -35,6 +35,7 @@ interface Estadisticas {
 }
 
 interface SurveyConfig {
+    enabled: boolean;
     brand_name: string;
     whatsapp_message: string;
     discount_percentage: number;
@@ -54,6 +55,7 @@ export default function ReporteEncuestas() {
     const [loadingConfig, setLoadingConfig] = useState(false);
     const [savingConfig, setSavingConfig] = useState(false);
     const [config, setConfig] = useState<SurveyConfig>({
+        enabled: true,
         brand_name: 'DeltaWash',
         whatsapp_message: 'Gracias por confiar en DeltaWash. ¿Nos dejarías tu opinión? Son solo 10 segundos y a nosotros nos ayuda a mejorar :)',
         discount_percentage: 10,
@@ -300,6 +302,33 @@ export default function ReporteEncuestas() {
                                 <h2 className="text-2xl font-bold text-gray-900">⚙️ Configuración de Encuestas</h2>
                             </div>
                             <div className="p-6 space-y-6">
+                                {/* Toggle Sistema de Encuestas */}
+                                <div className="bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <label className="text-sm font-bold text-gray-900">Sistema de Encuestas</label>
+                                            <p className="text-xs text-gray-600 mt-1">
+                                                {config.enabled
+                                                    ? 'Las encuestas se envían automáticamente después de cada lavado'
+                                                    : 'El sistema está desactivado. No se enviarán ni generarán encuestas'}
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setConfig({ ...config, enabled: !config.enabled })}
+                                            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                                                config.enabled ? 'bg-green-600' : 'bg-gray-300'
+                                            }`}
+                                        >
+                                            <span
+                                                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                                                    config.enabled ? 'translate-x-7' : 'translate-x-1'
+                                                }`}
+                                            />
+                                        </button>
+                                    </div>
+                                </div>
+
                                 {/* Nombre de marca */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">

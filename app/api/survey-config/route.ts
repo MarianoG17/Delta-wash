@@ -30,9 +30,11 @@ export async function GET(request: Request) {
                 try {
                     let configResult = await db`
                         SELECT
+                            enabled,
                             brand_name,
                             google_maps_url,
-                            discount_percentage
+                            discount_percentage,
+                            whatsapp_message
                         FROM survey_config
                         WHERE id = 1
                         LIMIT 1
@@ -41,9 +43,11 @@ export async function GET(request: Request) {
                     if (legacyConfigs.length > 0) {
                         // Mapear formato Legacy al formato esperado
                         configs = [{
+                            enabled: legacyConfigs[0].enabled !== false, // Default true si no existe
                             brand_name: legacyConfigs[0].brand_name || 'DeltaWash',
                             google_maps_url: legacyConfigs[0].google_maps_url,
-                            whatsapp_message: 'Gracias por confiar en DeltaWash. ¿Nos dejarías tu opinión? Son solo 10 segundos y a nosotros nos ayuda a mejorar :)',
+                            whatsapp_message: legacyConfigs[0].whatsapp_message || 'Gracias por confiar en DeltaWash. ¿Nos dejarías tu opinión? Son solo 10 segundos y a nosotros nos ayuda a mejorar :)',
+                            discount_percentage: legacyConfigs[0].discount_percentage || 10,
                             dias_para_responder: 7,
                             requiere_calificacion_minima: false
                         }];
@@ -61,6 +65,7 @@ export async function GET(request: Request) {
             return NextResponse.json({
                 success: true,
                 config: {
+                    enabled: true,
                     brand_name: 'DeltaWash',
                     logo_url: null,
                     google_maps_url: 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36',
@@ -81,6 +86,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
             success: true,
             config: {
+                enabled: true,
                 brand_name: 'DeltaWash',
                 logo_url: null,
                 google_maps_url: 'https://maps.app.goo.gl/AJ4h1s9e38LzLsP36',
@@ -98,6 +104,7 @@ export async function POST(request: Request) {
         const db = await getDBConnection(empresaId);
 
         const {
+            enabled,
             brand_name,
             google_maps_url,
             whatsapp_message
@@ -117,8 +124,10 @@ export async function POST(request: Request) {
             if (error?.code === '42P01') {
                 await db`
                     UPDATE survey_config
-                    SET brand_name = ${brand_name || 'DeltaWash'},
-                        google_maps_url = ${google_maps_url || null}
+                    SET enabled = ${enabled !== undefined ? enabled : true},
+                        brand_name = ${brand_name || 'DeltaWash'},
+                        google_maps_url = ${google_maps_url || null},
+                        whatsapp_message = ${whatsapp_message || 'Gracias por confiar en DeltaWash'}
                     WHERE id = 1
                 `;
             } else {
