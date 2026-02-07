@@ -82,7 +82,7 @@ export default function RegistroPage() {
         <div className="text-center mb-8">
           <Link href="/home" className="inline-flex items-center space-x-2 mb-4">
             <div className="text-4xl">🧺</div>
-            <h1 className="text-3xl font-bold text-blue-600">Chasis</h1>
+            <h1 className="text-3xl font-bold text-blue-600">LAVAPP</h1>
           </Link>
           <h2 className="text-2xl font-bold text-gray-900 mt-4">
             Empezá tu prueba gratis
@@ -234,7 +234,7 @@ export default function RegistroPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white rounded-t-2xl">
-              <h3 className="text-3xl font-bold mb-2">🎉 ¡Bienvenido a Chasis!</h3>
+              <h3 className="text-3xl font-bold mb-2">🎉 ¡Bienvenido a LAVAPP!</h3>
               <p className="text-blue-100">Tu cuenta {registroData.empresa.nombre} está lista</p>
             </div>
 
@@ -318,7 +318,7 @@ export default function RegistroPage() {
                 onClick={() => router.push('/login-saas')}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-lg font-bold text-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
               >
-                Empezar a usar Chasis →
+                Empezar a usar LAVAPP →
               </button>
             </div>
           </div>

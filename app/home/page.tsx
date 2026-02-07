@@ -8,7 +8,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <div className="text-3xl">🚗</div>
-            <h1 className="text-2xl font-bold text-blue-600">Chasis</h1>
+            <h1 className="text-2xl font-bold text-blue-600">LAVAPP</h1>
           </div>
           <div className="flex items-center space-x-4">
             <Link
@@ -573,9 +573,9 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Con Chasis */}
+            {/* Con LAVAPP */}
             <div className="bg-green-50 border-2 border-green-200 rounded-xl p-8">
-              <h4 className="text-2xl font-bold text-green-700 mb-6">✅ Con Chasis</h4>
+              <h4 className="text-2xl font-bold text-green-700 mb-6">✅ Con LAVAPP</h4>
               <ul className="space-y-4 text-gray-700">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-3 text-xl">✓</span>
@@ -611,7 +611,7 @@ export default function HomePage() {
               ¿Cómo funciona?
             </h3>
             <p className="text-xl text-gray-600">
-              Empezá a usar Chasis en 3 simples pasos
+              Empezá a usar LAVAPP en 3 simples pasos
             </p>
           </div>
 
@@ -807,7 +807,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <div className="text-3xl">🚗</div>
-                <h4 className="text-xl font-bold">Chasis</h4>
+                <h4 className="text-xl font-bold">LAVAPP</h4>
               </div>
               <p className="text-gray-400">
                 Sistema de gestión digital para lavaderos de autos
@@ -833,7 +833,7 @@ export default function HomePage() {
           </div>
 
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-            <p>© 2026 Chasis - Sistema de gestión para lavaderos de autos</p>
+            <p>© 2026 LAVAPP - Sistema de gestión para lavaderos de autos</p>
             <p className="mt-2 text-sm">
               Desarrollado en Argentina 🇦🇷 con ❤️
             </p>

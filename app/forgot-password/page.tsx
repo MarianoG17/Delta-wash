@@ -25,7 +25,7 @@ export default function ForgotPasswordPage() {
 
       if (response.ok) {
         setSuccess(true);
-        
+
         // En development, mostrar el link en consola
         if (data.resetLink) {
           console.log('🔗 Link de reseteo (DEVELOPMENT):', data.resetLink);
@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
         <div className="text-center mb-8">
           <Link href="/login-saas" className="inline-flex items-center space-x-2 mb-4">
             <div className="text-4xl">🧺</div>
-            <h1 className="text-3xl font-bold text-blue-600">Chasis</h1>
+            <h1 className="text-3xl font-bold text-blue-600">LAVAPP</h1>
           </Link>
           <h2 className="text-2xl font-bold text-gray-900 mt-4">
             ¿Olvidaste tu contraseña?
