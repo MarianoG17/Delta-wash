@@ -25,7 +25,7 @@ FOUND_SECRET=0
 
 for FILE in $FILES; do
   # Saltar archivos que no deben verificarse
-  if [[ $FILE == *"node_modules"* ]] || [[ $FILE == *".next"* ]] || [[ $FILE == *"package-lock.json"* ]] || [[ $FILE == *.md ]] || [[ $FILE == .husky/* ]]; then
+  if [[ $FILE == *"node_modules"* ]] || [[ $FILE == *".next"* ]] || [[ $FILE == *"package-lock.json"* ]] || [[ $FILE == *.md ]] || [[ $FILE == .husky/* ]] || [[ $FILE == ".env.example" ]]; then
     continue
   fi
   
