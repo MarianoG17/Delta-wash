@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createPool } from '@vercel/postgres';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { Resend } from 'resend';
 import { createAndSetupBranchForEmpresa, sincronizarUsuariosEmpresa } from '@/lib/neon-api';
 
 /**
@@ -206,9 +207,9 @@ export async function POST(request: Request) {
     // AHORA CON RETRY LOGIC para manejar problemas de timing/inicialización
     if (branchUrl) {
       console.log('[Registro] 👤 Sincronizando usuarios en branch dedicado con retry logic...');
-      
+
       const sincronizado = await sincronizarUsuariosEmpresa(empresa.id, branchUrl, 3);
-      
+
       if (sincronizado) {
         console.log(`[Registro] ✅ Usuarios sincronizados exitosamente`);
       } else {
@@ -255,6 +256,93 @@ export async function POST(request: Request) {
     const advertencia = branchUrl
       ? null
       : 'Tu cuenta requiere configuración manual de la base de datos. Contactá a soporte.';
+
+    // Enviar email de bienvenida
+    try {
+      if (process.env.RESEND_API_KEY) {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lavapp.ar';
+        
+        await resend.emails.send({
+          from: 'LAVAPP <noreply@lavapp.ar>',
+          to: email,
+          subject: '¡Bienvenido a LAVAPP! Tu cuenta está lista 🎉',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #0ea5e9; font-size: 32px; margin-bottom: 10px;">
+                  🚗 ¡Bienvenido a LAVAPP!
+                </h1>
+              </div>
+              
+              <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 20px; margin-bottom: 30px;">
+                <p style="margin: 0; font-size: 16px; color: #333;">
+                  Hola <strong>${nombreEmpresa}</strong>,
+                </p>
+                <p style="margin-top: 10px; color: #666;">
+                  Tu cuenta ha sido creada exitosamente. Ahora podés empezar a gestionar tu lavadero de forma profesional y dejar el papel atrás. 📱
+                </p>
+              </div>
+
+              <h2 style="color: #0ea5e9; font-size: 20px; margin-top: 30px;">🚀 Próximos pasos:</h2>
+              
+              <div style="margin: 20px 0;">
+                <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; margin-bottom: 15px;">
+                  <strong style="color: #0ea5e9;">1. Configurá tus precios</strong>
+                  <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">
+                    Ir a Listas de Precios y definir las tarifas de tus servicios y tipos de vehículos.
+                  </p>
+                </div>
+
+                <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px; margin-bottom: 15px;">
+                  <strong style="color: #0ea5e9;">2. Cargá tu primer auto</strong>
+                  <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">
+                    Empezá a registrar vehículos y ver cómo el sistema calcula los precios automáticamente.
+                  </p>
+                </div>
+
+                <div style="padding: 15px; background-color: #f9fafb; border-radius: 8px;">
+                  <strong style="color: #0ea5e9;">3. Explorá las funciones</strong>
+                  <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">
+                    • Historial de autos<br>
+                    • Cuenta corriente con clientes<br>
+                    • Reportes y estadísticas<br>
+                    • Encuestas de satisfacción
+                  </p>
+                </div>
+              </div>
+
+              <div style="text-align: center; margin: 40px 0;">
+                <a href="${appUrl}/home" style="display: inline-block; padding: 14px 28px; background-color: #0ea5e9; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                  Ir a mi panel →
+                </a>
+              </div>
+
+              <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 30px 0;">
+                <p style="margin: 0; color: #92400e; font-size: 14px;">
+                  <strong>💡 Periodo de prueba:</strong> Tenés 15 días para explorar todas las funciones sin costo.
+                </p>
+              </div>
+
+              <div style="text-align: center; padding: 20px 0; border-top: 1px solid #e5e7eb; margin-top: 40px;">
+                <p style="color: #666; font-size: 14px; margin-bottom: 10px;">
+                  ¿Necesitás ayuda? Respondé este email y te asistimos con gusto.
+                </p>
+                <p style="color: #999; font-size: 12px;">
+                  LAVAPP - Sistema de gestión para lavaderos de autos<br>
+                  <a href="${appUrl}" style="color: #0ea5e9; text-decoration: none;">lavapp.ar</a>
+                </p>
+              </div>
+            </div>
+          `
+        });
+
+        console.log('[Registro] ✉️ Email de bienvenida enviado a:', email);
+      }
+    } catch (emailError) {
+      // No fallar el registro si falla el email
+      console.error('[Registro] Error al enviar email de bienvenida:', emailError);
+    }
 
     // Retornar éxito con información de ambos usuarios
     return NextResponse.json({
