@@ -541,12 +541,12 @@ export default function HomePage() {
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Encuestas de Satisfacción</h4>
               <p className="text-gray-600 mb-4">
-                Recibí feedback automático de tus clientes después de cada servicio. Mejorá la calidad y fidelizá clientes.
+                Generación de links de encuestas para enviar por WhatsApp. Recibí feedback de tus clientes y mejorá la calidad del servicio.
               </p>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li>✓ Envío automático por email</li>
+                <li>✓ Link listo para compartir</li>
+                <li>✓ Integración con WhatsApp</li>
                 <li>✓ Reportes de satisfacción</li>
-                <li>✓ Análisis de comentarios</li>
               </ul>
             </div>
           </div>
