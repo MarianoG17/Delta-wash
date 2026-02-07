@@ -132,6 +132,9 @@ COMMENT ON COLUMN benefits.discount_percentage IS 'Porcentaje de descuento confi
 CREATE TABLE IF NOT EXISTS survey_config (
   id INTEGER PRIMARY KEY DEFAULT 1, -- Solo permite 1 fila
   
+  -- Estado del sistema
+  enabled BOOLEAN DEFAULT true, -- Permite activar/desactivar el sistema de encuestas
+  
   -- Branding
   brand_name VARCHAR(200) DEFAULT 'DeltaWash',
   logo_url TEXT, -- URL del logo para mostrar en encuesta pública
@@ -154,6 +157,7 @@ CREATE TABLE IF NOT EXISTS survey_config (
 );
 
 COMMENT ON TABLE survey_config IS 'Configuración global del sistema de encuestas (DeltaWash single-tenant)';
+COMMENT ON COLUMN survey_config.enabled IS 'Si es false, el sistema de encuestas está desactivado y no se enviarán ni generarán encuestas';
 COMMENT ON COLUMN survey_config.whatsapp_message IS 'Mensaje personalizable para envío de encuestas por WhatsApp';
 COMMENT ON COLUMN survey_config.discount_percentage IS 'Porcentaje de descuento para beneficios (0-100)';
 COMMENT ON COLUMN survey_config.google_maps_url IS 'URL de Google Maps para redirección automática (rating 4-5)';
