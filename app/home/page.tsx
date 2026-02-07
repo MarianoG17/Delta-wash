@@ -255,7 +255,7 @@ export default function HomePage() {
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Gestión de Precios</h4>
               <p className="text-gray-800 mb-4">
-                Precios automáticos según tipo de vehículo y servicio. Calculadora integrada con extras.
+                Precios automáticos según tipo de vehículo y servicio. Agregá servicios adicionales fácilmente.
               </p>
               <ul className="space-y-2 text-sm text-gray-800">
                 <li>✓ 5 tipos de vehículo (Auto, SUV, Camioneta, XL, Moto)</li>
@@ -397,6 +397,23 @@ export default function HomePage() {
                 <li>✓ Link listo para compartir</li>
                 <li>✓ Integración con WhatsApp</li>
                 <li>✓ Reportes de satisfacción</li>
+              </ul>
+            </div>
+
+            {/* Feature 11 - PRO */}
+            <div className="bg-gradient-to-br from-cyan-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border-2 border-cyan-300">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-4xl">💵</div>
+                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">PRO</span>
+              </div>
+              <h4 className="text-xl font-bold mb-3 text-gray-900">Upselling Inteligente</h4>
+              <p className="text-gray-800 mb-4">
+                Sugerencias automáticas de servicios adicionales según el vehículo. Aumentá tus ventas ofreciendo encerado, aspirado, limpieza de tapizados y más.
+              </p>
+              <ul className="space-y-2 text-sm text-gray-800">
+                <li>✓ Sugerencias personalizadas</li>
+                <li>✓ Incremento de ticket promedio</li>
+                <li>✓ Configuración por tipo de vehículo</li>
               </ul>
             </div>
           </div>
