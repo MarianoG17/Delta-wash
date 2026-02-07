@@ -43,7 +43,8 @@ export async function GET(request: Request) {
         const survey = surveys[0];
 
         // Generar URL según tipo de sistema
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        // Fallback a lavapp.ar en producción si la variable no está configurada
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lavapp.ar';
         
         // SIMPLIFICADO: Todos usan ruta directa /survey/[token]
         // La API /survey/[token] ya maneja tanto Legacy como SaaS internamente
