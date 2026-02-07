@@ -187,24 +187,6 @@ export default function LoginSaaSPage() {
                     </div>
                 </div>
 
-                {/* Acceso legacy (DeltaWash) */}
-                <div className="mt-6 text-center">
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                        <p className="text-sm text-gray-600 mb-2">
-                            <strong>¿Usuario de DeltaWash?</strong>
-                        </p>
-                        <p className="text-xs text-gray-500 mb-3">
-                            Si ya usabas el sistema antes, seguí usando tu acceso habitual:
-                        </p>
-                        <Link
-                            href="/"
-                            className="inline-block text-sm text-blue-600 hover:underline font-medium"
-                        >
-                            Ir al acceso de DeltaWash →
-                        </Link>
-                    </div>
-                </div>
-
                 {/* Footer */}
                 <p className="text-center text-xs text-gray-500 mt-6">
                     Al iniciar sesión, aceptás nuestros términos y condiciones
