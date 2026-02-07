@@ -163,7 +163,7 @@ export default function HomePage() {
                 <div className="relative w-[320px] h-[640px] bg-gray-900 rounded-[50px] shadow-2xl p-3 border-8 border-gray-800">
                   {/* Notch */}
                   <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-6 bg-gray-900 rounded-b-3xl z-10"></div>
-                  
+
                   {/* Screen Content - animated cycle */}
                   <div className="relative w-full h-full bg-white rounded-[40px] overflow-hidden">
                     {/* Step 1: Entering License Plate with Auto-fill */}
@@ -174,10 +174,10 @@ export default function HomePage() {
                       <div className="space-y-3">
                         <div>
                           <label className="block text-xs font-semibold text-gray-700 mb-1">Patente</label>
-                          <input 
-                            type="text" 
-                            value="AA 123 BC" 
-                            readOnly 
+                          <input
+                            type="text"
+                            value="AA 123 BC"
+                            readOnly
                             className="w-full px-3 py-2 border-2 border-blue-500 rounded-lg bg-blue-50 text-gray-900 font-mono font-bold text-center text-lg"
                           />
                           <p className="text-xs text-green-600 mt-2 font-semibold animate-pulse">✓ Cliente encontrado - datos cargados automáticamente</p>
@@ -275,10 +275,10 @@ export default function HomePage() {
                 {/* Hand SVG - positioned at bottom right */}
                 <div className="absolute -bottom-16 -right-12 z-0">
                   <svg width="180" height="200" viewBox="0 0 180 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M90 50 L90 180 L70 180 Q60 180 60 170 L60 80 Q60 70 70 70 L80 70 Q85 70 85 65 L85 30 Q85 20 95 20 Q105 20 105 30 L105 50 L90 50Z" fill="#FDB4A8" stroke="#333" strokeWidth="2"/>
-                    <path d="M105 50 L105 30 Q105 20 115 20 Q125 20 125 30 L125 60" fill="#FDB4A8" stroke="#333" strokeWidth="2"/>
-                    <path d="M125 60 L125 40 Q125 30 135 30 Q145 30 145 40 L145 70" fill="#FDB4A8" stroke="#333" strokeWidth="2"/>
-                    <path d="M145 70 L145 50 Q145 40 155 40 Q165 40 165 50 L165 90 Q165 100 155 100 L90 100" fill="#FDB4A8" stroke="#333" strokeWidth="2"/>
+                    <path d="M90 50 L90 180 L70 180 Q60 180 60 170 L60 80 Q60 70 70 70 L80 70 Q85 70 85 65 L85 30 Q85 20 95 20 Q105 20 105 30 L105 50 L90 50Z" fill="#FDB4A8" stroke="#333" strokeWidth="2" />
+                    <path d="M105 50 L105 30 Q105 20 115 20 Q125 20 125 30 L125 60" fill="#FDB4A8" stroke="#333" strokeWidth="2" />
+                    <path d="M125 60 L125 40 Q125 30 135 30 Q145 30 145 40 L145 70" fill="#FDB4A8" stroke="#333" strokeWidth="2" />
+                    <path d="M145 70 L145 50 Q145 40 155 40 Q165 40 165 50 L165 90 Q165 100 155 100 L90 100" fill="#FDB4A8" stroke="#333" strokeWidth="2" />
                   </svg>
                 </div>
               </div>
@@ -292,7 +292,7 @@ export default function HomePage() {
                   <div>
                     <h4 className="font-bold text-lg text-gray-900 mb-2">Ingreso ultrarrápido</h4>
                     <p className="text-gray-600 text-sm">
-                      Escribís la patente y si el cliente ya vino antes, <strong>todos sus datos se cargan automáticamente</strong>: 
+                      Escribís la patente y si el cliente ya vino antes, <strong>todos sus datos se cargan automáticamente</strong>:
                       nombre, teléfono, marca y modelo. Elegís el servicio y listo.
                     </p>
                   </div>
@@ -341,39 +341,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      <style jsx>{`
-        @keyframes fadeInOut {
-          0%, 20% {
-            opacity: 1;
-            visibility: visible;
-          }
-          25%, 100% {
-            opacity: 0;
-            visibility: hidden;
-          }
-        }
-
-        .demo-step {
-          animation: fadeInOut 16s infinite;
-        }
-
-        .demo-step-1 {
-          animation-delay: 0s;
-        }
-
-        .demo-step-2 {
-          animation-delay: 4s;
-        }
-
-        .demo-step-3 {
-          animation-delay: 8s;
-        }
-
-        .demo-step-4 {
-          animation-delay: 12s;
-        }
-      `}</style>
 
       {/* Features Section */}
       <section id="features" className="bg-white py-20">

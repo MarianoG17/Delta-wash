@@ -25,3 +25,35 @@ body {
     text-wrap: balance;
   }
 }
+
+/* Animated phone demo styles */
+@keyframes fadeInOut {
+  0%, 20% {
+    opacity: 1;
+    visibility: visible;
+  }
+  25%, 100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.demo-step {
+  animation: fadeInOut 16s infinite;
+}
+
+.demo-step-1 {
+  animation-delay: 0s;
+}
+
+.demo-step-2 {
+  animation-delay: 4s;
+}
+
+.demo-step-3 {
+  animation-delay: 8s;
+}
+
+.demo-step-4 {
+  animation-delay: 12s;
+}
