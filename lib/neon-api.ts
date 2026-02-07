@@ -468,15 +468,18 @@ export async function initializeBranchSchema(
       survey_id INTEGER NOT NULL REFERENCES surveys(id) ON DELETE CASCADE,
       client_phone VARCHAR(20) NOT NULL,
       benefit_type VARCHAR(50) NOT NULL DEFAULT '10_PERCENT_OFF',
+      discount_percentage INTEGER DEFAULT 10 CHECK (discount_percentage >= 0 AND discount_percentage <= 100),
       status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'redeemed')),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       redeemed_at TIMESTAMP,
+      redeemed_visit_id INTEGER REFERENCES registros_lavado(id) ON DELETE SET NULL,
       redeemed_by_user_id INTEGER,
       notes TEXT
     )`;
 
     await sql`CREATE INDEX IF NOT EXISTS idx_benefits_phone_status ON benefits(client_phone, status)`;
     await sql`CREATE INDEX IF NOT EXISTS idx_benefits_survey ON benefits(survey_id)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_benefits_redeemed_visit_id ON benefits(redeemed_visit_id)`;
 
     // Tabla de configuración de encuestas
     await sql`CREATE TABLE IF NOT EXISTS configuracion_encuestas (
