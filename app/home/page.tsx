@@ -651,136 +651,117 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Pricing - Plan Único */}
       <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h3 className="text-4xl font-bold text-gray-900 mb-4">Elegí el plan para tu lavadero</h3>
-            <p className="text-xl text-gray-800">Sin costos ocultos. Cancelá cuando quieras.</p>
+            <h3 className="text-4xl font-bold text-gray-900 mb-4">Todo lo que necesitás, un solo precio</h3>
+            <p className="text-xl text-gray-800">Sin costos ocultos. Sin funcionalidades limitadas. Sin sorpresas.</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {/* Plan Básico */}
-            <div className="bg-white p-8 rounded-2xl shadow-xl border-2 border-blue-200 hover:shadow-2xl transition-shadow">
-              <div className="text-center mb-6">
-                <h4 className="text-2xl font-bold text-gray-900 mb-2">Plan Básico</h4>
-                <p className="text-gray-800">Ideal para lavaderos pequeños</p>
-              </div>
-              <div className="text-center mb-8">
-                <div className="text-5xl font-bold text-blue-600 mb-2">
-                  $60.000
-                </div>
-                <div className="text-xl text-gray-800">
-                  por mes
-                </div>
-              </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-3 text-xl flex-shrink-0">✓</span>
-                  <span><strong>15 días</strong> de prueba gratis</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-3 text-xl flex-shrink-0">✓</span>
-                  <span>Gestión de vehículos completa</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-3 text-xl flex-shrink-0">✓</span>
-                  <span>Precios automáticos por tipo</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-3 text-xl flex-shrink-0">✓</span>
-                  <span>App móvil (PWA)</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-3 text-xl flex-shrink-0">✓</span>
-                  <span>Notificaciones por WhatsApp</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-3 text-xl flex-shrink-0">✓</span>
-                  <span>Historial y búsqueda</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-3 text-xl flex-shrink-0">✓</span>
-                  <span>Exportar a Excel</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-3 text-xl flex-shrink-0">✓</span>
-                  <span>Soporte por WhatsApp</span>
-                </li>
-              </ul>
-              <Link
-                href="/registro"
-                className="block w-full bg-blue-600 text-white px-6 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl text-center"
-              >
-                Empezar gratis
-              </Link>
-            </div>
-
-            {/* Plan Pro */}
-            <div className="bg-gradient-to-br from-purple-50 to-white p-8 rounded-2xl shadow-xl border-2 border-purple-400 hover:shadow-2xl transition-shadow relative">
+          <div className="max-w-2xl mx-auto">
+            {/* Plan Único */}
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 p-10 rounded-3xl shadow-2xl border-2 border-blue-400 relative">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="bg-purple-600 text-white px-6 py-2 rounded-full text-sm font-bold">
-                  MÁS POPULAR
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-2 rounded-full text-sm font-bold">
+                  TODO INCLUIDO
                 </span>
               </div>
-              <div className="text-center mb-6 mt-4">
-                <h4 className="text-2xl font-bold text-gray-900 mb-2">Plan Pro</h4>
-                <p className="text-gray-800">Para lavaderos profesionales</p>
+              <div className="text-center mb-6 mt-2">
+                <h4 className="text-3xl font-bold text-gray-900 mb-2">LAVAPP Profesional</h4>
+                <p className="text-lg text-gray-800">Todas las funcionalidades para tu lavadero</p>
               </div>
-              <div className="text-center mb-8">
-                <div className="text-5xl font-bold text-purple-600 mb-2">
+              <div className="text-center mb-10">
+                <div className="text-6xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
                   $85.000
                 </div>
-                <div className="text-xl text-gray-800">
+                <div className="text-2xl text-gray-800 font-medium">
                   por mes
                 </div>
+                <div className="mt-2 text-green-600 font-semibold">
+                  ✓ 15 días de prueba gratis
+                </div>
               </div>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-3 text-xl flex-shrink-0">✓</span>
-                  <span><strong>Todo lo del Plan Básico</strong></span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-purple-500 mr-3 text-xl flex-shrink-0">★</span>
-                  <span><strong>Cuentas Corrientes</strong> para clientes</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-purple-500 mr-3 text-xl flex-shrink-0">★</span>
-                  <span><strong>Reportes y Estadísticas</strong> avanzadas</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-purple-500 mr-3 text-xl flex-shrink-0">★</span>
-                  <span><strong>Multi-usuario</strong> con roles</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-purple-500 mr-3 text-xl flex-shrink-0">★</span>
-                  <span><strong>Control de Caja</strong> diario</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-purple-500 mr-3 text-xl flex-shrink-0">★</span>
-                  <span><strong>Autos por día</strong> y franja horaria</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-purple-500 mr-3 text-xl flex-shrink-0">★</span>
-                  <span><strong>Top clientes</strong> y frecuentes</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-3 text-xl flex-shrink-0">✓</span>
-                  <span>Soporte prioritario</span>
-                </li>
-              </ul>
+
+              <div className="grid md:grid-cols-2 gap-4 mb-8">
+                <div>
+                  <h5 className="font-bold text-gray-900 mb-3 flex items-center">
+                    <span className="text-blue-600 mr-2">📱</span> Gestión Completa
+                  </h5>
+                  <ul className="space-y-2">
+                    <li className="flex items-start text-sm">
+                      <span className="text-green-500 mr-2 flex-shrink-0">✓</span>
+                      <span>Carga y seguimiento de vehículos</span>
+                    </li>
+                    <li className="flex items-start text-sm">
+                      <span className="text-green-500 mr-2 flex-shrink-0">✓</span>
+                      <span>Listas de precios personalizadas</span>
+                    </li>
+                    <li className="flex items-start text-sm">
+                      <span className="text-green-500 mr-2 flex-shrink-0">✓</span>
+                      <span>App móvil instalable (PWA)</span>
+                    </li>
+                    <li className="flex items-start text-sm">
+                      <span className="text-green-500 mr-2 flex-shrink-0">✓</span>
+                      <span>Notificaciones WhatsApp automáticas</span>
+                    </li>
+                    <li className="flex items-start text-sm">
+                      <span className="text-green-500 mr-2 flex-shrink-0">✓</span>
+                      <span>Historial completo y búsqueda</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h5 className="font-bold text-gray-900 mb-3 flex items-center">
+                    <span className="text-purple-600 mr-2">⭐</span> Funciones Avanzadas
+                  </h5>
+                  <ul className="space-y-2">
+                    <li className="flex items-start text-sm">
+                      <span className="text-green-500 mr-2 flex-shrink-0">✓</span>
+                      <span>Cuentas corrientes para clientes</span>
+                    </li>
+                    <li className="flex items-start text-sm">
+                      <span className="text-green-500 mr-2 flex-shrink-0">✓</span>
+                      <span>Multi-usuario con roles y permisos</span>
+                    </li>
+                    <li className="flex items-start text-sm">
+                      <span className="text-green-500 mr-2 flex-shrink-0">✓</span>
+                      <span>Reportes y estadísticas detalladas</span>
+                    </li>
+                    <li className="flex items-start text-sm">
+                      <span className="text-green-500 mr-2 flex-shrink-0">✓</span>
+                      <span>Encuestas de satisfacción y beneficios</span>
+                    </li>
+                    <li className="flex items-start text-sm">
+                      <span className="text-green-500 mr-2 flex-shrink-0">✓</span>
+                      <span>Exportar datos a Excel</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
               <Link
                 href="/registro"
-                className="block w-full bg-purple-600 text-white px-6 py-4 rounded-lg text-lg font-semibold hover:bg-purple-700 transition-all shadow-lg hover:shadow-xl text-center"
+                className="block w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-5 rounded-xl text-xl font-bold hover:from-blue-700 hover:to-purple-700 transition-all shadow-xl hover:shadow-2xl text-center transform hover:scale-105"
               >
-                Empezar gratis
+                Empezar gratis por 15 días
               </Link>
+
+              <p className="text-center text-sm text-gray-800 mt-4">
+                💳 Sin tarjeta de crédito. Cancelá cuando quieras.
+              </p>
             </div>
           </div>
 
-          <p className="text-center text-gray-800 mt-8">
-            💳 Ambos planes incluyen 15 días de prueba gratis. Sin tarjeta de crédito.
-          </p>
+          <div className="mt-12 text-center">
+            <p className="text-gray-800 text-lg mb-2">
+              <strong>¿Necesitás un descuento especial?</strong>
+            </p>
+            <p className="text-gray-800">
+              Contactanos por WhatsApp y hablamos de tu caso particular.
+            </p>
+          </div>
         </div>
       </section>
 

@@ -26,16 +26,16 @@ body {
   }
 }
 
-/* Animated phone demo styles - 8s cycle with 5 steps */
+/* Animated phone demo styles - 10.5s cycle with 5 steps */
 @keyframes fadeInOut {
 
   0%,
-  30% {
+  45% {
     opacity: 1;
     visibility: visible;
   }
 
-  35%,
+  50%,
   100% {
     opacity: 0;
     visibility: hidden;
@@ -43,7 +43,7 @@ body {
 }
 
 .demo-step {
-  animation: fadeInOut 8s infinite;
+  animation: fadeInOut 10.5s infinite;
 }
 
 .demo-step-1 {
@@ -51,19 +51,19 @@ body {
 }
 
 .demo-step-2 {
-  animation-delay: 2.5s;
+  animation-delay: 5s;
 }
 
 .demo-step-3 {
-  animation-delay: 4s;
+  animation-delay: 6.5s;
 }
 
 .demo-step-4 {
-  animation-delay: 5.5s;
+  animation-delay: 8s;
 }
 
 .demo-step-5 {
-  animation-delay: 7s;
+  animation-delay: 9.5s;
 }
 
 /* Typing effect for license plate */
