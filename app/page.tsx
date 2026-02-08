@@ -50,7 +50,7 @@ export default function Home() {
     const [mounted, setMounted] = useState(false);
     const [preciosDinamicos, setPreciosDinamicos] = useState<any>(null);
     const [empresaNombre, setEmpresaNombre] = useState<string>('DeltaWash');
-    
+
     // Estados para tipos dinámicos
     const [tiposVehiculoDinamicos, setTiposVehiculoDinamicos] = useState<any[]>([]);
     const [tiposLimpiezaDinamicos, setTiposLimpiezaDinamicos] = useState<any[]>([]);
@@ -911,35 +911,31 @@ export default function Home() {
                         <div className="flex flex-wrap gap-2">
                             <Link
                                 href="/reportes"
-                                className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm relative"
+                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
                             >
                                 <TrendingUp size={16} />
                                 <span>Reportes</span>
-                                <span className="absolute -top-0.5 -right-0.5 bg-white/20 text-white text-[8px] font-semibold px-1 py-0.5 rounded-full">PRO</span>
                             </Link>
                             <Link
                                 href="/reportes/encuestas"
-                                className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm relative"
+                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
                             >
                                 <MessageSquare size={16} />
                                 <span>Encuestas</span>
-                                <span className="absolute -top-0.5 -right-0.5 bg-white/20 text-white text-[8px] font-semibold px-1 py-0.5 rounded-full">PRO</span>
                             </Link>
                             <Link
                                 href="/cuentas-corrientes"
-                                className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm relative"
+                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
                             >
                                 <Wallet size={16} />
                                 <span>Cuentas</span>
-                                <span className="absolute -top-0.5 -right-0.5 bg-white/20 text-white text-[8px] font-semibold px-1 py-0.5 rounded-full">PRO</span>
                             </Link>
                             <Link
                                 href="/listas-precios"
-                                className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm relative"
+                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
                             >
                                 <DollarSign size={16} />
                                 <span>Precios</span>
-                                <span className="absolute -top-0.5 -right-0.5 bg-white/20 text-white text-[8px] font-semibold px-1 py-0.5 rounded-full">PRO</span>
                             </Link>
                             <Link
                                 href="/usuarios"
@@ -966,11 +962,10 @@ export default function Home() {
                             {getAuthUser()?.isSaas && (
                                 <Link
                                     href="/admin/upselling"
-                                    className="flex items-center gap-2 px-3 py-2 bg-purple-500/90 hover:bg-purple-600 text-white rounded-lg transition-all text-sm relative"
+                                    className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
                                 >
                                     <TrendingUp size={16} />
                                     <span>Upselling</span>
-                                    <span className="absolute -top-0.5 -right-0.5 bg-white/20 text-white text-[8px] font-semibold px-1 py-0.5 rounded-full">PRO</span>
                                 </Link>
                             )}
                         </div>
@@ -1088,11 +1083,11 @@ export default function Home() {
                                         tiposVehiculoDinamicos.map((tipo) => (
                                             <option key={tipo.id} value={tipo.nombre}>
                                                 {tipo.nombre === 'auto' ? 'Auto' :
-                                                 tipo.nombre === 'mono' ? 'Mono (SUV)' :
-                                                 tipo.nombre === 'camioneta' ? 'Camioneta' :
-                                                 tipo.nombre === 'camioneta_xl' ? 'Camioneta XL' :
-                                                 tipo.nombre === 'moto' ? 'Moto' :
-                                                 tipo.nombre.toUpperCase()}
+                                                    tipo.nombre === 'mono' ? 'Mono (SUV)' :
+                                                        tipo.nombre === 'camioneta' ? 'Camioneta' :
+                                                            tipo.nombre === 'camioneta_xl' ? 'Camioneta XL' :
+                                                                tipo.nombre === 'moto' ? 'Moto' :
+                                                                    tipo.nombre.toUpperCase()}
                                             </option>
                                         ))
                                     ) : (
@@ -1121,13 +1116,13 @@ export default function Home() {
                                         { nombre: 'limpieza_motor', id: 6 },
                                     ]).map((tipo) => {
                                         const displayName = tipo.nombre === 'simple_exterior' ? 'Simple Exterior (solo por fuera)' :
-                                                          tipo.nombre === 'simple' ? 'Simple' :
-                                                          tipo.nombre === 'con_cera' ? 'Con Cera' :
-                                                          tipo.nombre === 'pulido' ? 'Pulido' :
-                                                          tipo.nombre === 'limpieza_chasis' ? 'Limpieza de Chasis' :
-                                                          tipo.nombre === 'limpieza_motor' ? 'Limpieza de Motor' :
-                                                          formatearNombreTipo(tipo.nombre);
-                                        
+                                            tipo.nombre === 'simple' ? 'Simple' :
+                                                tipo.nombre === 'con_cera' ? 'Con Cera' :
+                                                    tipo.nombre === 'pulido' ? 'Pulido' :
+                                                        tipo.nombre === 'limpieza_chasis' ? 'Limpieza de Chasis' :
+                                                            tipo.nombre === 'limpieza_motor' ? 'Limpieza de Motor' :
+                                                                formatearNombreTipo(tipo.nombre);
+
                                         return (
                                             <label key={tipo.id} className="flex items-center gap-2 cursor-pointer">
                                                 <input
