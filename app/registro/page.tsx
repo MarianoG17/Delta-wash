@@ -126,7 +126,7 @@ export default function RegistroPage() {
                 value={formData.contacto_nombre}
                 onChange={(e) => setFormData({ ...formData, contacto_nombre: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="Ej: Juan Pérez"
+                placeholder="Ej: Carlos Rodríguez"
                 required
               />
             </div>
@@ -141,7 +141,7 @@ export default function RegistroPage() {
                 value={formData.telefono}
                 onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="Ej: 3815123456"
+                placeholder="Ej: 381-4567890"
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -159,7 +159,7 @@ export default function RegistroPage() {
                 value={formData.direccion}
                 onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="Ej: Av. Siempreviva 742, Springfield"
+                placeholder="Ej: Av. Mate de Luna 1750, Tucumán"
                 required
               />
             </div>
