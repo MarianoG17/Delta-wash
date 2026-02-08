@@ -1,19 +1,26 @@
 import { NextResponse } from 'next/server';
-import { getDBConnection } from '@/lib/db-saas';
+import { neon } from '@neondatabase/serverless';
 
 export async function GET(request: Request) {
   try {
-    const db = await getDBConnection();
+    if (!process.env.CENTRAL_DB_URL) {
+      return NextResponse.json(
+        { error: 'Base de datos central no configurada' },
+        { status: 500 }
+      );
+    }
+
+    const sql = neon(process.env.CENTRAL_DB_URL);
 
     // Contar branches activos (empresas con neon_branch_id)
-    const result = await db.get(`
+    const result = await sql`
       SELECT COUNT(*) as total
       FROM empresas
       WHERE neon_branch_id IS NOT NULL
-    `);
+    `;
 
     return NextResponse.json({
-      total: result?.total || 0,
+      total: Number(result[0]?.total) || 0,
       limit: 10 // Límite de Neon en plan gratuito
     });
   } catch (error) {

@@ -1,14 +1,22 @@
 import { NextResponse } from 'next/server';
-import { getDBConnection } from '@/lib/db-saas';
+import { neon } from '@neondatabase/serverless';
 import { deleteBranch } from '@/lib/neon-api';
 
 // GET: Obtener todas las empresas
 export async function GET(request: Request) {
     try {
-        const db = await getDBConnection();
+        if (!process.env.CENTRAL_DB_URL) {
+            console.error('❌ CENTRAL_DB_URL no está configurada');
+            return NextResponse.json(
+                { error: 'Base de datos central no configurada' },
+                { status: 500 }
+            );
+        }
 
-        const empresas = await db.all(`
-      SELECT 
+        const sql = neon(process.env.CENTRAL_DB_URL);
+
+        const empresas = await sql`
+      SELECT
         id,
         nombre,
         email,
@@ -21,7 +29,7 @@ export async function GET(request: Request) {
         nota_descuento
       FROM empresas
       ORDER BY created_at DESC
-    `);
+    `;
 
         return NextResponse.json({ empresas });
     } catch (error) {
@@ -51,51 +59,27 @@ export async function PUT(request: Request) {
             );
         }
 
-        const db = await getDBConnection();
-
-        // Primero verificar si las columnas existen
-        const tableInfo = await db.all(`PRAGMA table_info(empresas)`);
-        const columns = tableInfo.map((col: any) => col.name);
-
-        const hasPrecioColumns = columns.includes('precio_mensual');
-
-        if (!hasPrecioColumns) {
-            // Las columnas no existen, solo actualizar trial_end_date
-            if (trial_end_date) {
-                await db.run(
-                    `UPDATE empresas 
-           SET trial_end_date = ? 
-           WHERE id = ?`,
-                    [trial_end_date, empresa_id]
-                );
-            }
-
-            return NextResponse.json({
-                success: true,
-                message: 'Trial actualizado (columnas de precio pendientes de migración)'
-            });
+        if (!process.env.CENTRAL_DB_URL) {
+            return NextResponse.json(
+                { error: 'Base de datos central no configurada' },
+                { status: 500 }
+            );
         }
+
+        const sql = neon(process.env.CENTRAL_DB_URL);
 
         // Calcular precio final
         const precio_final = precio_mensual * (1 - descuento_porcentaje / 100);
 
-        await db.run(
-            `UPDATE empresas 
-       SET precio_mensual = ?,
-           descuento_porcentaje = ?,
-           precio_final = ?,
-           nota_descuento = ?,
-           trial_end_date = ?
-       WHERE id = ?`,
-            [
-                precio_mensual,
-                descuento_porcentaje,
-                precio_final,
-                nota_descuento || null,
-                trial_end_date || null,
-                empresa_id
-            ]
-        );
+        await sql`
+          UPDATE empresas
+          SET precio_mensual = ${precio_mensual},
+              descuento_porcentaje = ${descuento_porcentaje},
+              precio_final = ${precio_final},
+              nota_descuento = ${nota_descuento || null},
+              trial_end_date = ${trial_end_date || null}
+          WHERE id = ${empresa_id}
+        `;
 
         return NextResponse.json({ success: true });
     } catch (error) {
@@ -119,13 +103,21 @@ export async function DELETE(request: Request) {
             );
         }
 
-        const db = await getDBConnection();
+        if (!process.env.CENTRAL_DB_URL) {
+            return NextResponse.json(
+                { error: 'Base de datos central no configurada' },
+                { status: 500 }
+            );
+        }
+
+        const sql = neon(process.env.CENTRAL_DB_URL);
 
         // Obtener información de la empresa antes de eliminar
-        const empresa = await db.get(
-            `SELECT neon_branch_id, nombre FROM empresas WHERE id = ?`,
-            [empresa_id]
-        );
+        const empresasResult = await sql`
+          SELECT neon_branch_id, nombre FROM empresas WHERE id = ${empresa_id}
+        `;
+
+        const empresa = empresasResult[0];
 
         if (!empresa) {
             return NextResponse.json(
@@ -146,10 +138,9 @@ export async function DELETE(request: Request) {
         }
 
         // Eliminar de la base de datos central
-        await db.run(
-            `DELETE FROM empresas WHERE id = ?`,
-            [empresa_id]
-        );
+        await sql`
+          DELETE FROM empresas WHERE id = ${empresa_id}
+        `;
 
         console.log(`✓ Empresa "${empresa.nombre}" eliminada de DB central`);
 
