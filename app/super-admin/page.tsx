@@ -14,6 +14,10 @@ interface Empresa {
   descuento_porcentaje: number;
   precio_final: number;
   nota_descuento: string | null;
+  telefono: string | null;
+  contacto_nombre: string | null;
+  direccion: string | null;
+  estado: string;
 }
 
 export default function SuperAdminPage() {
@@ -28,9 +32,13 @@ export default function SuperAdminPage() {
     precio_mensual: 85000,
     descuento_porcentaje: 0,
     nota_descuento: '',
-    trial_end_date: ''
+    trial_end_date: '',
+    telefono: '',
+    contacto_nombre: '',
+    direccion: ''
   });
   const [branchesCount, setBranchesCount] = useState({ total: 0, limit: 10 });
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'activos' | 'archivados'>('activos');
 
   useEffect(() => {
     const authStatus = sessionStorage.getItem('super_admin_auth');
@@ -107,7 +115,10 @@ export default function SuperAdminPage() {
       precio_mensual: empresa.precio_mensual,
       descuento_porcentaje: empresa.descuento_porcentaje,
       nota_descuento: empresa.nota_descuento || '',
-      trial_end_date: empresa.trial_end_date?.split('T')[0] || ''
+      trial_end_date: empresa.trial_end_date?.split('T')[0] || '',
+      telefono: empresa.telefono || '',
+      contacto_nombre: empresa.contacto_nombre || '',
+      direccion: empresa.direccion || ''
     });
   };
 
@@ -117,7 +128,10 @@ export default function SuperAdminPage() {
       precio_mensual: 85000,
       descuento_porcentaje: 0,
       nota_descuento: '',
-      trial_end_date: ''
+      trial_end_date: '',
+      telefono: '',
+      contacto_nombre: '',
+      direccion: ''
     });
   };
 
@@ -188,9 +202,54 @@ export default function SuperAdminPage() {
     }
   };
 
+  const archivarEmpresa = async (empresa: Empresa) => {
+    const confirmacion = confirm(
+      `¿ARCHIVAR empresa "${empresa.nombre}"?\n\n` +
+      `Esto hará:\n` +
+      `✓ Eliminar el branch de Neon (libera espacio)\n` +
+      `✓ Mantener los datos de contacto\n` +
+      `✓ Cambiar estado a "archivado"\n\n` +
+      `Podrás reactivarla después si es necesario.`
+    );
+
+    if (!confirmacion) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/super-admin/empresas', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          empresa_id: empresa.id,
+          accion: 'archivar',
+          admin_email: 'admin@lavapp.ar'
+        })
+      });
+
+      if (res.ok) {
+        alert('Empresa archivada correctamente. Branch liberado.');
+        await cargarEmpresas();
+        await cargarBranchesCount();
+      } else {
+        const data = await res.json();
+        alert(`Error: ${data.error}`);
+      }
+    } catch (err) {
+      alert('Error al archivar empresa');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const calcularPrecioFinal = (precio: number, descuento: number) => {
     return precio * (1 - descuento / 100);
   };
+
+  const empresasFiltradas = empresas.filter(e => {
+    if (filtroEstado === 'activos') return e.estado === 'activo';
+    if (filtroEstado === 'archivados') return e.estado === 'archivado';
+    return true;
+  });
 
   if (!isAuthenticated) {
     return (
@@ -285,7 +344,7 @@ export default function SuperAdminPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold text-gray-900">
                 Empresas Registradas ({empresas.length})
               </h2>
@@ -295,6 +354,37 @@ export default function SuperAdminPage() {
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 {loading ? 'Cargando...' : '🔄 Actualizar'}
+              </button>
+            </div>
+
+            {/* Filtros */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setFiltroEstado('activos')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${filtroEstado === 'activos'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+              >
+                ✓ Activos ({empresas.filter(e => e.estado === 'activo').length})
+              </button>
+              <button
+                onClick={() => setFiltroEstado('archivados')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${filtroEstado === 'archivados'
+                  ? 'bg-gray-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+              >
+                📦 Archivados ({empresas.filter(e => e.estado === 'archivado').length})
+              </button>
+              <button
+                onClick={() => setFiltroEstado('todos')}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${filtroEstado === 'todos'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+              >
+                📋 Todos ({empresas.length})
               </button>
             </div>
           </div>
@@ -310,26 +400,73 @@ export default function SuperAdminPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descuento</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio Final</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {empresas.length === 0 ? (
+                {empresasFiltradas.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
-                      No hay empresas registradas
+                    <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
+                      {filtroEstado === 'activos' && 'No hay empresas activas'}
+                      {filtroEstado === 'archivados' && 'No hay empresas archivadas'}
+                      {filtroEstado === 'todos' && 'No hay empresas registradas'}
                     </td>
                   </tr>
                 ) : (
-                  empresas.map((empresa) => (
-                    <tr key={empresa.id} className="hover:bg-gray-50">
+                  empresasFiltradas.map((empresa) => (
+                    <tr key={empresa.id} className={`hover:bg-gray-50 ${empresa.estado === 'archivado' ? 'bg-gray-100 opacity-60' : ''
+                      }`}>
                       <td className="px-4 py-4 text-sm text-gray-900">{empresa.id}</td>
                       <td className="px-4 py-4">
                         <div className="text-sm font-medium text-gray-900">{empresa.nombre}</div>
-                        {empresa.nota_descuento && (
-                          <div className="text-xs text-purple-600 mt-1">
-                            📝 {empresa.nota_descuento}
+                        {editingEmpresa === empresa.id ? (
+                          <div className="mt-2 space-y-1">
+                            <input
+                              type="text"
+                              value={editForm.contacto_nombre}
+                              onChange={(e) => setEditForm({ ...editForm, contacto_nombre: e.target.value })}
+                              placeholder="Nombre contacto"
+                              className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                            />
+                            <input
+                              type="text"
+                              value={editForm.telefono}
+                              onChange={(e) => setEditForm({ ...editForm, telefono: e.target.value })}
+                              placeholder="Teléfono"
+                              className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                            />
+                            <input
+                              type="text"
+                              value={editForm.direccion}
+                              onChange={(e) => setEditForm({ ...editForm, direccion: e.target.value })}
+                              placeholder="Dirección"
+                              className="w-full px-2 py-1 border border-gray-300 rounded text-xs"
+                            />
                           </div>
+                        ) : (
+                          <>
+                            {empresa.nota_descuento && (
+                              <div className="text-xs text-purple-600 mt-1">
+                                📝 {empresa.nota_descuento}
+                              </div>
+                            )}
+                            {empresa.contacto_nombre && (
+                              <div className="text-xs text-gray-600 mt-1">
+                                👤 {empresa.contacto_nombre}
+                              </div>
+                            )}
+                            {empresa.telefono && (
+                              <div className="text-xs text-gray-600 mt-1">
+                                📞 {empresa.telefono}
+                              </div>
+                            )}
+                            {empresa.direccion && (
+                              <div className="text-xs text-gray-600 mt-1">
+                                📍 {empresa.direccion}
+                              </div>
+                            )}
+                          </>
                         )}
                       </td>
                       <td className="px-4 py-4 text-sm text-gray-600">{empresa.email}</td>
@@ -406,6 +543,17 @@ export default function SuperAdminPage() {
                           </div>
                         )}
                       </td>
+                      <td className="px-4 py-4 text-sm">
+                        {empresa.estado === 'archivado' ? (
+                          <span className="px-2 py-1 bg-gray-200 text-gray-700 rounded text-xs">
+                            📦 Archivado
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
+                            ✓ Activo
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-4">
                         {editingEmpresa === empresa.id ? (
                           <div className="flex gap-2">
@@ -422,7 +570,7 @@ export default function SuperAdminPage() {
                               ✗
                             </button>
                           </div>
-                        ) : (
+                        ) : empresa.estado === 'activo' ? (
                           <div className="flex gap-2">
                             <button
                               onClick={() => iniciarEdicion(empresa)}
@@ -431,11 +579,15 @@ export default function SuperAdminPage() {
                               ✏️ Editar
                             </button>
                             <button
-                              onClick={() => eliminarEmpresa(empresa)}
-                              className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                              onClick={() => archivarEmpresa(empresa)}
+                              className="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700"
                             >
-                              🗑️ Eliminar
+                              📦 Archivar
                             </button>
+                          </div>
+                        ) : (
+                          <div className="text-gray-500 text-sm">
+                            Archivado - Branch liberado
                           </div>
                         )}
                       </td>

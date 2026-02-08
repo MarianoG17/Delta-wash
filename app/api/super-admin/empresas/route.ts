@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+nueimport { NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { deleteBranch } from '@/lib/neon-api';
 
@@ -26,7 +26,11 @@ export async function GET(request: Request) {
         COALESCE(precio_mensual, 85000.00) as precio_mensual,
         COALESCE(descuento_porcentaje, 0) as descuento_porcentaje,
         COALESCE(precio_final, 85000.00) as precio_final,
-        nota_descuento
+        nota_descuento,
+        telefono,
+        contacto_nombre,
+        direccion,
+        COALESCE(estado, 'activo') as estado
       FROM empresas
       ORDER BY created_at DESC
     `;
@@ -41,7 +45,7 @@ export async function GET(request: Request) {
     }
 }
 
-// PUT: Actualizar precios y descuentos de una empresa
+// PUT: Actualizar precios, descuentos y datos de contacto de una empresa
 export async function PUT(request: Request) {
     try {
         const {
@@ -49,7 +53,10 @@ export async function PUT(request: Request) {
             precio_mensual,
             descuento_porcentaje,
             nota_descuento,
-            trial_end_date
+            trial_end_date,
+            telefono,
+            contacto_nombre,
+            direccion
         } = await request.json();
 
         if (!empresa_id) {
@@ -77,7 +84,10 @@ export async function PUT(request: Request) {
               descuento_porcentaje = ${descuento_porcentaje},
               precio_final = ${precio_final},
               nota_descuento = ${nota_descuento || null},
-              trial_end_date = ${trial_end_date || null}
+              trial_end_date = ${trial_end_date || null},
+              telefono = ${telefono || null},
+              contacto_nombre = ${contacto_nombre || null},
+              direccion = ${direccion || null}
           WHERE id = ${empresa_id}
         `;
 
@@ -154,5 +164,73 @@ export async function DELETE(request: Request) {
             { error: 'Error al eliminar empresa' },
             { status: 500 }
         );
+    }
+}
+
+// PATCH: Archivar o reactivar empresa
+export async function PATCH(request: Request) {
+    try {
+        const { empresa_id, accion, admin_email } = await request.json();
+
+        if (!process.env.CENTRAL_DB_URL) {
+            return NextResponse.json({ error: 'DB no configurada' }, { status: 500 });
+        }
+
+        const sql = neon(process.env.CENTRAL_DB_URL);
+
+        if (accion === 'archivar') {
+            // 1. Obtener empresa
+            const empresaResult = await sql`SELECT * FROM empresas WHERE id = ${empresa_id}`;
+            const empresa = empresaResult[0];
+
+            if (!empresa) {
+                return NextResponse.json({ error: 'Empresa no encontrada' }, { status: 404 });
+            }
+
+            // 2. Eliminar branch de Neon
+            if (empresa.neon_branch_id) {
+                try {
+                    await deleteBranch(empresa.neon_branch_id);
+                    console.log(`✓ Branch ${empresa.neon_branch_id} eliminado`);
+                } catch (err) {
+                    console.error('Error eliminando branch:', err);
+                }
+            }
+
+            // 3. Actualizar estado a archivado y limpiar branch info
+            await sql`
+        UPDATE empresas
+        SET estado = 'archivado',
+            branch_url = NULL,
+            neon_branch_id = NULL,
+            updated_at = NOW()
+        WHERE id = ${empresa_id}
+      `;
+
+            // 4. Log de auditoría
+            await sql`
+        INSERT INTO empresa_logs (empresa_id, empresa_nombre, accion, detalles, realizado_por)
+        VALUES (${empresa_id}, ${empresa.nombre}, 'archivado',
+                'Branch eliminado de Neon para liberar espacio', ${admin_email})
+      `;
+
+            return NextResponse.json({
+                success: true,
+                message: 'Empresa archivada y branch eliminado'
+            });
+        }
+
+        if (accion === 'reactivar') {
+            // TODO: Implementar reactivación (crear nuevo branch)
+            return NextResponse.json({
+                error: 'Reactivación aún no implementada'
+            }, { status: 501 });
+        }
+
+        return NextResponse.json({ error: 'Acción no válida' }, { status: 400 });
+
+    } catch (error) {
+        console.error('Error en PATCH empresas:', error);
+        return NextResponse.json({ error: 'Error en la operación' }, { status: 500 });
     }
 }
