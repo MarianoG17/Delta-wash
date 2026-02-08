@@ -14,10 +14,10 @@ import { createAndSetupBranchForEmpresa, sincronizarUsuariosEmpresa } from '@/li
 export async function POST(request: Request) {
   try {
     // Leer datos del formulario
-    const { nombreEmpresa, email, password } = await request.json();
+    const { nombreEmpresa, email, password, telefono, contacto_nombre, direccion } = await request.json();
 
     // Validaciones básicas
-    if (!nombreEmpresa || !email || !password) {
+    if (!nombreEmpresa || !email || !password || !telefono || !contacto_nombre || !direccion) {
       return NextResponse.json(
         { success: false, message: 'Todos los campos son requeridos' },
         { status: 400 }
@@ -143,7 +143,11 @@ export async function POST(request: Request) {
         branch_url,
         plan,
         estado,
-        fecha_expiracion
+        fecha_expiracion,
+        email,
+        telefono,
+        contacto_nombre,
+        direccion
       ) VALUES (
         ${nombreEmpresa},
         ${finalSlug},
@@ -151,7 +155,11 @@ export async function POST(request: Request) {
         ${branchUrl},
         'trial',
         'activo',
-        NOW() + INTERVAL '15 days'
+        NOW() + INTERVAL '15 days',
+        ${email},
+        ${telefono},
+        ${contacto_nombre},
+        ${direccion}
       )
       RETURNING id, nombre, slug
     `;
@@ -262,7 +270,7 @@ export async function POST(request: Request) {
       if (process.env.RESEND_API_KEY) {
         const resend = new Resend(process.env.RESEND_API_KEY);
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lavapp.ar';
-        
+
         await resend.emails.send({
           from: 'LAVAPP <noreply@lavapp.ar>',
           to: email,

@@ -14,7 +14,10 @@ export default function RegistroPage() {
     nombreEmpresa: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    telefono: '',
+    contacto_nombre: '',
+    direccion: ''
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -42,7 +45,10 @@ export default function RegistroPage() {
         body: JSON.stringify({
           nombreEmpresa: formData.nombreEmpresa,
           email: formData.email,
-          password: formData.password
+          password: formData.password,
+          telefono: formData.telefono,
+          contacto_nombre: formData.contacto_nombre,
+          direccion: formData.direccion
         })
       });
 
@@ -106,6 +112,54 @@ export default function RegistroPage() {
                 onChange={(e) => setFormData({ ...formData, nombreEmpresa: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 placeholder="Ej: Lavadero Express"
+                required
+              />
+            </div>
+
+            {/* Nombre de contacto */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Tu nombre completo
+              </label>
+              <input
+                type="text"
+                value={formData.contacto_nombre}
+                onChange={(e) => setFormData({ ...formData, contacto_nombre: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Ej: Juan Pérez"
+                required
+              />
+            </div>
+
+            {/* Teléfono */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Teléfono del lavadero
+              </label>
+              <input
+                type="tel"
+                value={formData.telefono}
+                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Ej: 3815123456"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Lo usaremos para contactarte
+              </p>
+            </div>
+
+            {/* Dirección */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Dirección del lavadero
+              </label>
+              <input
+                type="text"
+                value={formData.direccion}
+                onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Ej: Av. Siempreviva 742, Springfield"
                 required
               />
             </div>
