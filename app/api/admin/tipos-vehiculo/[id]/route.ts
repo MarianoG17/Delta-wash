@@ -161,17 +161,51 @@ export async function DELETE(
     // Obtener conexión del branch de la empresa
     const db = await getDBConnection(payload.empresaId);
 
+    // Obtener el nombre del tipo
+    const tipo = await db`
+      SELECT nombre FROM tipos_vehiculo
+      WHERE id = ${tipoId}
+    `;
+
+    if (tipo.rows.length === 0) {
+      return NextResponse.json(
+        { success: false, message: 'Tipo de vehículo no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // CRÍTICO: Verificar que no tenga registros históricos
+    const registrosAsociados = await db`
+      SELECT COUNT(*) as count
+      FROM registros
+      WHERE tipo_vehiculo = ${tipo.rows[0].nombre}
+    `;
+
+    const totalRegistros = parseInt(registrosAsociados.rows[0]?.count || '0');
+
+    if (totalRegistros > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'No se puede eliminar: Este tipo ya se usó en registros históricos',
+          detalles: `Hay ${totalRegistros} registro(s) de lavados usando este tipo. Eliminar el tipo borraría la información del historial.`,
+          sugerencia: 'No se puede eliminar tipos con historial. Considera inactivarlo en lugar de eliminarlo.'
+        },
+        { status: 400 }
+      );
+    }
+
     // Verificar si hay precios asociados a este tipo
     const preciosRelacionados = await db`
-      SELECT COUNT(*) as count 
-      FROM precios 
+      SELECT COUNT(*) as count
+      FROM precios
       WHERE tipo_vehiculo_id = ${tipoId}
     `;
 
     if (parseInt(preciosRelacionados.rows[0].count) > 0) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           message: 'No se puede eliminar este tipo de vehículo porque tiene precios asociados. Primero inactívalo en lugar de eliminarlo.',
           hasRelatedPrices: true
         },

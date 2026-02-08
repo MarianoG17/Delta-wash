@@ -105,6 +105,39 @@ export async function DELETE(
         const tipoId = parseInt(params.id);
         const sql = await getDBConnection(empresaId);
 
+        // Obtener el nombre del tipo
+        const tipo = await sql`
+            SELECT nombre FROM tipos_vehiculo
+            WHERE id = ${tipoId}
+        `;
+
+        if (tipo.length === 0) {
+            return NextResponse.json(
+                { error: 'Tipo no encontrado' },
+                { status: 404 }
+            );
+        }
+
+        // CRÍTICO: Verificar que no tenga registros históricos
+        const registrosAsociados = await sql`
+            SELECT COUNT(*) as count
+            FROM registros
+            WHERE tipo_vehiculo = ${tipo[0].nombre}
+        `;
+
+        const totalRegistros = parseInt(registrosAsociados[0]?.count || '0');
+
+        if (totalRegistros > 0) {
+            return NextResponse.json(
+                {
+                    error: 'No se puede eliminar: Este tipo ya se usó en registros históricos',
+                    detalles: `Hay ${totalRegistros} registro(s) de lavados usando este tipo. Eliminar el tipo borraría la información del historial.`,
+                    sugerencia: 'No se puede eliminar tipos con historial. Considera inactivarlo o crear un nuevo tipo diferente.'
+                },
+                { status: 400 }
+            );
+        }
+
         // Verificar que no tenga precios asociados
         const preciosAsociados = await sql`
             SELECT COUNT(*) as count
