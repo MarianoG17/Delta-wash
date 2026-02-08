@@ -619,7 +619,7 @@ export default function SuperAdminPage() {
             <div className="text-3xl mb-2">💰</div>
             <div className="text-sm text-gray-600">Ingresos Mensuales Potenciales</div>
             <div className="text-2xl font-bold text-green-600">
-              ${empresas.reduce((sum, e) => sum + Number(e.precio_final || 0), 0).toLocaleString()}
+              ${empresas.filter(e => e.estado === 'activo').reduce((sum, e) => sum + Number(e.precio_final || 0), 0).toLocaleString()}
             </div>
           </div>
 
