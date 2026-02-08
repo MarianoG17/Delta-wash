@@ -396,6 +396,8 @@ export default function SuperAdminPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Empresa</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teléfono</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dirección</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trial hasta</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descuento</th>
@@ -407,7 +409,7 @@ export default function SuperAdminPage() {
               <tbody className="divide-y divide-gray-200">
                 {empresasFiltradas.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
+                    <td colSpan={11} className="px-4 py-8 text-center text-gray-500">
                       {filtroEstado === 'activos' && 'No hay empresas activas'}
                       {filtroEstado === 'archivados' && 'No hay empresas archivadas'}
                       {filtroEstado === 'todos' && 'No hay empresas registradas'}
@@ -470,6 +472,12 @@ export default function SuperAdminPage() {
                         )}
                       </td>
                       <td className="px-4 py-4 text-sm text-gray-600">{empresa.email}</td>
+                      <td className="px-4 py-4 text-sm text-gray-600">
+                        {empresa.telefono || '-'}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-600">
+                        {empresa.direccion || '-'}
+                      </td>
                       <td className="px-4 py-4">
                         {editingEmpresa === empresa.id ? (
                           <input
