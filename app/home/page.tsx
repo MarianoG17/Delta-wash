@@ -348,11 +348,10 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Feature 1 - BÁSICO */}
+            {/* Feature 1 */}
             <div className="bg-gradient-to-br from-blue-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border border-blue-100">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-4xl">📋</div>
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">BÁSICO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Gestión de Vehículos</h4>
               <p className="text-gray-800 mb-4">
@@ -365,11 +364,10 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Feature 2 - BÁSICO */}
+            {/* Feature 2 */}
             <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border border-green-100">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-4xl">💰</div>
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">BÁSICO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Gestión de Precios</h4>
               <p className="text-gray-800 mb-4">
@@ -382,11 +380,10 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Feature 3 - BÁSICO */}
+            {/* Feature 3 */}
             <div className="bg-gradient-to-br from-purple-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border border-purple-100">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-4xl">📱</div>
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">BÁSICO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">App Móvil (PWA)</h4>
               <p className="text-gray-800 mb-4">
@@ -399,11 +396,10 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Feature 4 - BÁSICO */}
+            {/* Feature 4 */}
             <div className="bg-gradient-to-br from-yellow-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border border-yellow-100">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-4xl">📲</div>
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">BÁSICO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Notificaciones WhatsApp</h4>
               <p className="text-gray-800 mb-4">
@@ -416,11 +412,10 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Feature 5 - BÁSICO */}
+            {/* Feature 5 */}
             <div className="bg-gradient-to-br from-red-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border border-red-100">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-4xl">📊</div>
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-semibold">BÁSICO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Historial Completo</h4>
               <p className="text-gray-800 mb-4">
@@ -433,11 +428,10 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Feature 6 - PRO */}
-            <div className="bg-gradient-to-br from-indigo-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border-2 border-indigo-300">
+            {/* Feature 6 */}
+            <div className="bg-gradient-to-br from-indigo-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border border-indigo-100">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-4xl">💳</div>
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">PRO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Cuentas Corrientes</h4>
               <p className="text-gray-800 mb-4">
@@ -450,11 +444,10 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Feature 7 - PRO */}
-            <div className="bg-gradient-to-br from-orange-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border-2 border-orange-300">
+            {/* Feature 7 */}
+            <div className="bg-gradient-to-br from-orange-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border border-orange-100">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-4xl">📈</div>
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">PRO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Reportes y Estadísticas</h4>
               <p className="text-gray-800 mb-4">
@@ -467,11 +460,10 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Feature 8 - PRO */}
-            <div className="bg-gradient-to-br from-pink-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border-2 border-pink-300">
+            {/* Feature 8 */}
+            <div className="bg-gradient-to-br from-pink-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border border-pink-100">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-4xl">👥</div>
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">PRO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Multi-usuario con Roles</h4>
               <p className="text-gray-800 mb-4">
@@ -484,11 +476,10 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Feature 9 - PRO */}
-            <div className="bg-gradient-to-br from-teal-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border-2 border-teal-300">
+            {/* Feature 9 */}
+            <div className="bg-gradient-to-br from-teal-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border border-teal-100">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-4xl">💵</div>
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">PRO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Control de Caja</h4>
               <p className="text-gray-800 mb-4">
@@ -501,11 +492,10 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Feature 10 - PRO */}
-            <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border-2 border-green-300">
+            {/* Feature 10 */}
+            <div className="bg-gradient-to-br from-green-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border border-green-100">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-4xl">📋</div>
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">PRO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Encuestas de Satisfacción</h4>
               <p className="text-gray-800 mb-4">
@@ -518,11 +508,10 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Feature 11 - PRO */}
-            <div className="bg-gradient-to-br from-cyan-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border-2 border-cyan-300">
+            {/* Feature 11 */}
+            <div className="bg-gradient-to-br from-cyan-50 to-white p-8 rounded-xl shadow-md hover:shadow-xl transition-shadow border border-cyan-100">
               <div className="flex items-center justify-between mb-4">
                 <div className="text-4xl">💵</div>
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-semibold">PRO</span>
               </div>
               <h4 className="text-xl font-bold mb-3 text-gray-900">Upselling Inteligente</h4>
               <p className="text-gray-800 mb-4">
