@@ -26,16 +26,16 @@ body {
   }
 }
 
-/* Animated phone demo styles - faster 10s cycle */
+/* Animated phone demo styles - 8s cycle with 5 steps */
 @keyframes fadeInOut {
 
   0%,
-  28% {
+  30% {
     opacity: 1;
     visibility: visible;
   }
 
-  33%,
+  35%,
   100% {
     opacity: 0;
     visibility: hidden;
@@ -43,7 +43,7 @@ body {
 }
 
 .demo-step {
-  animation: fadeInOut 10s infinite;
+  animation: fadeInOut 8s infinite;
 }
 
 .demo-step-1 {
@@ -51,9 +51,184 @@ body {
 }
 
 .demo-step-2 {
-  animation-delay: 3.33s;
+  animation-delay: 2.5s;
 }
 
 .demo-step-3 {
-  animation-delay: 6.66s;
+  animation-delay: 4s;
+}
+
+.demo-step-4 {
+  animation-delay: 5.5s;
+}
+
+.demo-step-5 {
+  animation-delay: 7s;
+}
+
+/* Typing effect for license plate */
+@keyframes typing {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+
+  to {
+    width: 100%;
+    opacity: 1;
+  }
+}
+
+.typing-effect {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: typing 0.5s steps(6, end) forwards;
+}
+
+/* Fade in and slide up */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards;
+}
+
+/* Smooth scroll down */
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.slide-down {
+  animation: slideDown 0.5s ease-out forwards;
+}
+
+/* Checkmark animation */
+@keyframes checkmark {
+  0% {
+    transform: scale(0);
+  }
+
+  50% {
+    transform: scale(1.3);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.check-animation {
+  animation: checkmark 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Move card between states */
+@keyframes moveCard {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  50% {
+    transform: translateY(-20px);
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: translateY(150px);
+    opacity: 1;
+  }
+}
+
+.move-card {
+  animation: moveCard 0.6s ease-in-out forwards;
+}
+
+/* Pulse for buttons */
+@keyframes pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+}
+
+.pulse-animation {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* WhatsApp interface simulation */
+@keyframes whatsappSend {
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.whatsapp-send {
+  animation: whatsappSend 0.6s ease-in forwards;
+}
+
+/* Fade out for delivered state */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+.fade-out {
+  animation: fadeOut 0.5s ease-out forwards;
+}
+
+/* Scale in animation */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.scale-in {
+  animation: scaleIn 0.4s ease-out forwards;
 }
