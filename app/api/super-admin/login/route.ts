@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
     try {
@@ -6,9 +7,9 @@ export async function POST(request: Request) {
 
         // Verificar credenciales contra variables de entorno
         const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL;
-        const SUPER_ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD;
+        const SUPER_ADMIN_PASSWORD_HASH = process.env.SUPER_ADMIN_PASSWORD_HASH;
 
-        if (!SUPER_ADMIN_EMAIL || !SUPER_ADMIN_PASSWORD) {
+        if (!SUPER_ADMIN_EMAIL || !SUPER_ADMIN_PASSWORD_HASH) {
             console.error('⚠️ Super admin credentials not configured in environment variables');
             return NextResponse.json(
                 { error: 'Super admin not configured' },
@@ -16,7 +17,8 @@ export async function POST(request: Request) {
             );
         }
 
-        if (email === SUPER_ADMIN_EMAIL && password === SUPER_ADMIN_PASSWORD) {
+        // Verificar email y comparar password con hash
+        if (email === SUPER_ADMIN_EMAIL && await bcrypt.compare(password, SUPER_ADMIN_PASSWORD_HASH)) {
             return NextResponse.json({ success: true });
         }
 
