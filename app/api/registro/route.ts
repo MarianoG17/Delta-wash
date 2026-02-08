@@ -88,6 +88,7 @@ export async function POST(request: Request) {
 
     let branchUrl = '';
     let branchName = finalSlug;
+    let branchId = '';
 
     try {
       console.log('[Registro] 📞 Llamando a createAndSetupBranchForEmpresa()...');
@@ -105,6 +106,7 @@ export async function POST(request: Request) {
 
       branchUrl = branchInfo.connectionUriPooler; // Usar pooler para mejor rendimiento
       branchName = branchInfo.branchName;
+      branchId = branchInfo.branchId; // ✅ Guardar el ID real del branch
 
       if (!branchUrl || branchUrl.trim() === '') {
         console.error('[Registro] ❌ ERROR: connectionUriPooler está vacío o undefined');
@@ -141,6 +143,7 @@ export async function POST(request: Request) {
         slug,
         branch_name,
         branch_url,
+        neon_branch_id,
         plan,
         estado,
         fecha_expiracion,
@@ -153,6 +156,7 @@ export async function POST(request: Request) {
         ${finalSlug},
         ${branchName},
         ${branchUrl},
+        ${branchId},
         'trial',
         'activo',
         NOW() + INTERVAL '15 days',
