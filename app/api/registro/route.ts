@@ -146,7 +146,7 @@ export async function POST(request: Request) {
         neon_branch_id,
         plan,
         estado,
-        fecha_expiracion,
+        trial_end_date,
         email,
         telefono,
         contacto_nombre,
