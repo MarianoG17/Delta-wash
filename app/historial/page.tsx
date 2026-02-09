@@ -343,7 +343,7 @@ function HistorialContent() {
                                         Tiempo
                                     </th>
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
-                                        Auto
+                                        Vehículo
                                     </th>
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
                                         Patente

@@ -121,7 +121,7 @@ export async function DELETE(
         // CRÍTICO: Verificar que no tenga registros históricos
         const registrosAsociados = await sql`
             SELECT COUNT(*) as count
-            FROM registros
+            FROM registros_lavado
             WHERE tipo_vehiculo = ${tipo[0].nombre}
         `;
 
