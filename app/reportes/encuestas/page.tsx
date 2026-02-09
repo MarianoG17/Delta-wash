@@ -526,16 +526,21 @@ export default function ReporteEncuestas() {
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                {/* ESTADO 3: Respondida */}
+                                                {/* ESTADO 3: Respondida (no se puede reenviar) */}
                                                 {encuesta.respondedAt ? (
                                                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-lg border border-green-300">
                                                         ✅ Respondida
                                                     </span>
                                                 ) : encuesta.sentAt ? (
-                                                    /* ESTADO 2: Enviada pero no respondida */
-                                                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-lg border border-yellow-300">
-                                                        ✅ Enviada
-                                                    </span>
+                                                    /* ESTADO 2: Enviada - clickeable para reenviar */
+                                                    <button
+                                                        onClick={() => enviarEncuesta(encuesta)}
+                                                        className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 text-xs font-semibold rounded-lg border border-yellow-300 transition-colors cursor-pointer"
+                                                        title="Click para reenviar"
+                                                    >
+                                                        <Send size={14} />
+                                                        ✅ Enviada (reenviar)
+                                                    </button>
                                                 ) : (
                                                     /* ESTADO 1: No enviada */
                                                     <button
