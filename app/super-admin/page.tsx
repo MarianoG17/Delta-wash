@@ -59,7 +59,7 @@ export default function SuperAdminPage() {
   const [error, setError] = useState('');
   const [editingEmpresa, setEditingEmpresa] = useState<number | null>(null);
   const [vistaActual, setVistaActual] = useState<'empresas' | 'pagos'>('empresas');
-  
+
   // Estados para Pagos
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
@@ -67,8 +67,18 @@ export default function SuperAdminPage() {
   const [anioSeleccionado, setAnioSeleccionado] = useState(new Date().getFullYear());
   const [filtroEstadoPago, setFiltroEstadoPago] = useState<'todos' | 'pendiente' | 'pagado' | 'vencido'>('todos');
   const [modalRegistroPago, setModalRegistroPago] = useState<Pago | null>(null);
+
+  // Helper para obtener fecha local en formato YYYY-MM-DD
+  const getFechaLocal = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [formRegistroPago, setFormRegistroPago] = useState({
-    fecha_pago: new Date().toISOString().split('T')[0],
+    fecha_pago: getFechaLocal(),
     metodo_pago: 'transferencia',
     comprobante: '',
     notas: ''
@@ -214,8 +224,14 @@ export default function SuperAdminPage() {
 
   const abrirModalRegistroPago = (pago: Pago) => {
     setModalRegistroPago(pago);
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const fechaLocal = `${year}-${month}-${day}`;
+
     setFormRegistroPago({
-      fecha_pago: new Date().toISOString().split('T')[0],
+      fecha_pago: fechaLocal,
       metodo_pago: 'transferencia',
       comprobante: '',
       notas: ''
@@ -394,8 +410,8 @@ export default function SuperAdminPage() {
   };
 
   const formatearMes = (mes: number) => {
-    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     return meses[mes - 1];
   };
 
@@ -522,21 +538,19 @@ export default function SuperAdminPage() {
           <div className="flex gap-4 mt-6">
             <button
               onClick={() => setVistaActual('empresas')}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                vistaActual === 'empresas'
+              className={`px-6 py-3 rounded-lg font-semibold transition-all ${vistaActual === 'empresas'
                   ? 'bg-white text-blue-600'
                   : 'bg-white/20 text-white hover:bg-white/30'
-              }`}
+                }`}
             >
               🏢 Empresas
             </button>
             <button
               onClick={() => setVistaActual('pagos')}
-              className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                vistaActual === 'pagos'
+              className={`px-6 py-3 rounded-lg font-semibold transition-all ${vistaActual === 'pagos'
                   ? 'bg-white text-blue-600'
                   : 'bg-white/20 text-white hover:bg-white/30'
-              }`}
+                }`}
             >
               💰 Pagos
             </button>
@@ -888,7 +902,7 @@ export default function SuperAdminPage() {
                       <div className="text-2xl mb-2">📊</div>
                       <div className="text-sm text-gray-600">Total del Mes</div>
                       <div className="text-2xl font-bold text-blue-600">
-                        ${((estadisticas.total_pagado || 0) + (estadisticas.total_pendiente || 0)).toLocaleString()}
+                        ${(Number(estadisticas.total_pagado || 0) + Number(estadisticas.total_pendiente || 0)).toLocaleString()}
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         Proyectado
@@ -1088,12 +1102,12 @@ export default function SuperAdminPage() {
       {/* Modal Registrar Pago */}
       {modalRegistroPago && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-gray-200 flex-shrink-0">
               <h3 className="text-xl font-bold text-gray-900">💰 Registrar Pago</h3>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 overflow-y-auto flex-grow">
               <div>
                 <div className="text-sm text-gray-600">Empresa</div>
                 <div className="text-lg font-bold text-gray-900">{modalRegistroPago.empresa_nombre}</div>
@@ -1185,7 +1199,7 @@ export default function SuperAdminPage() {
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-200 flex gap-3">
+            <div className="p-6 border-t border-gray-200 flex gap-3 flex-shrink-0">
               <button
                 onClick={cerrarModalRegistroPago}
                 className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
