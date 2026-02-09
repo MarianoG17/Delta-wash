@@ -9,6 +9,16 @@ export async function POST(request: Request) {
         const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL;
         const SUPER_ADMIN_PASSWORD_HASH = process.env.SUPER_ADMIN_PASSWORD_HASH;
 
+        // 🔍 DEBUG: Logs para diagnosticar
+        console.log('🔐 Super Admin Login Attempt:');
+        console.log('   - Email provided:', email);
+        console.log('   - Expected email:', SUPER_ADMIN_EMAIL);
+        console.log('   - Email match:', email === SUPER_ADMIN_EMAIL);
+        console.log('   - Hash configured:', !!SUPER_ADMIN_PASSWORD_HASH);
+        console.log('   - Hash length:', SUPER_ADMIN_PASSWORD_HASH?.length || 0);
+        console.log('   - Hash starts with:', SUPER_ADMIN_PASSWORD_HASH?.substring(0, 4));
+        console.log('   - Password length:', password?.length || 0);
+
         if (!SUPER_ADMIN_EMAIL || !SUPER_ADMIN_PASSWORD_HASH) {
             console.error('⚠️ Super admin credentials not configured in environment variables');
             return NextResponse.json(
@@ -17,11 +27,20 @@ export async function POST(request: Request) {
             );
         }
 
-        // Verificar email y comparar password con hash
-        if (email === SUPER_ADMIN_EMAIL && await bcrypt.compare(password, SUPER_ADMIN_PASSWORD_HASH)) {
+        // Verificar email
+        const emailMatch = email === SUPER_ADMIN_EMAIL;
+        console.log('   - Email verification:', emailMatch ? '✅ PASS' : '❌ FAIL');
+
+        // Verificar password
+        const passwordMatch = await bcrypt.compare(password, SUPER_ADMIN_PASSWORD_HASH);
+        console.log('   - Password verification:', passwordMatch ? '✅ PASS' : '❌ FAIL');
+
+        if (emailMatch && passwordMatch) {
+            console.log('✅ Login successful');
             return NextResponse.json({ success: true });
         }
 
+        console.log('❌ Login failed');
         return NextResponse.json(
             { error: 'Invalid credentials' },
             { status: 401 }
