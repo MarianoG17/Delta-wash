@@ -266,7 +266,13 @@ export default function ReporteEncuestas() {
                             <p className="text-gray-600">{empresaNombre}</p>
                         </div>
                         <button
-                            onClick={() => setShowConfig(!showConfig)}
+                            onClick={() => {
+                                setShowConfig(!showConfig);
+                                // Recargar configuración al abrir el modal
+                                if (!showConfig) {
+                                    cargarConfiguracion();
+                                }
+                            }}
                             className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors"
                         >
                             <Settings size={20} />
