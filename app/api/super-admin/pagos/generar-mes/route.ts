@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
         const sql = neon(process.env.CENTRAL_DB_URL);
 
-        // Obtener todas las empresas activas que no estén en trial
+        // Obtener todas las empresas activas (incluye empresas en trial)
         const empresasActivas = await sql`
             SELECT
                 id,
@@ -47,7 +47,6 @@ export async function POST(request: Request) {
                 trial_end_date
             FROM empresas
             WHERE COALESCE(estado, 'activo') = 'activo'
-            AND (trial_end_date IS NULL OR trial_end_date < CURRENT_DATE)
         `;
 
         let pagosCreados = 0;
