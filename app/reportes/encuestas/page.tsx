@@ -170,6 +170,32 @@ export default function ReporteEncuestas() {
 
         // Abrir WhatsApp (funcionalidad principal)
         window.open(whatsappUrl, '_blank');
+
+        // ✨ ACTUALIZACIÓN OPTIMISTA: Marcar como enviada en la UI inmediatamente
+        setEncuestas(prev => prev.map(enc =>
+            enc.id === encuesta.id
+                ? { ...enc, sentAt: new Date().toISOString(), status: 'disparada' as const }
+                : enc
+        ));
+
+        // Marcar como enviada en el backend
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            await fetch('/api/surveys/mark-sent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
+                body: JSON.stringify({ visitId: encuesta.id })
+            });
+        } catch (error) {
+            console.error('Error al marcar encuesta como enviada:', error);
+        }
     };
 
     const renderStars = (rating: number | null) => {
@@ -500,9 +526,18 @@ export default function ReporteEncuestas() {
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
+                                                {/* ESTADO 3: Respondida */}
                                                 {encuesta.respondedAt ? (
-                                                    <span className="text-xs text-green-600 font-semibold">✓ Respondida</span>
+                                                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-lg border border-green-300">
+                                                        ✅ Respondida
+                                                    </span>
+                                                ) : encuesta.sentAt ? (
+                                                    /* ESTADO 2: Enviada pero no respondida */
+                                                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-lg border border-yellow-300">
+                                                        ✅ Enviada
+                                                    </span>
                                                 ) : (
+                                                    /* ESTADO 1: No enviada */
                                                     <button
                                                         onClick={() => enviarEncuesta(encuesta)}
                                                         className="inline-flex items-center gap-1 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded-lg transition-colors"
