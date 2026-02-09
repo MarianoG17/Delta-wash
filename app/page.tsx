@@ -301,8 +301,11 @@ export default function Home() {
                 body: JSON.stringify({ visitId })
             });
 
-            // Recargar encuesta
-            cargarEncuesta(visitId);
+            // Pequeño delay para asegurar que la BD se actualice
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            // Recargar encuesta y esperar a que se complete
+            await cargarEncuesta(visitId);
         } catch (error) {
             console.error('Error al enviar encuesta:', error);
         }
