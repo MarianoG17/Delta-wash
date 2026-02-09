@@ -286,7 +286,16 @@ export default function Home() {
             // Abrir WhatsApp
             window.open(survey.whatsappUrl, '_blank');
 
-            // Marcar como disparada
+            // ✨ ACTUALIZACIÓN OPTIMISTA: Actualizar UI inmediatamente
+            setSurveys(prev => ({
+                ...prev,
+                [visitId]: {
+                    ...survey,
+                    sentAt: new Date().toISOString() // Marcar como enviada ahora mismo
+                }
+            }));
+
+            // Marcar como disparada en el backend
             const user = getAuthUser();
             const authToken = user?.isSaas
                 ? localStorage.getItem('authToken')
@@ -301,11 +310,8 @@ export default function Home() {
                 body: JSON.stringify({ visitId })
             });
 
-            // Pequeño delay para asegurar que la BD se actualice
-            await new Promise(resolve => setTimeout(resolve, 300));
-
-            // Recargar encuesta y esperar a que se complete
-            await cargarEncuesta(visitId);
+            // Opcional: Recargar para confirmar (en background)
+            setTimeout(() => cargarEncuesta(visitId), 1000);
         } catch (error) {
             console.error('Error al enviar encuesta:', error);
         }
