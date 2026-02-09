@@ -95,6 +95,9 @@ export default function Home() {
     // Estados para encuestas
     const [surveys, setSurveys] = useState<Record<number, Survey | null>>({});
 
+    // Estado para trackear mensajes de WhatsApp enviados
+    const [whatsappSent, setWhatsappSent] = useState<Record<number, boolean>>({});
+
     // Helper function para formatear nombres de tipos personalizados
     const formatearNombreTipo = (nombre: string): string => {
         return nombre.split('_').map((word: string) =>
@@ -668,6 +671,16 @@ export default function Home() {
                 } else {
                     window.open(data.whatsappUrl, '_blank');
                 }
+
+                // ✨ Marcar como enviado en el estado local
+                setWhatsappSent(prev => ({
+                    ...prev,
+                    [id]: true
+                }));
+
+                // Mostrar mensaje de confirmación
+                setMessage('✅ Mensaje enviado por WhatsApp');
+                setTimeout(() => setMessage(''), 3000);
             } else {
                 alert('❌ Error al generar link de WhatsApp');
             }
@@ -1641,10 +1654,12 @@ export default function Home() {
                                                     {userRole === 'admin' && (
                                                         <button
                                                             onClick={() => enviarWhatsApp(registro.id)}
-                                                            className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors text-sm"
+                                                            className={`flex-1 flex items-center justify-center gap-2 ${whatsappSent[registro.id]
+                                                                ? 'bg-green-500 hover:bg-green-600'
+                                                                : 'bg-blue-500 hover:bg-blue-600'} text-white font-semibold py-2 rounded-lg transition-colors text-sm`}
                                                         >
                                                             <Send size={16} />
-                                                            WhatsApp
+                                                            {whatsappSent[registro.id] ? '📱 Reenviar mensaje' : 'WhatsApp'}
                                                         </button>
                                                     )}
                                                     <button
