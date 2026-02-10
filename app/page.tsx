@@ -251,8 +251,19 @@ export default function Home() {
                 });
 
                 // 🧹 Limpiar estados de WhatsApp enviados para registros que ya no están en "listo"
+                // Leer DIRECTAMENTE desde localStorage para evitar race conditions con setState
+                const savedWhatsappSent = localStorage.getItem('whatsappSent');
+                let whatsappSentActual: Record<number, boolean> = {};
+                
+                if (savedWhatsappSent) {
+                    try {
+                        whatsappSentActual = JSON.parse(savedWhatsappSent);
+                    } catch (e) {
+                        console.error('Error al parsear whatsappSent en limpieza', e);
+                    }
+                }
+
                 const idsListos = dataListos.registros.map((r: Registro) => r.id);
-                const whatsappSentActual = { ...whatsappSent };
                 let cambios = false;
                 
                 Object.keys(whatsappSentActual).forEach(key => {
