@@ -130,6 +130,16 @@ export default function Home() {
                     setEmpresaNombre('DeltaWash');
                 }
 
+                // ✨ Restaurar estado de WhatsApp enviados desde localStorage
+                const savedWhatsappSent = localStorage.getItem('whatsappSent');
+                if (savedWhatsappSent) {
+                    try {
+                        setWhatsappSent(JSON.parse(savedWhatsappSent));
+                    } catch (e) {
+                        console.error('Error al parsear whatsappSent desde localStorage', e);
+                    }
+                }
+
                 cargarPreciosDinamicos();
                 cargarTiposVehiculo();
                 cargarTiposLimpieza();
@@ -239,6 +249,24 @@ export default function Home() {
                 dataListos.registros.forEach((registro: Registro) => {
                     cargarEncuesta(registro.id);
                 });
+
+                // 🧹 Limpiar estados de WhatsApp enviados para registros que ya no están en "listo"
+                const idsListos = dataListos.registros.map((r: Registro) => r.id);
+                const whatsappSentActual = { ...whatsappSent };
+                let cambios = false;
+                
+                Object.keys(whatsappSentActual).forEach(key => {
+                    const id = parseInt(key);
+                    if (!idsListos.includes(id)) {
+                        delete whatsappSentActual[id];
+                        cambios = true;
+                    }
+                });
+
+                if (cambios) {
+                    setWhatsappSent(whatsappSentActual);
+                    localStorage.setItem('whatsappSent', JSON.stringify(whatsappSentActual));
+                }
             } else {
                 setRegistrosListos([]);
             }
@@ -664,23 +692,25 @@ export default function Home() {
             const data = await res.json();
 
             if (data.success) {
+                // ✨ ACTUALIZACIÓN OPTIMISTA: Marcar como enviado ANTES de abrir WhatsApp
+                const newWhatsappSent = { ...whatsappSent, [id]: true };
+                setWhatsappSent(newWhatsappSent);
+                
+                // 💾 PERSISTIR en localStorage para que sobreviva a recargas de página
+                localStorage.setItem('whatsappSent', JSON.stringify(newWhatsappSent));
+
+                // Mostrar mensaje de confirmación
+                setMessage('✅ Mensaje enviado por WhatsApp');
+                setTimeout(() => setMessage(''), 3000);
+
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
+                // Abrir WhatsApp DESPUÉS de actualizar el estado
                 if (isIOS) {
                     window.location.href = data.whatsappUrl;
                 } else {
                     window.open(data.whatsappUrl, '_blank');
                 }
-
-                // ✨ Marcar como enviado en el estado local
-                setWhatsappSent(prev => ({
-                    ...prev,
-                    [id]: true
-                }));
-
-                // Mostrar mensaje de confirmación
-                setMessage('✅ Mensaje enviado por WhatsApp');
-                setTimeout(() => setMessage(''), 3000);
             } else {
                 alert('❌ Error al generar link de WhatsApp');
             }
@@ -1522,6 +1552,20 @@ export default function Home() {
                                                             ${registro.precio.toLocaleString('es-AR')}
                                                         </span>
                                                     )}
+                                                    {/* Indicador de estado de pago */}
+                                                    {registro.usa_cuenta_corriente ? (
+                                                        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded font-semibold block">
+                                                            💳 Cta.Cte.
+                                                        </span>
+                                                    ) : registro.pagado ? (
+                                                        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold block">
+                                                            ✓ Pagado
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded font-semibold block">
+                                                            ⏳ Pendiente
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                             <p className="text-sm text-gray-600 mb-2">
@@ -1548,20 +1592,31 @@ export default function Home() {
                                             <p className="text-xs text-gray-500 mb-3">
                                                 Ingreso: {new Date(registro.fecha_ingreso).toLocaleString('es-AR')}
                                             </p>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => marcarComoListo(registro.id)}
-                                                    className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
-                                                >
-                                                    ✓ Listo
-                                                </button>
-                                                <button
-                                                    onClick={() => cancelarRegistro(registro.id)}
-                                                    className="flex items-center justify-center gap-2 px-3 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg transition-colors"
-                                                    title="Cancelar"
-                                                >
-                                                    ✕
-                                                </button>
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => marcarComoListo(registro.id)}
+                                                        className="flex-1 flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                    >
+                                                        ✓ Listo
+                                                    </button>
+                                                    <button
+                                                        onClick={() => cancelarRegistro(registro.id)}
+                                                        className="flex items-center justify-center gap-2 px-3 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg transition-colors"
+                                                        title="Cancelar"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                                {/* Botón de pago anticipado si no está pagado y no usó cuenta corriente */}
+                                                {!registro.pagado && !registro.usa_cuenta_corriente && (
+                                                    <button
+                                                        onClick={() => registrarPago(registro.id)}
+                                                        className="w-full flex items-center justify-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 rounded-lg transition-colors text-sm"
+                                                    >
+                                                        💰 Registrar Pago Anticipado
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     ))
