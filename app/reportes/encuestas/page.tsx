@@ -239,7 +239,7 @@ export default function ReporteEncuestas() {
                     'Content-Type': 'application/json',
                     ...(authToken && { 'Authorization': `Bearer ${authToken}` })
                 },
-                body: JSON.stringify({ visitId: encuesta.id })
+                body: JSON.stringify({ surveyId: encuesta.id })
             });
         } catch (error) {
             console.error('Error al marcar encuesta como enviada:', error);

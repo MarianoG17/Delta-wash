@@ -7,21 +7,20 @@ export async function POST(request: Request) {
         const empresaId = await getEmpresaIdFromToken(request);
         const db = await getDBConnection(empresaId);
 
-        const { visitId } = await request.json();
+        const { surveyId } = await request.json();
 
-        if (!visitId) {
+        if (!surveyId) {
             return NextResponse.json(
-                { error: 'visitId es requerido' },
+                { error: 'surveyId es requerido' },
                 { status: 400 }
             );
         }
 
-        // Buscar la encuesta por visit_id y empresa_id
+        // Buscar la encuesta por ID directo (más eficiente y correcto)
         const surveyResult = await db`
-            SELECT id, responded_at 
-            FROM surveys 
-            WHERE visit_id = ${visitId} 
-            AND empresa_id = ${empresaId}
+            SELECT id, responded_at
+            FROM surveys
+            WHERE id = ${surveyId}
         `;
 
         const surveys = Array.isArray(surveyResult) ? surveyResult : surveyResult.rows || [];
@@ -45,8 +44,8 @@ export async function POST(request: Request) {
 
         // Marcar como enviada (disparada)
         await db`
-            UPDATE surveys 
-            SET sent_at = CURRENT_TIMESTAMP 
+            UPDATE surveys
+            SET sent_at = CURRENT_TIMESTAMP
             WHERE id = ${survey.id}
         `;
 

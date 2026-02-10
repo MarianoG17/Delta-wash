@@ -140,6 +140,16 @@ export default function Home() {
                     }
                 }
 
+                // ✨ Restaurar estado de encuestas enviadas desde localStorage
+                const savedSurveys = localStorage.getItem('surveys');
+                if (savedSurveys) {
+                    try {
+                        setSurveys(JSON.parse(savedSurveys));
+                    } catch (e) {
+                        console.error('Error al parsear surveys desde localStorage', e);
+                    }
+                }
+
                 cargarPreciosDinamicos();
                 cargarTiposVehiculo();
                 cargarTiposLimpieza();
@@ -303,8 +313,8 @@ export default function Home() {
 
             const data = await res.json();
             if (data.survey) {
-                setSurveys(prev => ({
-                    ...prev,
+                const newSurveys = {
+                    ...surveys,
                     [visitId]: {
                         id: data.survey.id,
                         token: data.survey.token,
@@ -313,7 +323,11 @@ export default function Home() {
                         surveyUrl: data.survey.surveyUrl,
                         whatsappUrl: data.survey.whatsappUrl
                     }
-                }));
+                };
+                setSurveys(newSurveys);
+                
+                // 💾 Actualizar localStorage también
+                localStorage.setItem('surveys', JSON.stringify(newSurveys));
             }
         } catch (error) {
             console.error('Error al cargar encuesta:', error);
@@ -325,17 +339,21 @@ export default function Home() {
         if (!survey) return;
 
         try {
-            // Abrir WhatsApp
-            window.open(survey.whatsappUrl, '_blank');
-
             // ✨ ACTUALIZACIÓN OPTIMISTA: Actualizar UI inmediatamente
-            setSurveys(prev => ({
-                ...prev,
+            const newSurveys = {
+                ...surveys,
                 [visitId]: {
                     ...survey,
                     sentAt: new Date().toISOString() // Marcar como enviada ahora mismo
                 }
-            }));
+            };
+            setSurveys(newSurveys);
+
+            // 💾 PERSISTIR en localStorage para que sobreviva a recargas de página
+            localStorage.setItem('surveys', JSON.stringify(newSurveys));
+
+            // Abrir WhatsApp DESPUÉS de actualizar el estado
+            window.open(survey.whatsappUrl, '_blank');
 
             // Marcar como disparada en el backend
             const user = getAuthUser();
