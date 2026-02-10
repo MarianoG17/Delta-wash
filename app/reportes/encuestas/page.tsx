@@ -77,6 +77,16 @@ export default function ReporteEncuestas() {
             if (slug) setEmpresaSlug(slug);
         }
 
+        // ✨ Restaurar estado de encuestas desde localStorage
+        const savedEncuestas = localStorage.getItem('encuestasEstado');
+        if (savedEncuestas) {
+            try {
+                setEncuestas(JSON.parse(savedEncuestas));
+            } catch (e) {
+                console.error('Error al parsear encuestasEstado desde localStorage', e);
+            }
+        }
+
         cargarReporte();
         cargarConfiguracion();
     }, [router]);
@@ -148,8 +158,37 @@ export default function ReporteEncuestas() {
             if (!res.ok) throw new Error('Error al cargar reporte');
 
             const data = await res.json();
-            setEncuestas(data.encuestas);
+            
+            // 🔄 Mergear con estados locales (para mantener optimistic updates)
+            const savedEncuestas = localStorage.getItem('encuestasEstado');
+            let encuestasLocales: Record<number, Encuesta> = {};
+            
+            if (savedEncuestas) {
+                try {
+                    const parsed = JSON.parse(savedEncuestas);
+                    parsed.forEach((enc: Encuesta) => {
+                        encuestasLocales[enc.id] = enc;
+                    });
+                } catch (e) {
+                    console.error('Error al parsear encuestasEstado', e);
+                }
+            }
+
+            // Mergear: priorizar estado del servidor, pero mantener sentAt local si es más reciente
+            const encuestasMerged = data.encuestas.map((encAPI: Encuesta) => {
+                const encLocal = encuestasLocales[encAPI.id];
+                if (encLocal && encLocal.sentAt && !encAPI.sentAt) {
+                    // Si tenemos sentAt local pero no en API, usar el local
+                    return { ...encAPI, sentAt: encLocal.sentAt, status: 'disparada' as const };
+                }
+                return encAPI;
+            });
+
+            setEncuestas(encuestasMerged);
             setEstadisticas(data.estadisticas);
+            
+            // 💾 Guardar estado merged en localStorage
+            localStorage.setItem('encuestasEstado', JSON.stringify(encuestasMerged));
         } catch (error) {
             console.error('Error al cargar reporte:', error);
             alert('Error al cargar el reporte de encuestas');
@@ -168,15 +207,24 @@ export default function ReporteEncuestas() {
         const phoneClean = encuesta.clientPhone.replace(/\D/g, ''); // Solo dígitos
         const whatsappUrl = `https://wa.me/549${phoneClean}?text=${encodeURIComponent(whatsappMessage)}`;
 
-        // Abrir WhatsApp (funcionalidad principal)
-        window.open(whatsappUrl, '_blank');
-
-        // ✨ ACTUALIZACIÓN OPTIMISTA: Marcar como enviada en la UI inmediatamente
-        setEncuestas(prev => prev.map(enc =>
+        // ✨ ACTUALIZACIÓN OPTIMISTA: Marcar como enviada en la UI ANTES de abrir WhatsApp
+        const encuestasActualizadas = encuestas.map(enc =>
             enc.id === encuesta.id
                 ? { ...enc, sentAt: new Date().toISOString(), status: 'disparada' as const }
                 : enc
-        ));
+        );
+        setEncuestas(encuestasActualizadas);
+        
+        // 💾 PERSISTIR en localStorage para que sobreviva a recargas de página
+        localStorage.setItem('encuestasEstado', JSON.stringify(encuestasActualizadas));
+
+        // Abrir WhatsApp DESPUÉS de actualizar el estado
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        if (isIOS) {
+            window.location.href = whatsappUrl;
+        } else {
+            window.open(whatsappUrl, '_blank');
+        }
 
         // Marcar como enviada en el backend
         try {
