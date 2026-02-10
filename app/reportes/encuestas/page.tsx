@@ -72,7 +72,7 @@ export default function ReporteEncuestas() {
         if (user.isSaas) {
             const nombreEmpresa = localStorage.getItem('empresaNombre');
             if (nombreEmpresa) setEmpresaNombre(nombreEmpresa);
-            
+
             const slug = localStorage.getItem('empresaSlug');
             if (slug) setEmpresaSlug(slug);
         }
@@ -158,11 +158,11 @@ export default function ReporteEncuestas() {
             if (!res.ok) throw new Error('Error al cargar reporte');
 
             const data = await res.json();
-            
+
             // 🔄 Mergear con estados locales (para mantener optimistic updates)
             const savedEncuestas = localStorage.getItem('encuestasEstado');
             let encuestasLocales: Record<number, Encuesta> = {};
-            
+
             if (savedEncuestas) {
                 try {
                     const parsed = JSON.parse(savedEncuestas);
@@ -186,7 +186,7 @@ export default function ReporteEncuestas() {
 
             setEncuestas(encuestasMerged);
             setEstadisticas(data.estadisticas);
-            
+
             // 💾 Guardar estado merged en localStorage
             localStorage.setItem('encuestasEstado', JSON.stringify(encuestasMerged));
         } catch (error) {
@@ -214,7 +214,7 @@ export default function ReporteEncuestas() {
                 : enc
         );
         setEncuestas(encuestasActualizadas);
-        
+
         // 💾 PERSISTIR en localStorage para que sobreviva a recargas de página
         localStorage.setItem('encuestasEstado', JSON.stringify(encuestasActualizadas));
 
@@ -396,14 +396,12 @@ export default function ReporteEncuestas() {
                                         <button
                                             type="button"
                                             onClick={() => setConfig({ ...config, enabled: !config.enabled })}
-                                            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                                                config.enabled ? 'bg-green-600' : 'bg-gray-300'
-                                            }`}
+                                            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${config.enabled ? 'bg-green-600' : 'bg-gray-300'
+                                                }`}
                                         >
                                             <span
-                                                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                                                    config.enabled ? 'translate-x-7' : 'translate-x-1'
-                                                }`}
+                                                className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${config.enabled ? 'translate-x-7' : 'translate-x-1'
+                                                    }`}
                                             />
                                         </button>
                                     </div>
@@ -556,8 +554,22 @@ export default function ReporteEncuestas() {
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {renderStars(encuesta.rating)}
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
-                                                {encuesta.comment || <span className="text-gray-400">Sin comentario</span>}
+                                            <td className="px-6 py-4 text-sm text-gray-600 max-w-xs">
+                                                {encuesta.comment ? (
+                                                    <div className="group relative">
+                                                        <p className="line-clamp-2 cursor-help">
+                                                            {encuesta.comment}
+                                                        </p>
+                                                        {encuesta.comment.length > 50 && (
+                                                            <div className="invisible group-hover:visible absolute z-10 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl -top-2 left-full ml-2">
+                                                                {encuesta.comment}
+                                                                <div className="absolute top-3 -left-1 w-2 h-2 bg-gray-900 transform rotate-45"></div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-gray-400">Sin comentario</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                                                 {encuesta.beneficioEstado === 'redeemed' ? (
