@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDBConnection } from '@/lib/db-saas';
 import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
+import { notificarFidelizacion } from '@/lib/fidelizacion-webhook';
 
 export async function POST(request: Request) {
     try {
@@ -24,6 +25,22 @@ export async function POST(request: Request) {
           fecha_listo = CURRENT_TIMESTAMP
       WHERE id = ${id}
     `;
+
+        // Obtener datos del registro para notificar a Fidelización
+        const registroResult = await db`
+      SELECT celular, patente, marca_modelo
+      FROM registros_lavado
+      WHERE id = ${id}
+    `;
+
+        const registroData = Array.isArray(registroResult) ? registroResult : registroResult.rows || [];
+
+        // 🔔 Notificar a Fidelización (fire-and-forget, no bloquea)
+        if (registroData.length > 0) {
+            const { celular, patente, marca_modelo } = registroData[0];
+            notificarFidelizacion(celular, patente, 'listo', marca_modelo)
+                .catch(() => { }); // Silenciar errores para no afectar el flujo
+        }
 
         return NextResponse.json({
             success: true,

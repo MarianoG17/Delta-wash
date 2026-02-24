@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getDBConnection } from '@/lib/db-saas';
 import { getEmpresaIdFromToken } from '@/lib/auth-middleware';
 import { sincronizarUsuariosEmpresa } from '@/lib/neon-api';
+import { notificarFidelizacion } from '@/lib/fidelizacion-webhook';
 
 export async function GET(request: Request) {
     try {
@@ -153,6 +154,10 @@ export async function POST(request: Request) {
                 )
             `;
 
+            // 🔔 Notificar a Fidelización (fire-and-forget, no bloquea)
+            notificarFidelizacion(celular, patente.toUpperCase(), 'en_proceso', marca_modelo)
+                .catch(() => {}); // Silenciar errores para no afectar el flujo
+
             return NextResponse.json({
                 success: true,
                 registro: resultData[0],
@@ -205,6 +210,10 @@ export async function POST(request: Request) {
                         // No fallar el registro por esto
                     }
                 }
+
+                // 🔔 Notificar a Fidelización (fire-and-forget, no bloquea)
+                notificarFidelizacion(celular, patente.toUpperCase(), 'en_proceso', marca_modelo)
+                    .catch(() => {}); // Silenciar errores para no afectar el flujo
 
                 return NextResponse.json({
                     success: true,
