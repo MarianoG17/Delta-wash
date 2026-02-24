@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getDBConnection } from '@/lib/db-saas';
 import { getTokenPayload } from '@/lib/auth-middleware';
 import { neon } from '@neondatabase/serverless';
+import { notificarFidelizacion } from '@/lib/fidelizacion-webhook';
 
 export async function POST(request: Request) {
     try {
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
         `;
 
         const registros = Array.isArray(registroCheck) ? registroCheck : registroCheck.rows || [];
-        
+
         if (registros.length === 0) {
             return NextResponse.json(
                 { error: 'Registro no encontrado' },
@@ -77,12 +78,12 @@ export async function POST(request: Request) {
                         FROM registros_lavado
                         WHERE id = ${registro_actualizado.id}
                     `;
-                    
+
                     const reg = Array.isArray(registroCompleto) ? registroCompleto[0] : registroCompleto.rows?.[0];
-                    
+
                     // Generar token UUID explícitamente
                     const surveyToken = crypto.randomUUID();
-                    
+
                     // Branch-per-company: sin empresa_id en la tabla
                     await db`
                         INSERT INTO surveys (
@@ -101,21 +102,21 @@ export async function POST(request: Request) {
                             ${reg?.tipo_limpieza || 'Servicio'}
                         )
                     `;
-                    
+
                     // SOLO EN SAAS: Registrar en survey_lookup en base central
                     // tokenPayload contiene empresaId y branchUrl si el usuario está autenticado vía SaaS
                     if (tokenPayload && tokenPayload.empresaId && tokenPayload.branchUrl) {
                         try {
                             // Usar neon() directamente porque CENTRAL_DB_URL es conexión directa (no pooled)
                             const centralSql = neon(process.env.CENTRAL_DB_URL!);
-                            
+
                             // Usar branchUrl directamente del JWT (no requiere query adicional)
                             await centralSql`
                                 INSERT INTO survey_lookup (survey_token, empresa_id, branch_url)
                                 VALUES (${surveyToken}, ${tokenPayload.empresaId}, ${tokenPayload.branchUrl})
                             `;
-                            
-                            console.log(`[Survey] ✅ Registrado en survey_lookup: token=${surveyToken.substring(0,8)}... empresa=${tokenPayload.empresaId}`);
+
+                            console.log(`[Survey] ✅ Registrado en survey_lookup: token=${surveyToken.substring(0, 8)}... empresa=${tokenPayload.empresaId}`);
                         } catch (lookupError) {
                             // Log pero no fallar - Legacy no necesita survey_lookup
                             console.error('[Survey] ⚠️ Error al registrar survey_lookup (solo afecta SaaS):', lookupError);
@@ -129,6 +130,22 @@ export async function POST(request: Request) {
                 // Log pero no fallar el entregado
                 console.error('Error al generar encuesta:', error);
             }
+        }
+
+        // Obtener datos del registro para notificar a Fidelización
+        const registroResultFinal = await db`
+            SELECT celular, patente, marca_modelo
+            FROM registros_lavado
+            WHERE id = ${id}
+        `;
+
+        const registroDataFinal = Array.isArray(registroResultFinal) ? registroResultFinal : registroResultFinal.rows || [];
+
+        // 🔔 Notificar a Fidelización (fire-and-forget, no bloquea)
+        if (registroDataFinal.length > 0) {
+            const { celular, patente, marca_modelo } = registroDataFinal[0];
+            notificarFidelizacion(celular, patente, 'entregado', marca_modelo)
+                .catch(() => { }); // Silenciar errores para no afectar el flujo
         }
 
         return NextResponse.json({
