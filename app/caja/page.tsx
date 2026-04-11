@@ -43,6 +43,20 @@ interface Movimiento {
     created_at: string;
 }
 
+interface CajaHistorial {
+    id: number;
+    fecha: string;
+    saldo_inicial: number;
+    estado: string;
+    notas_cierre: string | null;
+    closed_at: string | null;
+    ingresos_efectivo: number;
+    cant_efectivo: number;
+    ingresos_transferencia: number;
+    cant_transferencia: number;
+    total_egresos: number;
+}
+
 export default function Caja() {
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
@@ -68,6 +82,11 @@ export default function Caja() {
     // Cierre
     const [notas, setNotas] = useState<string>('');
     const [confirmandoCierre, setConfirmandoCierre] = useState(false);
+
+    // Historial
+    const [historial, setHistorial] = useState<CajaHistorial[]>([]);
+    const [loadingHistorial, setLoadingHistorial] = useState(false);
+    const [historialVisible, setHistorialVisible] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -214,6 +233,26 @@ export default function Caja() {
             alert('❌ Error al cerrar caja');
         } finally {
             setGuardando(false);
+        }
+    };
+
+    const cargarHistorial = async () => {
+        if (historialVisible) {
+            setHistorialVisible(false);
+            return;
+        }
+        setLoadingHistorial(true);
+        setHistorialVisible(true);
+        try {
+            const res = await fetch('/api/caja/historial', {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            const data = await res.json();
+            if (data.success) setHistorial(data.cajas);
+        } catch (error) {
+            console.error('Error cargando historial:', error);
+        } finally {
+            setLoadingHistorial(false);
         }
     };
 
@@ -559,6 +598,75 @@ export default function Caja() {
                         )}
                     </>
                 )}
+                {/* Historial de cajas anteriores */}
+                <div className="mb-6">
+                    <button
+                        onClick={cargarHistorial}
+                        className="flex items-center gap-2 px-5 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl font-medium text-sm transition-colors"
+                    >
+                        <span>{historialVisible ? '▲ Ocultar' : '▼ Ver'} historial de cajas anteriores</span>
+                    </button>
+
+                    {historialVisible && (
+                        <div className="bg-white rounded-2xl shadow-xl p-6 mt-3">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4">Historial de Cajas</h3>
+                            {loadingHistorial ? (
+                                <p className="text-gray-400 text-sm">Cargando...</p>
+                            ) : historial.length === 0 ? (
+                                <p className="text-gray-400 text-sm">No hay cajas anteriores registradas.</p>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b-2 border-gray-100">
+                                                <th className="text-left py-2 px-3 text-gray-500 font-medium">Fecha</th>
+                                                <th className="text-right py-2 px-3 text-gray-500 font-medium">Saldo inicial</th>
+                                                <th className="text-right py-2 px-3 text-gray-500 font-medium">💵 Efectivo</th>
+                                                <th className="text-right py-2 px-3 text-gray-500 font-medium">🏦 Transferencia</th>
+                                                <th className="text-right py-2 px-3 text-gray-500 font-medium">Egresos</th>
+                                                <th className="text-right py-2 px-3 text-gray-500 font-medium">Saldo cierre</th>
+                                                <th className="text-left py-2 px-3 text-gray-500 font-medium">Estado</th>
+                                                <th className="text-left py-2 px-3 text-gray-500 font-medium">Notas</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {historial.map((c) => {
+                                                const saldoCierre = c.saldo_inicial + c.ingresos_efectivo - c.total_egresos;
+                                                const fechaDisplay = new Date(c.fecha + 'T12:00:00').toLocaleDateString('es-AR', {
+                                                    weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
+                                                });
+                                                return (
+                                                    <tr key={c.id} className="border-b border-gray-50 hover:bg-gray-50">
+                                                        <td className="py-3 px-3 font-medium text-gray-900 capitalize">{fechaDisplay}</td>
+                                                        <td className="py-3 px-3 text-right text-gray-600">{formatPeso(c.saldo_inicial)}</td>
+                                                        <td className="py-3 px-3 text-right">
+                                                            <span className="font-semibold text-green-600">{formatPeso(c.ingresos_efectivo)}</span>
+                                                            <span className="text-xs text-gray-400 ml-1">({c.cant_efectivo})</span>
+                                                        </td>
+                                                        <td className="py-3 px-3 text-right">
+                                                            <span className="font-semibold text-blue-600">{formatPeso(c.ingresos_transferencia)}</span>
+                                                            <span className="text-xs text-gray-400 ml-1">({c.cant_transferencia})</span>
+                                                        </td>
+                                                        <td className="py-3 px-3 text-right text-red-500 font-semibold">{formatPeso(c.total_egresos)}</td>
+                                                        <td className="py-3 px-3 text-right font-bold text-emerald-600">{formatPeso(saldoCierre)}</td>
+                                                        <td className="py-3 px-3">
+                                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.estado === 'cerrada' ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700'}`}>
+                                                                {c.estado === 'cerrada' ? '🔒 Cerrada' : '🟢 Abierta'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="py-3 px-3 text-gray-500 text-xs max-w-[160px]" title={c.notas_cierre || ''}>
+                                                            {c.notas_cierre ? (c.notas_cierre.length > 40 ? c.notas_cierre.slice(0, 40) + '…' : c.notas_cierre) : '-'}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
