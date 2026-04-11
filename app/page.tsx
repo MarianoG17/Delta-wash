@@ -50,6 +50,7 @@ export default function Home() {
     const [mounted, setMounted] = useState(false);
     const [preciosDinamicos, setPreciosDinamicos] = useState<any>(null);
     const [empresaNombre, setEmpresaNombre] = useState<string>('DeltaWash');
+    const [cajaSinAbrir, setCajaSinAbrir] = useState(false);
 
     // Estados para tipos dinámicos
     const [tiposVehiculoDinamicos, setTiposVehiculoDinamicos] = useState<any[]>([]);
@@ -154,6 +155,17 @@ export default function Home() {
                 cargarTiposVehiculo();
                 cargarTiposLimpieza();
                 cargarRegistrosEnProceso();
+
+                // Verificar si hay caja abierta (solo admin)
+                if (user.rol === 'admin') {
+                    const authToken = user.isSaas
+                        ? localStorage.getItem('authToken')
+                        : localStorage.getItem('lavadero_token');
+                    fetch('/api/caja', { headers: { 'Authorization': `Bearer ${authToken}` } })
+                        .then(r => r.json())
+                        .then(d => { if (d.success && !d.caja) setCajaSinAbrir(true); })
+                        .catch(() => {});
+                }
             }
         }
     }, [router]);
@@ -1031,6 +1043,32 @@ export default function Home() {
                         </div>
                     )}
                 </div>
+
+                {/* Banner: caja sin abrir (solo admin) */}
+                {cajaSinAbrir && userRole === 'admin' && (
+                    <div className="flex items-center justify-between gap-4 bg-amber-400 text-amber-900 rounded-2xl px-5 py-3 mb-4 shadow-lg">
+                        <div className="flex items-center gap-3">
+                            <DollarSign size={22} className="shrink-0" />
+                            <div>
+                                <p className="font-bold text-sm">Caja del día sin abrir</p>
+                                <p className="text-xs opacity-80">No hay caja abierta para hoy. Abrila antes de empezar a trabajar.</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <Link
+                                href="/caja"
+                                className="px-4 py-1.5 bg-amber-900 hover:bg-amber-800 text-white rounded-lg text-sm font-bold transition-colors"
+                            >
+                                Abrir caja →
+                            </Link>
+                            <button
+                                onClick={() => setCajaSinAbrir(false)}
+                                className="text-amber-700 hover:text-amber-900 text-lg font-bold px-1"
+                                title="Cerrar aviso"
+                            >✕</button>
+                        </div>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Formulario de Registro */}
