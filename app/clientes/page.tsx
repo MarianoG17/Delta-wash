@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Users, Download, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Users, Download, TrendingUp, Tag } from 'lucide-react';
 import { getAuthUser, getLoginUrl } from '@/lib/auth-utils';
 
 interface Cliente {
@@ -22,6 +22,17 @@ interface Estadisticas {
     completados: number;
 }
 
+interface ListaPrecio {
+    id: number;
+    nombre: string;
+    es_default: boolean;
+}
+
+interface AsignacionLista {
+    celular: string;
+    lista_precio_id: number | null;
+}
+
 export default function Clientes() {
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
@@ -29,6 +40,10 @@ export default function Clientes() {
     const [estadisticas, setEstadisticas] = useState<Estadisticas | null>(null);
     const [loading, setLoading] = useState(true);
     const [filtro, setFiltro] = useState('');
+    const [userRole, setUserRole] = useState<string>('operador');
+    const [listas, setListas] = useState<ListaPrecio[]>([]);
+    const [asignaciones, setAsignaciones] = useState<Record<string, number | null>>({});
+    const [editandoLista, setEditandoLista] = useState<string | null>(null);
 
     useEffect(() => {
         setMounted(true);
@@ -37,10 +52,76 @@ export default function Clientes() {
             if (!user) {
                 router.push(getLoginUrl());
             } else {
+                setUserRole(user.rol);
                 cargarDatos();
+                if (user.rol === 'admin') {
+                    cargarListas();
+                    cargarAsignaciones();
+                }
             }
         }
     }, [router]);
+
+    const getAuthToken = () => {
+        const user = getAuthUser();
+        return user?.isSaas
+            ? localStorage.getItem('authToken')
+            : localStorage.getItem('lavadero_token');
+    };
+
+    const cargarListas = async () => {
+        try {
+            const res = await fetch('/api/listas-precios', {
+                headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+            });
+            const data = await res.json();
+            if (data.success) {
+                setListas(data.listas.map((l: any) => ({ id: l.id, nombre: l.nombre, es_default: l.es_default })));
+            }
+        } catch (error) {
+            console.error('Error cargando listas:', error);
+        }
+    };
+
+    const cargarAsignaciones = async () => {
+        try {
+            const res = await fetch('/api/clientes/lista-precio', {
+                headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+            });
+            const data = await res.json();
+            if (data.success) {
+                const map: Record<string, number | null> = {};
+                data.asignaciones.forEach((a: AsignacionLista) => {
+                    map[a.celular] = a.lista_precio_id;
+                });
+                setAsignaciones(map);
+            }
+        } catch (error) {
+            console.error('Error cargando asignaciones:', error);
+        }
+    };
+
+    const asignarLista = async (celular: string, nombre_cliente: string, lista_precio_id: number | null) => {
+        try {
+            const res = await fetch('/api/clientes/lista-precio', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getAuthToken()}`
+                },
+                body: JSON.stringify({ celular, nombre_cliente, lista_precio_id }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setAsignaciones(prev => ({ ...prev, [celular]: lista_precio_id }));
+                setEditandoLista(null);
+            } else {
+                alert('❌ ' + data.message);
+            }
+        } catch (error) {
+            alert('❌ Error al asignar lista de precios');
+        }
+    };
 
     const cargarDatos = async () => {
         try {
@@ -202,12 +283,17 @@ export default function Clientes() {
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
                                         Última Visita
                                     </th>
+                                    {userRole === 'admin' && (
+                                        <th className="text-left py-3 px-2 font-semibold text-gray-700">
+                                            Lista Precios
+                                        </th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody>
                                 {clientesFiltrados.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="text-center py-8 text-gray-500">
+                                        <td colSpan={userRole === 'admin' ? 8 : 7} className="text-center py-8 text-gray-500">
                                             No se encontraron clientes
                                         </td>
                                     </tr>
@@ -270,6 +356,46 @@ export default function Clientes() {
                                             <td className="py-3 px-2 text-sm text-gray-900">
                                                 {formatFecha(cliente.ultima_visita)}
                                             </td>
+                                            {userRole === 'admin' && (
+                                                <td className="py-3 px-2 text-sm">
+                                                    {editandoLista === cliente.celular ? (
+                                                        <div className="flex gap-1 items-center">
+                                                            <select
+                                                                defaultValue={asignaciones[cliente.celular] ?? ''}
+                                                                onChange={(e) => asignarLista(
+                                                                    cliente.celular,
+                                                                    cliente.nombre_cliente,
+                                                                    e.target.value ? parseInt(e.target.value) : null
+                                                                )}
+                                                                className="px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 focus:ring-1 focus:ring-blue-500"
+                                                            >
+                                                                <option value="">Por defecto</option>
+                                                                {listas.map(l => (
+                                                                    <option key={l.id} value={l.id}>
+                                                                        {l.nombre}{l.es_default ? ' ✓' : ''}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                            <button
+                                                                onClick={() => setEditandoLista(null)}
+                                                                className="text-xs text-gray-400 hover:text-gray-600"
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => setEditandoLista(cliente.celular)}
+                                                            className="flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600"
+                                                        >
+                                                            <Tag size={11} />
+                                                            {asignaciones[cliente.celular]
+                                                                ? (listas.find(l => l.id === asignaciones[cliente.celular])?.nombre ?? 'Especial')
+                                                                : 'Default'}
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            )}
                                         </tr>
                                     ))
                                 )}
