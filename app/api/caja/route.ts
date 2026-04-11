@@ -89,6 +89,7 @@ export async function GET(request: Request) {
                 FROM movimientos_caja m
                 JOIN cajas c ON c.id = m.caja_id
                 WHERE c.fecha = ${fechaAyer}
+                    AND (m.metodo_pago = 'efectivo' OR m.metodo_pago IS NULL)
             `;
             const egresosAyer = Array.isArray(egresosAyerResult) ? egresosAyerResult : egresosAyerResult.rows || [];
 

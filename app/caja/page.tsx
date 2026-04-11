@@ -42,6 +42,7 @@ interface Movimiento {
     categoria: string;
     descripcion: string | null;
     monto: number;
+    metodo_pago: string;
     created_at: string;
 }
 
@@ -80,6 +81,7 @@ export default function Caja() {
     const [categoria, setCategoria] = useState<string>('sueldo');
     const [descripcion, setDescripcion] = useState<string>('');
     const [monto, setMonto] = useState<string>('');
+    const [metodoPagoEgreso, setMetodoPagoEgreso] = useState<'efectivo' | 'transferencia'>('efectivo');
     const [guardando, setGuardando] = useState(false);
 
     // Cierre
@@ -179,6 +181,7 @@ export default function Caja() {
                     descripcion,
                     monto: parseFloat(monto),
                     usuario_id: userId,
+                    metodo_pago: metodoPagoEgreso,
                 }),
             });
             const data = await res.json();
@@ -273,10 +276,13 @@ export default function Caja() {
         return new Date(fecha).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
     };
 
+    const egresosEfectivo = egresos.reduce((s, e) => (e.metodo_pago === 'efectivo' || !e.metodo_pago) ? s + (parseFloat(String(e.monto)) || 0) : s, 0);
+    const egresosTransferencia = egresos.reduce((s, e) => e.metodo_pago === 'transferencia' ? s + (parseFloat(String(e.monto)) || 0) : s, 0);
+
     const saldoEfectivo = caja
         ? (parseFloat(String(caja.saldo_inicial)) || 0)
             + (resumen?.ingresos_efectivo.total || 0)
-            - (resumen?.total_egresos || 0)
+            - egresosEfectivo
         : 0;
 
     if (!mounted || loading) {
@@ -363,6 +369,9 @@ export default function Caja() {
                             <div className="bg-white rounded-2xl p-4 shadow-xl">
                                 <p className="text-xs text-gray-500 mb-1">Egresos / Retiros</p>
                                 <p className="text-xl font-bold text-red-500">{formatPeso(resumen.total_egresos)}</p>
+                                {(egresosTransferencia > 0) && (
+                                    <p className="text-xs text-gray-400 mt-0.5">💵 {formatPeso(egresosEfectivo)} · 🏦 {formatPeso(egresosTransferencia)}</p>
+                                )}
                             </div>
                         </div>
 
@@ -371,7 +380,7 @@ export default function Caja() {
                             <div>
                                 <p className="text-sm text-gray-500">Efectivo en caja ahora</p>
                                 <p className="text-4xl font-bold text-emerald-600">{formatPeso(saldoEfectivo)}</p>
-                                <p className="text-xs text-gray-400 mt-1">saldo inicial + ingresos efectivo − egresos</p>
+                                <p className="text-xs text-gray-400 mt-1">saldo inicial + ingresos efectivo − egresos en efectivo</p>
                             </div>
                             <DollarSign className="text-emerald-200" size={64} />
                         </div>
@@ -438,6 +447,7 @@ export default function Caja() {
                                             <th className="text-left py-2 px-2 text-gray-500 font-medium">Categoría</th>
                                             <th className="text-left py-2 px-2 text-gray-500 font-medium">Detalle</th>
                                             <th className="text-right py-2 px-2 text-gray-500 font-medium">Monto</th>
+                                            <th className="text-left py-2 px-2 text-gray-500 font-medium">Pago</th>
                                             {caja.estado === 'abierta' && <th className="py-2 px-2"></th>}
                                         </tr>
                                     </thead>
@@ -453,6 +463,11 @@ export default function Caja() {
                                                 <td className="py-2 px-2 text-gray-700 capitalize">{e.categoria || '-'}</td>
                                                 <td className="py-2 px-2 text-gray-600">{e.descripcion || '-'}</td>
                                                 <td className="py-2 px-2 font-bold text-right text-red-600">{formatPeso(parseFloat(String(e.monto)) || 0)}</td>
+                                                <td className="py-2 px-2">
+                                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${e.metodo_pago === 'transferencia' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                                                        {e.metodo_pago === 'transferencia' ? '🏦 Transfer.' : '💵 Efectivo'}
+                                                    </span>
+                                                </td>
                                                 {caja.estado === 'abierta' && (
                                                     <td className="py-2 px-2">
                                                         <button onClick={() => eliminarMovimiento(e.id)} className="text-gray-300 hover:text-red-500 transition-colors" title="Eliminar">
@@ -470,7 +485,7 @@ export default function Caja() {
                             {caja.estado === 'abierta' && (
                                 <form onSubmit={agregarMovimiento} className="border-t border-gray-100 pt-4">
                                     <p className="text-sm font-semibold text-gray-700 mb-3">Registrar egreso / retiro</p>
-                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                    <div className="grid grid-cols-3 gap-3 mb-3">
                                         <div>
                                             <label className="text-xs text-gray-500 mb-1 block">Tipo</label>
                                             <select
@@ -497,6 +512,17 @@ export default function Caja() {
                                             </div>
                                         )}
                                         {tipoMovimiento === 'retiro' && <div />}
+                                        <div>
+                                            <label className="text-xs text-gray-500 mb-1 block">Método de pago</label>
+                                            <select
+                                                value={metodoPagoEgreso}
+                                                onChange={(e) => setMetodoPagoEgreso(e.target.value as 'efectivo' | 'transferencia')}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500"
+                                            >
+                                                <option value="efectivo">💵 Efectivo</option>
+                                                <option value="transferencia">🏦 Transferencia</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3 mb-3">
                                         <div>
@@ -546,9 +572,12 @@ export default function Caja() {
                                         <div className="bg-gray-50 rounded-xl p-4 mb-5 text-sm space-y-1">
                                             <div className="flex justify-between"><span className="text-gray-500">Saldo inicial</span><span className="font-semibold">{formatPeso(parseFloat(String(caja.saldo_inicial)) || 0)}</span></div>
                                             <div className="flex justify-between"><span className="text-gray-500">+ Ingresos efectivo</span><span className="font-semibold text-green-600">+{formatPeso(resumen.ingresos_efectivo.total)}</span></div>
-                                            <div className="flex justify-between"><span className="text-gray-500">− Egresos / Retiros</span><span className="font-semibold text-red-500">−{formatPeso(resumen.total_egresos)}</span></div>
+                                            <div className="flex justify-between"><span className="text-gray-500">− Egresos efectivo</span><span className="font-semibold text-red-500">−{formatPeso(egresosEfectivo)}</span></div>
                                             <div className="flex justify-between border-t border-gray-200 pt-2 mt-2"><span className="font-bold">Efectivo esperado en caja</span><span className="font-bold text-emerald-600 text-lg">{formatPeso(saldoEfectivo)}</span></div>
                                             <div className="flex justify-between"><span className="text-gray-500">Ingresos transferencia</span><span className="font-semibold text-blue-600">{formatPeso(resumen.ingresos_transferencia.total)}</span></div>
+                                            {egresosTransferencia > 0 && (
+                                                <div className="flex justify-between"><span className="text-gray-500">− Egresos transferencia</span><span className="font-semibold text-red-400">−{formatPeso(egresosTransferencia)}</span></div>
+                                            )}
                                         </div>
 
                                         {/* Arqueo previo al cierre */}

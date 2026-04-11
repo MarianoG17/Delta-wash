@@ -8,7 +8,7 @@ export async function POST(request: Request) {
         const empresaId = await getEmpresaIdFromToken(request);
         const db = await getDBConnection(empresaId);
 
-        const { caja_id, tipo, categoria, descripcion, monto, usuario_id } = await request.json();
+        const { caja_id, tipo, categoria, descripcion, monto, usuario_id, metodo_pago } = await request.json();
 
         if (!caja_id || !tipo || !monto) {
             return NextResponse.json({ success: false, message: 'caja_id, tipo y monto son requeridos' }, { status: 400 });
@@ -26,8 +26,8 @@ export async function POST(request: Request) {
         }
 
         const result = await db`
-            INSERT INTO movimientos_caja (caja_id, tipo, categoria, descripcion, monto, usuario_id)
-            VALUES (${caja_id}, ${tipo}, ${categoria || null}, ${descripcion || null}, ${monto}, ${usuario_id || null})
+            INSERT INTO movimientos_caja (caja_id, tipo, categoria, descripcion, monto, usuario_id, metodo_pago)
+            VALUES (${caja_id}, ${tipo}, ${categoria || null}, ${descripcion || null}, ${monto}, ${usuario_id || null}, ${metodo_pago || 'efectivo'})
             RETURNING *
         `;
         const movimiento = Array.isArray(result) ? result[0] : result.rows?.[0];
