@@ -64,6 +64,47 @@ export async function GET(request: Request) {
     }
 }
 
+// Actualizar lista de precios de una cuenta corriente
+export async function PUT(request: Request) {
+    try {
+        const empresaId = await getEmpresaIdFromToken(request);
+        const db = await getDBConnection(empresaId);
+
+        const { cuenta_id, lista_precio_id } = await request.json();
+
+        if (!cuenta_id) {
+            return NextResponse.json(
+                { success: false, message: 'cuenta_id es requerido' },
+                { status: 400 }
+            );
+        }
+
+        const result = await db`
+            UPDATE cuentas_corrientes
+            SET lista_precio_id = ${lista_precio_id || null}
+            WHERE id = ${cuenta_id}
+            RETURNING *
+        `;
+
+        const resultData = Array.isArray(result) ? result : result.rows || [];
+
+        if (resultData.length === 0) {
+            return NextResponse.json(
+                { success: false, message: 'Cuenta no encontrada' },
+                { status: 404 }
+            );
+        }
+
+        return NextResponse.json({ success: true, cuenta: resultData[0] });
+    } catch (error) {
+        console.error('Error actualizando cuenta corriente:', error);
+        return NextResponse.json(
+            { success: false, message: 'Error del servidor' },
+            { status: 500 }
+        );
+    }
+}
+
 // Crear nueva cuenta corriente
 export async function POST(request: Request) {
     try {

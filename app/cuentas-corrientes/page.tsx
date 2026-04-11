@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Wallet, ArrowLeft, Plus, DollarSign, FileText } from 'lucide-react';
+import { Wallet, ArrowLeft, Plus, DollarSign, FileText, Tag } from 'lucide-react';
 import { getAuthUser, getLoginUrl } from '@/lib/auth-utils';
 
 interface CuentaCorriente {
@@ -15,6 +15,13 @@ interface CuentaCorriente {
     fecha_creacion: string;
     activa: boolean;
     notas?: string;
+    lista_precio_id?: number | null;
+}
+
+interface ListaPrecio {
+    id: number;
+    nombre: string;
+    es_default: boolean;
 }
 
 export default function CuentasCorrientesPage() {
@@ -37,6 +44,10 @@ export default function CuentasCorrientesPage() {
     const [cuentaSeleccionada, setCuentaSeleccionada] = useState<number | null>(null);
     const [montoCargar, setMontoCargar] = useState('');
 
+    // Estados para listas de precios
+    const [listas, setListas] = useState<ListaPrecio[]>([]);
+    const [editandoListaCuenta, setEditandoListaCuenta] = useState<number | null>(null);
+
     useEffect(() => {
         setMounted(true);
         if (typeof window !== 'undefined') {
@@ -51,10 +62,57 @@ export default function CuentasCorrientesPage() {
                     router.push('/');
                 } else {
                     cargarCuentas();
+                    cargarListas();
                 }
             }
         }
     }, [router]);
+
+    const cargarListas = async () => {
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/listas-precios', {
+                headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+            });
+            const data = await res.json();
+            if (data.success) {
+                setListas(data.listas.map((l: any) => ({ id: l.id, nombre: l.nombre, es_default: l.es_default })));
+            }
+        } catch (error) {
+            console.error('Error cargando listas:', error);
+        }
+    };
+
+    const actualizarListaCuenta = async (cuentaId: number, listaPrecioId: number | null) => {
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const headers: HeadersInit = { 'Content-Type': 'application/json' };
+            if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+            const res = await fetch('/api/cuentas-corrientes', {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify({ cuenta_id: cuentaId, lista_precio_id: listaPrecioId }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setEditandoListaCuenta(null);
+                cargarCuentas();
+            } else {
+                alert('❌ ' + data.message);
+            }
+        } catch (error) {
+            alert('❌ Error al actualizar lista de precios');
+        }
+    };
 
     const cargarCuentas = async () => {
         try {
@@ -361,6 +419,45 @@ export default function CuentasCorrientesPage() {
                                         <p className="text-xs text-gray-500 mb-3">
                                             Creada: {new Date(cuenta.fecha_creacion).toLocaleDateString('es-AR')}
                                         </p>
+
+                                        {/* Lista de precios */}
+                                        {editandoListaCuenta === cuenta.id ? (
+                                            <div className="flex gap-2 mb-3">
+                                                <select
+                                                    defaultValue={cuenta.lista_precio_id ?? ''}
+                                                    onChange={(e) => actualizarListaCuenta(cuenta.id, e.target.value ? parseInt(e.target.value) : null)}
+                                                    className="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-blue-500"
+                                                >
+                                                    <option value="">Por defecto</option>
+                                                    {listas.map(l => (
+                                                        <option key={l.id} value={l.id}>
+                                                            {l.nombre}{l.es_default ? ' (por defecto)' : ''}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <button
+                                                    onClick={() => setEditandoListaCuenta(null)}
+                                                    className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm"
+                                                >
+                                                    Cancelar
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <Tag size={13} className="text-gray-400" />
+                                                <span className="text-xs text-gray-500">
+                                                    {cuenta.lista_precio_id
+                                                        ? (listas.find(l => l.id === cuenta.lista_precio_id)?.nombre ?? 'Lista especial')
+                                                        : 'Lista por defecto'}
+                                                </span>
+                                                <button
+                                                    onClick={() => setEditandoListaCuenta(cuenta.id)}
+                                                    className="text-xs text-blue-500 hover:text-blue-700 underline ml-1"
+                                                >
+                                                    Cambiar
+                                                </button>
+                                            </div>
+                                        )}
 
                                         {/* Formulario para cargar saldo */}
                                         {cuentaSeleccionada === cuenta.id ? (
