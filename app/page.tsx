@@ -158,14 +158,18 @@ export default function Home() {
         }
     }, [router]);
 
-    const cargarPreciosDinamicos = async () => {
+    const cargarPreciosDinamicos = async (celularCliente?: string) => {
         try {
             const user = getAuthUser();
             const authToken = user?.isSaas
                 ? localStorage.getItem('authToken')
                 : localStorage.getItem('lavadero_token');
 
-            const res = await fetch('/api/listas-precios/obtener-precios', {
+            const url = celularCliente
+                ? `/api/listas-precios/obtener-precios?celular=${encodeURIComponent(celularCliente)}`
+                : '/api/listas-precios/obtener-precios';
+
+            const res = await fetch(url, {
                 headers: authToken ? {
                     'Authorization': `Bearer ${authToken}`
                 } : {}
@@ -1099,6 +1103,7 @@ export default function Home() {
                                                     if (data.data.celular && data.data.celular.length >= 8) {
                                                         buscarCuentaCorriente(data.data.celular);
                                                         buscarBeneficios(data.data.celular);
+                                                        cargarPreciosDinamicos(data.data.celular);
                                                         // Detectar upselling para clientes frecuentes al autocompletar
                                                         if (data.data.nombre_cliente) {
                                                             detectarUpselling(data.data.celular, data.data.nombre_cliente);
@@ -1256,6 +1261,7 @@ export default function Home() {
                                         if (value.length >= 8) {
                                             buscarCuentaCorriente(value);
                                             buscarBeneficios(value);
+                                            cargarPreciosDinamicos(value);
                                             // Detectar upselling para clientes frecuentes
                                             if (nombreCliente) {
                                                 detectarUpselling(value, nombreCliente);
@@ -1265,6 +1271,7 @@ export default function Home() {
                                             setUsaCuentaCorriente(false);
                                             setBeneficiosPendientes([]);
                                             setBeneficioSeleccionado(null);
+                                            cargarPreciosDinamicos();
                                         }
                                     }}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
