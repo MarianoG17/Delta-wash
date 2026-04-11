@@ -14,6 +14,8 @@ interface Caja {
     notas_cierre: string | null;
     created_at: string;
     closed_at: string | null;
+    efectivo_contado: number | null;
+    diferencia_cierre: number | null;
 }
 
 interface Resumen {
@@ -55,6 +57,7 @@ interface CajaHistorial {
     ingresos_transferencia: number;
     cant_transferencia: number;
     total_egresos: number;
+    diferencia_cierre: number | null;
 }
 
 export default function Caja() {
@@ -82,6 +85,7 @@ export default function Caja() {
     // Cierre
     const [notas, setNotas] = useState<string>('');
     const [confirmandoCierre, setConfirmandoCierre] = useState(false);
+    const [efectivoContado, setEfectivoContado] = useState<string>('');
 
     // Historial
     const [historial, setHistorial] = useState<CajaHistorial[]>([]);
@@ -220,7 +224,13 @@ export default function Caja() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${getToken()}`
                 },
-                body: JSON.stringify({ caja_id: caja.id, notas_cierre: notas, usuario_id: userId }),
+                body: JSON.stringify({
+                    caja_id: caja.id,
+                    notas_cierre: notas,
+                    usuario_id: userId,
+                    efectivo_contado: efectivoContado !== '' ? parseFloat(efectivoContado) : null,
+                    saldo_esperado: saldoEfectivo,
+                }),
             });
             const data = await res.json();
             if (data.success) {
@@ -551,12 +561,43 @@ export default function Caja() {
                                     </div>
                                 ) : (
                                     <div>
+                                        {/* Arqueo de caja */}
+                                        <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                                            <p className="text-sm font-semibold text-gray-700 mb-3">Arqueo de caja</p>
+                                            <div className="flex items-center justify-between mb-2 text-sm">
+                                                <span className="text-gray-500">Efectivo esperado</span>
+                                                <span className="font-bold text-gray-800">{formatPeso(saldoEfectivo)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <label className="text-sm text-gray-500 whitespace-nowrap">Efectivo contado</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={efectivoContado}
+                                                    onChange={(e) => setEfectivoContado(e.target.value)}
+                                                    placeholder={String(saldoEfectivo)}
+                                                    className="w-40 px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:ring-2 focus:ring-emerald-500"
+                                                />
+                                            </div>
+                                            {efectivoContado !== '' && (
+                                                (() => {
+                                                    const diff = parseFloat(efectivoContado) - saldoEfectivo;
+                                                    const color = diff === 0 ? 'text-gray-600' : diff > 0 ? 'text-blue-600' : 'text-red-600';
+                                                    const label = diff === 0 ? '✓ Sin diferencia' : diff > 0 ? `▲ Sobrante: ${formatPeso(diff)}` : `▼ Faltante: ${formatPeso(Math.abs(diff))}`;
+                                                    return (
+                                                        <div className={`text-sm font-bold ${color} border-t border-gray-200 pt-2`}>
+                                                            {label}
+                                                        </div>
+                                                    );
+                                                })()
+                                            )}
+                                        </div>
                                         <label className="text-sm font-medium text-gray-700 mb-2 block">Notas de cierre (opcional)</label>
                                         <textarea
                                             value={notas}
                                             onChange={(e) => setNotas(e.target.value)}
                                             placeholder="Observaciones del día..."
-                                            rows={3}
+                                            rows={2}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-emerald-500 mb-4"
                                         />
                                         <div className="flex gap-3">
@@ -591,6 +632,31 @@ export default function Caja() {
                                         </span>
                                     )}
                                 </div>
+                                {caja.efectivo_contado != null && (
+                                    <div className="flex items-center gap-4 bg-gray-50 rounded-xl p-4 mb-3 text-sm">
+                                        <div>
+                                            <span className="text-gray-500">Efectivo esperado</span>
+                                            <p className="font-bold text-gray-800">{formatPeso(saldoEfectivo)}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-500">Efectivo contado</span>
+                                            <p className="font-bold text-gray-800">{formatPeso(caja.efectivo_contado)}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-500">Diferencia</span>
+                                            <p className={`font-bold text-lg ${
+                                                (caja.diferencia_cierre ?? 0) === 0 ? 'text-gray-600'
+                                                : (caja.diferencia_cierre ?? 0) > 0 ? 'text-blue-600'
+                                                : 'text-red-600'
+                                            }`}>
+                                                {(caja.diferencia_cierre ?? 0) === 0 ? '✓ $0'
+                                                    : (caja.diferencia_cierre ?? 0) > 0
+                                                        ? `▲ +${formatPeso(caja.diferencia_cierre ?? 0)}`
+                                                        : `▼ ${formatPeso(caja.diferencia_cierre ?? 0)}`}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                                 {caja.notas_cierre && (
                                     <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-4 py-2">{caja.notas_cierre}</p>
                                 )}
@@ -625,6 +691,7 @@ export default function Caja() {
                                                 <th className="text-right py-2 px-3 text-gray-500 font-medium">🏦 Transferencia</th>
                                                 <th className="text-right py-2 px-3 text-gray-500 font-medium">Egresos</th>
                                                 <th className="text-right py-2 px-3 text-gray-500 font-medium">Saldo cierre</th>
+                                                <th className="text-right py-2 px-3 text-gray-500 font-medium">Diferencia</th>
                                                 <th className="text-left py-2 px-3 text-gray-500 font-medium">Estado</th>
                                                 <th className="text-left py-2 px-3 text-gray-500 font-medium">Notas</th>
                                             </tr>
@@ -649,6 +716,15 @@ export default function Caja() {
                                                         </td>
                                                         <td className="py-3 px-3 text-right text-red-500 font-semibold">{formatPeso(c.total_egresos)}</td>
                                                         <td className="py-3 px-3 text-right font-bold text-emerald-600">{formatPeso(saldoCierre)}</td>
+                                                        <td className="py-3 px-3 text-right">
+                                                            {c.diferencia_cierre != null ? (
+                                                                <span className={`text-sm font-bold ${c.diferencia_cierre === 0 ? 'text-gray-500' : c.diferencia_cierre > 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                                                                    {c.diferencia_cierre === 0 ? '✓ $0'
+                                                                        : c.diferencia_cierre > 0 ? `+${formatPeso(c.diferencia_cierre)}`
+                                                                        : formatPeso(c.diferencia_cierre)}
+                                                                </span>
+                                                            ) : <span className="text-gray-300 text-xs">—</span>}
+                                                        </td>
                                                         <td className="py-3 px-3">
                                                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.estado === 'cerrada' ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700'}`}>
                                                                 {c.estado === 'cerrada' ? '🔒 Cerrada' : '🟢 Abierta'}

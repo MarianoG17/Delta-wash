@@ -19,6 +19,7 @@ export async function GET(request: Request) {
                 c.estado,
                 c.notas_cierre,
                 c.closed_at,
+                c.diferencia_cierre,
                 COALESCE(SUM(CASE WHEN r.metodo_pago = 'efectivo' THEN r.precio ELSE 0 END), 0) AS ingresos_efectivo,
                 COUNT(CASE WHEN r.metodo_pago = 'efectivo' THEN 1 END)::int AS cant_efectivo,
                 COALESCE(SUM(CASE WHEN r.metodo_pago = 'transferencia' THEN r.precio ELSE 0 END), 0) AS ingresos_transferencia,
@@ -30,7 +31,7 @@ export async function GET(request: Request) {
                 AND DATE(COALESCE(r.fecha_pago, r.fecha_entregado)) = c.fecha
                 AND r.metodo_pago IN ('efectivo', 'transferencia')
             WHERE c.fecha < CURRENT_DATE
-            GROUP BY c.id, c.fecha, c.saldo_inicial, c.estado, c.notas_cierre, c.closed_at
+            GROUP BY c.id, c.fecha, c.saldo_inicial, c.estado, c.notas_cierre, c.closed_at, c.diferencia_cierre
             ORDER BY c.fecha DESC
             LIMIT ${limit}
         `;
@@ -59,6 +60,7 @@ export async function GET(request: Request) {
             ingresos_efectivo: parseFloat(c.ingresos_efectivo) || 0,
             ingresos_transferencia: parseFloat(c.ingresos_transferencia) || 0,
             total_egresos: egresosMap[c.id] || 0,
+            diferencia_cierre: c.diferencia_cierre != null ? parseFloat(c.diferencia_cierre) : null,
         }));
 
         return NextResponse.json({ success: true, cajas: cajasConResumen });

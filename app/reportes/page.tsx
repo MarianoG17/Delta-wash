@@ -578,6 +578,24 @@ export default function Reportes() {
                                             ))
                                         )}
                                     </tbody>
+                                    {reporteHorario.length > 0 && (
+                                        <tfoot>
+                                            <tr className="border-t-2 border-gray-300 bg-gray-50">
+                                                <td className="py-3 px-2 font-bold text-gray-900 sticky left-0 bg-gray-50">Total</td>
+                                                {(['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'] as const).map((dia) => {
+                                                    const sum = reporteHorario.reduce((acc, row) => acc + (row[dia] || 0), 0);
+                                                    return (
+                                                        <td key={dia} className="py-3 px-2 text-center font-bold text-gray-800">
+                                                            {sum > 0 ? sum : '-'}
+                                                        </td>
+                                                    );
+                                                })}
+                                                <td className="py-3 px-2 text-center font-bold text-blue-700 bg-blue-100 text-lg">
+                                                    {reporteHorario.reduce((acc, row) => acc + (row.total || 0), 0)}
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    )}
                                 </table>
                             </div>
                         </div>
