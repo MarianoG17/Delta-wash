@@ -29,10 +29,9 @@ export async function GET(request: Request) {
               ELSE NULL
             END as frecuencia_promedio_dias
           FROM registros_lavado
-          WHERE fecha_ingreso >= NOW() - INTERVAL '30 days'
-            AND (anulado IS NULL OR anulado = FALSE)
+          WHERE (anulado IS NULL OR anulado = FALSE)
           GROUP BY celular
-          ORDER BY total_visitas DESC, ultima_visita DESC
+          ORDER BY ultima_visita DESC, total_visitas DESC
         `;
 
     // También obtener estadísticas generales (EXCLUIR anulados)

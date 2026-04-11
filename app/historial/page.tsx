@@ -38,6 +38,8 @@ function HistorialContent() {
     const [userId, setUserId] = useState<number | null>(null);
     const [userRole, setUserRole] = useState<string>('operador');
     const [fechaFiltro, setFechaFiltro] = useState<string | null>(null);
+    const [filtroEstado, setFiltroEstado] = useState<string>('todos');
+    const [itemsVisibles, setItemsVisibles] = useState<number>(50);
     const [editandoPago, setEditandoPago] = useState<number | null>(null);
 
     useEffect(() => {
@@ -109,8 +111,14 @@ function HistorialContent() {
             });
         }
 
+        // Filtro por estado (cancelados/anulados)
+        if (filtroEstado === 'cancelados_anulados') {
+            filtrados = filtrados.filter((r) => r.anulado || r.estado === 'cancelado');
+        }
+
+        setItemsVisibles(50);
         setRegistrosFiltrados(filtrados);
-    }, [fechaFiltro, registros]);
+    }, [fechaFiltro, filtroEstado, registros]);
 
     const limpiarFiltro = () => {
         setFechaFiltro(null);
@@ -352,6 +360,22 @@ function HistorialContent() {
                     </div>
                 )}
 
+                {/* Filtros de estado */}
+                <div className="flex gap-2 mb-4 flex-wrap">
+                    <button
+                        onClick={() => setFiltroEstado('todos')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filtroEstado === 'todos' ? 'bg-white text-blue-700 shadow' : 'bg-white/30 text-white hover:bg-white/40'}`}
+                    >
+                        Todos
+                    </button>
+                    <button
+                        onClick={() => setFiltroEstado('cancelados_anulados')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filtroEstado === 'cancelados_anulados' ? 'bg-white text-red-700 shadow' : 'bg-white/30 text-white hover:bg-white/40'}`}
+                    >
+                        🚫 Cancelados / Anulados
+                    </button>
+                </div>
+
                 {/* Historial completo */}
                 <div id="historial-tabla" className="bg-white rounded-2xl shadow-xl p-6 scroll-mt-4">
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -405,7 +429,7 @@ function HistorialContent() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {registrosFiltrados.map((registro) => (
+                                {registrosFiltrados.slice(0, itemsVisibles).map((registro) => (
                                     <tr key={registro.id} className={`border-b border-gray-100 hover:bg-gray-50 ${registro.anulado ? 'bg-red-50 opacity-60' : ''}`}>
                                         <td className="py-3 px-2 text-sm text-gray-900">
                                             {formatFecha(registro.fecha_ingreso)}
@@ -535,6 +559,19 @@ function HistorialContent() {
                             </tbody>
                         </table>
                     </div>
+                    {registrosFiltrados.length > itemsVisibles && (
+                        <div className="mt-4 text-center">
+                            <button
+                                onClick={() => setItemsVisibles(prev => prev + 50)}
+                                className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                            >
+                                Cargar más ({registrosFiltrados.length - itemsVisibles} restantes)
+                            </button>
+                        </div>
+                    )}
+                    <p className="text-xs text-gray-400 mt-3 text-center">
+                        Mostrando {Math.min(itemsVisibles, registrosFiltrados.length)} de {registrosFiltrados.length} registros
+                    </p>
                 </div>
             </div>
         </div>
