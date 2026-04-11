@@ -517,28 +517,11 @@ export default function Home() {
             return 0;
         }
 
-        // Precios fallback por servicio y vehículo
-        const preciosFallback: { [servicio: string]: { [vehiculo: string]: number } } = {
-            'simple_exterior': { 'auto': 15000, 'mono': 20000, 'camioneta': 25000, 'camioneta_xl': 28000, 'moto': 10000 },
-            'simple': { 'auto': 22000, 'mono': 30000, 'camioneta': 35000, 'camioneta_xl': 38000, 'moto': 15000 },
-            'con_cera': { 'auto': 2000, 'mono': 2000, 'camioneta': 5000, 'camioneta_xl': 4000, 'moto': 0 },
-            'pulido': { 'auto': 35000, 'mono': 45000, 'camioneta': 50000, 'camioneta_xl': 55000, 'moto': 0 },
-            'limpieza_chasis': { 'auto': 20000, 'mono': 30000, 'camioneta': 35000, 'camioneta_xl': 40000, 'moto': 0 },
-            'limpieza_motor': { 'auto': 15000, 'mono': 20000, 'camioneta': 25000, 'camioneta_xl': 30000, 'moto': 10000 }
-        };
-
         let total = 0;
 
-        // Calcular precio por cada servicio seleccionado
         tiposLav.forEach(tipo => {
-            // Intentar primero desde precios dinámicos de la BD
-            // IMPORTANTE: Verificar con !== undefined para permitir precios en $0
             if (preciosDinamicos && preciosDinamicos[tipoVeh] && preciosDinamicos[tipoVeh][tipo] !== undefined) {
                 total += preciosDinamicos[tipoVeh][tipo];
-            }
-            // Si no existe en BD, usar fallback (solo para compatibilidad con datos antiguos)
-            else if (preciosFallback[tipo] && preciosFallback[tipo][tipoVeh] !== undefined) {
-                total += preciosFallback[tipo][tipoVeh];
             }
         });
 
@@ -547,23 +530,8 @@ export default function Home() {
 
     // Función para obtener precio individual de UN solo servicio
     const obtenerPrecioIndividual = (tipoVeh: string, tipoServicio: string): number => {
-        const preciosFallback: { [servicio: string]: { [vehiculo: string]: number } } = {
-            'simple_exterior': { 'auto': 15000, 'mono': 20000, 'camioneta': 25000, 'camioneta_xl': 28000, 'moto': 10000 },
-            'simple': { 'auto': 22000, 'mono': 30000, 'camioneta': 35000, 'camioneta_xl': 38000, 'moto': 15000 },
-            'con_cera': { 'auto': 2000, 'mono': 2000, 'camioneta': 5000, 'camioneta_xl': 4000, 'moto': 0 },
-            'pulido': { 'auto': 35000, 'mono': 45000, 'camioneta': 50000, 'camioneta_xl': 55000, 'moto': 0 },
-            'limpieza_chasis': { 'auto': 20000, 'mono': 30000, 'camioneta': 35000, 'camioneta_xl': 40000, 'moto': 0 },
-            'limpieza_motor': { 'auto': 15000, 'mono': 20000, 'camioneta': 25000, 'camioneta_xl': 30000, 'moto': 10000 }
-        };
-
-        // Precio desde BD
         if (preciosDinamicos && preciosDinamicos[tipoVeh] && preciosDinamicos[tipoVeh][tipoServicio] !== undefined) {
             return preciosDinamicos[tipoVeh][tipoServicio];
-        }
-
-        // Fallback
-        if (preciosFallback[tipoServicio] && preciosFallback[tipoServicio][tipoVeh] !== undefined) {
-            return preciosFallback[tipoServicio][tipoVeh];
         }
 
         return 0;

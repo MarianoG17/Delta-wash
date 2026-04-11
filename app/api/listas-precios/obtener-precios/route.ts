@@ -37,12 +37,14 @@ export async function GET(request: Request) {
         }
 
         // Si no se encontró lista, usar la por defecto
+        let usandoDefault = false;
         if (!lista_precio_id) {
             const listaDefaultResult = await db`
                 SELECT id FROM listas_precios WHERE es_default = true LIMIT 1
             `;
             const listaDefault = Array.isArray(listaDefaultResult) ? listaDefaultResult : listaDefaultResult.rows || [];
             lista_precio_id = listaDefault[0]?.id;
+            usandoDefault = true;
         }
 
         if (!lista_precio_id) {
@@ -71,6 +73,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
             success: true,
             lista_id: lista_precio_id,
+            es_default: usandoDefault,
             precios: preciosMap
         });
     } catch (error) {
