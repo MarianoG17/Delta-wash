@@ -22,6 +22,9 @@ interface Registro {
     metodo_pago?: string;
     pagado?: boolean;
     usa_cuenta_corriente?: boolean;
+    motivo_anulacion?: string;
+    motivo_cancelacion?: string;
+    fecha_anulacion?: string;
 }
 
 function HistorialContent() {
@@ -35,6 +38,7 @@ function HistorialContent() {
     const [userId, setUserId] = useState<number | null>(null);
     const [userRole, setUserRole] = useState<string>('operador');
     const [fechaFiltro, setFechaFiltro] = useState<string | null>(null);
+    const [editandoPago, setEditandoPago] = useState<number | null>(null);
 
     useEffect(() => {
         setMounted(true);
@@ -148,6 +152,33 @@ function HistorialContent() {
             }
         } catch (error) {
             alert('❌ Error al anular registro');
+        }
+    };
+
+    const actualizarMetodoPago = async (id: number, metodo_pago: string) => {
+        try {
+            const user = getAuthUser();
+            const authToken = user?.isSaas
+                ? localStorage.getItem('authToken')
+                : localStorage.getItem('lavadero_token');
+
+            const res = await fetch('/api/registros/registrar-pago', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
+                body: JSON.stringify({ id, metodo_pago }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setEditandoPago(null);
+                cargarDatos();
+            } else {
+                alert('❌ ' + data.message);
+            }
+        } catch (error) {
+            alert('❌ Error al actualizar forma de pago');
         }
     };
 
@@ -416,52 +447,73 @@ function HistorialContent() {
                                             {registro.precio ? `$${registro.precio.toLocaleString('es-AR')}` : '-'}
                                         </td>
                                         <td className="py-3 px-2 text-sm text-gray-900">
-                                            {registro.usa_cuenta_corriente ? (
-                                                <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">
-                                                    💳 Cta.Cte.
-                                                </span>
-                                            ) : registro.metodo_pago === 'efectivo' ? (
-                                                <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-medium">
-                                                    💵 Efectivo
-                                                </span>
-                                            ) : registro.metodo_pago === 'transferencia' ? (
-                                                <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
-                                                    🏦 Transferencia
-                                                </span>
-                                            ) : registro.pagado ? (
-                                                <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 font-medium">
-                                                    ✓ Pagado
-                                                </span>
+                                            {userRole === 'admin' && !registro.anulado && editandoPago === registro.id ? (
+                                                <div className="flex gap-1 items-center">
+                                                    <select
+                                                        defaultValue={registro.metodo_pago || ''}
+                                                        onChange={(e) => actualizarMetodoPago(registro.id, e.target.value)}
+                                                        className="px-2 py-1 border border-gray-300 rounded text-xs text-gray-900 focus:ring-1 focus:ring-blue-500"
+                                                    >
+                                                        <option value="efectivo">💵 Efectivo</option>
+                                                        <option value="transferencia">🏦 Transferencia</option>
+                                                        <option value="cuenta_corriente">💳 Cta.Cte.</option>
+                                                    </select>
+                                                    <button onClick={() => setEditandoPago(null)} className="text-xs text-gray-400 hover:text-gray-600">✕</button>
+                                                </div>
                                             ) : (
-                                                <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 font-medium">
-                                                    ⏳ Pendiente
-                                                </span>
+                                                <div className="flex items-center gap-1">
+                                                    {registro.usa_cuenta_corriente ? (
+                                                        <span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">💳 Cta.Cte.</span>
+                                                    ) : registro.metodo_pago === 'efectivo' ? (
+                                                        <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 font-medium">💵 Efectivo</span>
+                                                    ) : registro.metodo_pago === 'transferencia' ? (
+                                                        <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">🏦 Transferencia</span>
+                                                    ) : registro.pagado ? (
+                                                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700 font-medium">✓ Pagado</span>
+                                                    ) : (
+                                                        <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 font-medium">⏳ Pendiente</span>
+                                                    )}
+                                                    {userRole === 'admin' && !registro.anulado && (
+                                                        <button
+                                                            onClick={() => setEditandoPago(registro.id)}
+                                                            className="text-xs text-gray-400 hover:text-blue-500 ml-1"
+                                                            title="Editar forma de pago"
+                                                        >✏️</button>
+                                                    )}
+                                                </div>
                                             )}
                                         </td>
                                         <td className="py-3 px-2">
                                             {registro.anulado ? (
-                                                <span className="text-xs px-2 py-1 rounded-full font-medium bg-red-100 text-red-700">
-                                                    🚫 ANULADO
-                                                </span>
+                                                <div>
+                                                    <span className="text-xs px-2 py-1 rounded-full font-medium bg-red-100 text-red-700">
+                                                        🚫 ANULADO
+                                                    </span>
+                                                    {userRole === 'admin' && registro.motivo_anulacion && (
+                                                        <p className="text-xs text-red-500 mt-1 max-w-[140px]" title={registro.motivo_anulacion}>
+                                                            💬 {registro.motivo_anulacion.length > 40 ? registro.motivo_anulacion.slice(0, 40) + '…' : registro.motivo_anulacion}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             ) : (
-                                                <span
-                                                    className={`text-xs px-2 py-1 rounded-full font-medium ${registro.estado === 'entregado'
-                                                        ? 'bg-green-100 text-green-700'
-                                                        : registro.estado === 'listo'
-                                                            ? 'bg-orange-100 text-orange-700'
-                                                            : registro.estado === 'cancelado'
-                                                                ? 'bg-red-100 text-red-700'
-                                                                : 'bg-blue-100 text-blue-700'
-                                                        }`}
-                                                >
-                                                    {registro.estado === 'entregado'
-                                                        ? '✓ Entregado'
-                                                        : registro.estado === 'listo'
-                                                            ? '⚠ Listo'
-                                                            : registro.estado === 'cancelado'
-                                                                ? '✕ Cancelado'
-                                                                : '⏳ En proceso'}
-                                                </span>
+                                                <div>
+                                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                                        registro.estado === 'entregado' ? 'bg-green-100 text-green-700'
+                                                        : registro.estado === 'listo' ? 'bg-orange-100 text-orange-700'
+                                                        : registro.estado === 'cancelado' ? 'bg-red-100 text-red-700'
+                                                        : 'bg-blue-100 text-blue-700'
+                                                    }`}>
+                                                        {registro.estado === 'entregado' ? '✓ Entregado'
+                                                        : registro.estado === 'listo' ? '⚠ Listo'
+                                                        : registro.estado === 'cancelado' ? '✕ Cancelado'
+                                                        : '⏳ En proceso'}
+                                                    </span>
+                                                    {userRole === 'admin' && registro.estado === 'cancelado' && registro.motivo_cancelacion && (
+                                                        <p className="text-xs text-red-400 mt-1 max-w-[140px]" title={registro.motivo_cancelacion}>
+                                                            💬 {registro.motivo_cancelacion.length > 40 ? registro.motivo_cancelacion.slice(0, 40) + '…' : registro.motivo_cancelacion}
+                                                        </p>
+                                                    )}
+                                                </div>
                                             )}
                                         </td>
                                         {userRole === 'admin' && (
