@@ -17,7 +17,7 @@ interface Cliente {
 }
 
 interface Estadisticas {
-    total_registros_30dias: number;
+    total_registros: number;
     clientes_unicos: number;
     completados: number;
 }
@@ -44,6 +44,7 @@ export default function Clientes() {
     const [listas, setListas] = useState<ListaPrecio[]>([]);
     const [asignaciones, setAsignaciones] = useState<Record<string, number | null>>({});
     const [editandoLista, setEditandoLista] = useState<string | null>(null);
+    const [periodoStats, setPeriodoStats] = useState<number>(30);
 
     useEffect(() => {
         setMounted(true);
@@ -53,7 +54,7 @@ export default function Clientes() {
                 router.push(getLoginUrl());
             } else {
                 setUserRole(user.rol);
-                cargarDatos();
+                cargarDatos(30);
                 if (user.rol === 'admin') {
                     cargarListas();
                     cargarAsignaciones();
@@ -123,7 +124,7 @@ export default function Clientes() {
         }
     };
 
-    const cargarDatos = async () => {
+    const cargarDatos = async (dias: number = periodoStats) => {
         try {
             // Obtener token para autenticación
             const user = getAuthUser();
@@ -131,7 +132,7 @@ export default function Clientes() {
                 ? localStorage.getItem('authToken')
                 : localStorage.getItem('lavadero_token');
 
-            const res = await fetch('/api/estadisticas/clientes', {
+            const res = await fetch(`/api/estadisticas/clientes?dias=${dias}`, {
                 headers: {
                     'Authorization': `Bearer ${authToken}`
                 }
@@ -207,22 +208,45 @@ export default function Clientes() {
                     </button>
                 </div>
 
+                {/* Selector de período */}
+                <div className="flex gap-2 mb-4 flex-wrap">
+                    {[
+                        { label: '7 días', dias: 7 },
+                        { label: '30 días', dias: 30 },
+                        { label: '90 días', dias: 90 },
+                        { label: '1 año', dias: 365 },
+                        { label: 'Todo', dias: 0 },
+                    ].map(({ label, dias }) => (
+                        <button
+                            key={dias}
+                            onClick={() => { setPeriodoStats(dias); cargarDatos(dias); }}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${periodoStats === dias ? 'bg-white text-blue-700 shadow' : 'bg-white/30 text-white hover:bg-white/40'}`}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+
                 {/* Estadísticas */}
                 {estadisticas && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <div className="bg-white rounded-2xl p-6 shadow-xl">
                             <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-bold text-gray-900">Visitas (30 días)</h3>
+                                <h3 className="font-bold text-gray-900">
+                                    Visitas{periodoStats > 0 ? ` (${periodoStats} días)` : ' (total)'}
+                                </h3>
                                 <TrendingUp className="text-blue-600" size={24} />
                             </div>
                             <p className="text-3xl font-bold text-blue-600">
-                                {estadisticas.total_registros_30dias}
+                                {estadisticas.total_registros}
                             </p>
                         </div>
 
                         <div className="bg-white rounded-2xl p-6 shadow-xl">
                             <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-bold text-gray-900">Clientes Únicos</h3>
+                                <h3 className="font-bold text-gray-900">
+                                    Clientes únicos{periodoStats > 0 ? ` (${periodoStats} días)` : ''}
+                                </h3>
                                 <Users className="text-green-600" size={24} />
                             </div>
                             <p className="text-3xl font-bold text-green-600">
@@ -232,7 +256,9 @@ export default function Clientes() {
 
                         <div className="bg-white rounded-2xl p-6 shadow-xl">
                             <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-bold text-gray-900">Completados</h3>
+                                <h3 className="font-bold text-gray-900">
+                                    Completados{periodoStats > 0 ? ` (${periodoStats} días)` : ''}
+                                </h3>
                                 <TrendingUp className="text-purple-600" size={24} />
                             </div>
                             <p className="text-3xl font-bold text-purple-600">
@@ -256,7 +282,7 @@ export default function Clientes() {
                 {/* Lista de Clientes */}
                 <div className="bg-white rounded-2xl shadow-xl p-6">
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                        Clientes Recientes (últimos 30 días)
+                        Base de Clientes
                     </h2>
                     <div className="overflow-x-auto">
                         <table className="w-full">

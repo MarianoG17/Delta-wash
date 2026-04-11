@@ -8,10 +8,9 @@ export async function GET(request: Request) {
     const empresaId = await getEmpresaIdFromToken(request);
     const db = await getDBConnection(empresaId);
 
-    // Obtener estadísticas de clientes en los últimos 30 días
-    // Agrupar SOLO por celular para evitar duplicados por diferencias en nombres
-    // EXCLUIR registros anulados
-    // Calcular frecuencia promedio de visitas en días
+    const { searchParams } = new URL(request.url);
+    const dias = parseInt(searchParams.get('dias') || '30');
+
     const result = await db`
           SELECT
             MAX(nombre_cliente) as nombre_cliente,
@@ -34,16 +33,25 @@ export async function GET(request: Request) {
           ORDER BY ultima_visita DESC, total_visitas DESC
         `;
 
-    // También obtener estadísticas generales (EXCLUIR anulados)
-    const statsResult = await db`
-      SELECT
-        COUNT(*) as total_registros_30dias,
-        COUNT(DISTINCT celular) as clientes_unicos,
-        COUNT(CASE WHEN estado = 'entregado' THEN 1 END) as completados
-      FROM registros_lavado
-      WHERE fecha_ingreso >= NOW() - INTERVAL '30 days'
-        AND (anulado IS NULL OR anulado = FALSE)
-    `;
+    // Estadísticas generales para el período seleccionado (EXCLUIR anulados)
+    const statsResult = dias > 0
+      ? await db`
+          SELECT
+            COUNT(*) as total_registros,
+            COUNT(DISTINCT celular) as clientes_unicos,
+            COUNT(CASE WHEN estado = 'entregado' THEN 1 END) as completados
+          FROM registros_lavado
+          WHERE fecha_ingreso >= NOW() - (${dias} || ' days')::interval
+            AND (anulado IS NULL OR anulado = FALSE)
+        `
+      : await db`
+          SELECT
+            COUNT(*) as total_registros,
+            COUNT(DISTINCT celular) as clientes_unicos,
+            COUNT(CASE WHEN estado = 'entregado' THEN 1 END) as completados
+          FROM registros_lavado
+          WHERE (anulado IS NULL OR anulado = FALSE)
+        `;
 
     // Manejar diferencias entre drivers (pg vs neon)
     const clientes = Array.isArray(result) ? result : result.rows || [];
@@ -52,7 +60,8 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       clientes: clientes,
-      estadisticas: estadisticas
+      estadisticas: estadisticas,
+      dias,
     });
 
   } catch (error) {
