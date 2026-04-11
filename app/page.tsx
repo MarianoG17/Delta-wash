@@ -1011,6 +1011,13 @@ export default function Home() {
                                 <History size={16} />
                                 <span>Historial</span>
                             </Link>
+                            <Link
+                                href="/caja"
+                                className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all text-sm"
+                            >
+                                <DollarSign size={16} />
+                                <span>Caja</span>
+                            </Link>
                             {/* Solo mostrar Upselling para usuarios SaaS */}
                             {getAuthUser()?.isSaas && (
                                 <Link
