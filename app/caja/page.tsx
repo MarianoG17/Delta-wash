@@ -542,16 +542,49 @@ export default function Caja() {
                                 </div>
                                 {!confirmandoCierre ? (
                                     <div>
-                                        <p className="text-sm text-gray-500 mb-4">
-                                            Al cerrar la caja quedará registrado el resumen del día. No podrá modificarse.
-                                        </p>
-                                        <div className="bg-gray-50 rounded-xl p-4 mb-4 text-sm space-y-1">
+                                        {/* Resumen */}
+                                        <div className="bg-gray-50 rounded-xl p-4 mb-5 text-sm space-y-1">
                                             <div className="flex justify-between"><span className="text-gray-500">Saldo inicial</span><span className="font-semibold">{formatPeso(parseFloat(String(caja.saldo_inicial)) || 0)}</span></div>
                                             <div className="flex justify-between"><span className="text-gray-500">+ Ingresos efectivo</span><span className="font-semibold text-green-600">+{formatPeso(resumen.ingresos_efectivo.total)}</span></div>
                                             <div className="flex justify-between"><span className="text-gray-500">− Egresos / Retiros</span><span className="font-semibold text-red-500">−{formatPeso(resumen.total_egresos)}</span></div>
-                                            <div className="flex justify-between border-t border-gray-200 pt-2 mt-2"><span className="font-bold">Efectivo en caja</span><span className="font-bold text-emerald-600 text-lg">{formatPeso(saldoEfectivo)}</span></div>
+                                            <div className="flex justify-between border-t border-gray-200 pt-2 mt-2"><span className="font-bold">Efectivo esperado en caja</span><span className="font-bold text-emerald-600 text-lg">{formatPeso(saldoEfectivo)}</span></div>
                                             <div className="flex justify-between"><span className="text-gray-500">Ingresos transferencia</span><span className="font-semibold text-blue-600">{formatPeso(resumen.ingresos_transferencia.total)}</span></div>
                                         </div>
+
+                                        {/* Arqueo previo al cierre */}
+                                        <div className="border border-gray-200 rounded-xl p-4 mb-5">
+                                            <p className="text-sm font-semibold text-gray-700 mb-3">Arqueo de caja</p>
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <label className="text-sm text-gray-500 whitespace-nowrap">Efectivo contado</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    value={efectivoContado}
+                                                    onChange={(e) => setEfectivoContado(e.target.value)}
+                                                    placeholder={String(saldoEfectivo)}
+                                                    className="w-44 px-3 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:ring-2 focus:ring-emerald-500"
+                                                />
+                                            </div>
+                                            {efectivoContado !== '' && (() => {
+                                                const diff = parseFloat(efectivoContado) - saldoEfectivo;
+                                                if (diff === 0) return (
+                                                    <div className="text-sm font-bold text-emerald-600 flex items-center gap-2">
+                                                        ✓ Sin diferencia — caja cuadra perfecto
+                                                    </div>
+                                                );
+                                                return (
+                                                    <div className={`rounded-lg p-3 ${diff > 0 ? 'bg-blue-50 border border-blue-200' : 'bg-red-50 border border-red-200'}`}>
+                                                        <p className={`text-sm font-bold mb-1 ${diff > 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                                                            {diff > 0 ? `▲ Sobrante: ${formatPeso(diff)}` : `▼ Faltante: ${formatPeso(Math.abs(diff))}`}
+                                                        </p>
+                                                        <p className={`text-xs ${diff > 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                                                            Revisá los movimientos de arriba antes de cerrar. Podés cancelar y agregar egresos o retiros faltantes.
+                                                        </p>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+
                                         <button
                                             onClick={() => setConfirmandoCierre(true)}
                                             className="px-6 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-lg font-medium text-sm transition-colors"
@@ -561,37 +594,16 @@ export default function Caja() {
                                     </div>
                                 ) : (
                                     <div>
-                                        {/* Arqueo de caja */}
-                                        <div className="bg-gray-50 rounded-xl p-4 mb-4">
-                                            <p className="text-sm font-semibold text-gray-700 mb-3">Arqueo de caja</p>
-                                            <div className="flex items-center justify-between mb-2 text-sm">
-                                                <span className="text-gray-500">Efectivo esperado</span>
-                                                <span className="font-bold text-gray-800">{formatPeso(saldoEfectivo)}</span>
-                                            </div>
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <label className="text-sm text-gray-500 whitespace-nowrap">Efectivo contado</label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    value={efectivoContado}
-                                                    onChange={(e) => setEfectivoContado(e.target.value)}
-                                                    placeholder={String(saldoEfectivo)}
-                                                    className="w-40 px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:ring-2 focus:ring-emerald-500"
-                                                />
-                                            </div>
-                                            {efectivoContado !== '' && (
-                                                (() => {
-                                                    const diff = parseFloat(efectivoContado) - saldoEfectivo;
-                                                    const color = diff === 0 ? 'text-gray-600' : diff > 0 ? 'text-blue-600' : 'text-red-600';
-                                                    const label = diff === 0 ? '✓ Sin diferencia' : diff > 0 ? `▲ Sobrante: ${formatPeso(diff)}` : `▼ Faltante: ${formatPeso(Math.abs(diff))}`;
-                                                    return (
-                                                        <div className={`text-sm font-bold ${color} border-t border-gray-200 pt-2`}>
-                                                            {label}
-                                                        </div>
-                                                    );
-                                                })()
-                                            )}
-                                        </div>
+                                        {/* Resumen arqueo en confirmación */}
+                                        {efectivoContado !== '' && (() => {
+                                            const diff = parseFloat(efectivoContado) - saldoEfectivo;
+                                            if (diff === 0) return null;
+                                            return (
+                                                <div className={`rounded-lg p-3 mb-4 text-sm font-bold ${diff > 0 ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700'}`}>
+                                                    {diff > 0 ? `▲ Sobrante: ${formatPeso(diff)}` : `▼ Faltante: ${formatPeso(Math.abs(diff))}`}
+                                                </div>
+                                            );
+                                        })()}
                                         <label className="text-sm font-medium text-gray-700 mb-2 block">Notas de cierre (opcional)</label>
                                         <textarea
                                             value={notas}
