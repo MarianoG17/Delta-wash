@@ -15,7 +15,22 @@ export async function GET(request: Request) {
             SELECT * FROM cajas WHERE fecha = ${hoy}
         `;
         const cajas = Array.isArray(cajaResult) ? cajaResult : cajaResult.rows || [];
-        const caja = cajas[0] || null;
+        let caja = cajas[0] || null;
+
+        // Si no hay caja de hoy, usar la última caja abierta de días anteriores
+        if (!caja) {
+            const cajaAnteriorResult = await db`
+                SELECT * FROM cajas WHERE estado = 'abierta' AND fecha < ${hoy}
+                ORDER BY fecha DESC LIMIT 1
+            `;
+            const cajaAnterior = Array.isArray(cajaAnteriorResult) ? cajaAnteriorResult : cajaAnteriorResult.rows || [];
+            caja = cajaAnterior[0] || null;
+        }
+
+        // Usar la fecha de la caja activa (puede ser de otro día)
+        const cajaFecha = caja
+            ? (caja.fecha instanceof Date ? caja.fecha.toISOString().split('T')[0] : String(caja.fecha).split('T')[0])
+            : hoy;
 
         // Ingresos del día desde registros_lavado (efectivo y transferencia por separado)
         const ingresosResult = await db`
@@ -26,7 +41,7 @@ export async function GET(request: Request) {
             FROM registros_lavado
             WHERE pagado = true
                 AND (anulado IS NULL OR anulado = FALSE)
-                AND DATE(COALESCE(fecha_pago, fecha_entregado)) = ${hoy}
+                AND DATE(COALESCE(fecha_pago, fecha_entregado)) = ${cajaFecha}
                 AND metodo_pago IN ('efectivo', 'transferencia')
             GROUP BY metodo_pago
         `;
@@ -41,7 +56,7 @@ export async function GET(request: Request) {
             FROM registros_lavado
             WHERE pagado = true
                 AND (anulado IS NULL OR anulado = FALSE)
-                AND DATE(COALESCE(fecha_pago, fecha_entregado)) = ${hoy}
+                AND DATE(COALESCE(fecha_pago, fecha_entregado)) = ${cajaFecha}
                 AND metodo_pago IN ('efectivo', 'transferencia')
             ORDER BY COALESCE(fecha_pago, fecha_entregado) DESC
         `;

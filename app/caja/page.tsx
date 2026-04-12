@@ -383,6 +383,22 @@ export default function Caja() {
                 {/* Caja existente */}
                 {caja && resumen && (
                     <>
+                        {/* Aviso si la caja es de un día anterior */}
+                        {(() => {
+                            const fechaCaja = caja.fecha instanceof Date
+                                ? caja.fecha.toISOString().split('T')[0]
+                                : String(caja.fecha).split('T')[0];
+                            const hoyLocal = new Date().toISOString().split('T')[0];
+                            if (fechaCaja !== hoyLocal) {
+                                const fechaDisplay = new Date(fechaCaja + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: '2-digit' });
+                                return (
+                                    <div className="bg-amber-100 border border-amber-300 rounded-xl px-4 py-3 mb-4 text-sm text-amber-800 font-medium">
+                                        ⚠️ Mostrando la caja del <span className="font-bold capitalize">{fechaDisplay}</span> — quedó abierta sin cerrar. Podés agregar egresos y cerrarla normalmente.
+                                    </div>
+                                );
+                            }
+                            return null;
+                        })()}
                         {/* Resumen en cards */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                             <div className="bg-white rounded-2xl p-4 shadow-xl">
