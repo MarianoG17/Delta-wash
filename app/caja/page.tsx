@@ -93,6 +93,7 @@ export default function Caja() {
     const [historial, setHistorial] = useState<CajaHistorial[]>([]);
     const [loadingHistorial, setLoadingHistorial] = useState(false);
     const [historialVisible, setHistorialVisible] = useState(false);
+    const [cerrandoHistorialId, setCerrandoHistorialId] = useState<number | null>(null);
 
     useEffect(() => {
         setMounted(true);
@@ -246,6 +247,36 @@ export default function Caja() {
             alert('❌ Error al cerrar caja');
         } finally {
             setGuardando(false);
+        }
+    };
+
+    const cerrarCajaHistorial = async (cajaId: number) => {
+        if (!confirm('¿Cerrar esta caja sin arqueo? Se guardará como cerrada sin diferencia registrada.')) return;
+        setCerrandoHistorialId(cajaId);
+        try {
+            const res = await fetch('/api/caja/cerrar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`
+                },
+                body: JSON.stringify({ caja_id: cajaId, usuario_id: userId }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                // Recargar historial
+                const res2 = await fetch('/api/caja/historial', {
+                    headers: { 'Authorization': `Bearer ${getToken()}` }
+                });
+                const data2 = await res2.json();
+                if (data2.success) setHistorial(data2.cajas);
+            } else {
+                alert('❌ ' + data.message);
+            }
+        } catch {
+            alert('❌ Error al cerrar caja');
+        } finally {
+            setCerrandoHistorialId(null);
         }
     };
 
@@ -740,7 +771,10 @@ export default function Caja() {
                                         <tbody>
                                             {historial.map((c) => {
                                                 const saldoCierre = c.saldo_inicial + c.ingresos_efectivo - c.total_egresos;
-                                                const fechaDisplay = new Date(c.fecha + 'T12:00:00').toLocaleDateString('es-AR', {
+                                                const fechaStr = c.fecha instanceof Date
+                                                    ? c.fecha.toISOString().split('T')[0]
+                                                    : String(c.fecha).split('T')[0];
+                                                const fechaDisplay = new Date(fechaStr + 'T12:00:00').toLocaleDateString('es-AR', {
                                                     weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
                                                 });
                                                 return (
@@ -767,9 +801,17 @@ export default function Caja() {
                                                             ) : <span className="text-gray-300 text-xs">—</span>}
                                                         </td>
                                                         <td className="py-3 px-3">
-                                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.estado === 'cerrada' ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-700'}`}>
-                                                                {c.estado === 'cerrada' ? '🔒 Cerrada' : '🟢 Abierta'}
-                                                            </span>
+                                                            {c.estado === 'cerrada' ? (
+                                                                <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600">🔒 Cerrada</span>
+                                                            ) : (
+                                                                <button
+                                                                    onClick={() => cerrarCajaHistorial(c.id)}
+                                                                    disabled={cerrandoHistorialId === c.id}
+                                                                    className="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-900 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+                                                                >
+                                                                    {cerrandoHistorialId === c.id ? 'Cerrando...' : '🔒 Cerrar'}
+                                                                </button>
+                                                            )}
                                                         </td>
                                                         <td className="py-3 px-3 text-gray-500 text-xs max-w-[160px]" title={c.notas_cierre || ''}>
                                                             {c.notas_cierre ? (c.notas_cierre.length > 40 ? c.notas_cierre.slice(0, 40) + '…' : c.notas_cierre) : '-'}
