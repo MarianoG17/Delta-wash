@@ -8,7 +8,7 @@ import { getAuthUser, getLoginUrl } from '@/lib/auth-utils';
 
 interface Caja {
     id: number;
-    fecha: string;
+    fecha: string | Date;
     saldo_inicial: number;
     estado: 'abierta' | 'cerrada';
     notas_cierre: string | null;
