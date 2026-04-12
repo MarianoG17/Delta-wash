@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, DollarSign, TrendingDown, TrendingUp, Lock, Unlock, Trash2 } from 'lucide-react';
+import { ArrowLeft, DollarSign, TrendingDown, TrendingUp, Lock, Unlock, Trash2, Eye, X } from 'lucide-react';
 import { getAuthUser, getLoginUrl } from '@/lib/auth-utils';
 
 interface Caja {
@@ -94,6 +94,12 @@ export default function Caja() {
     const [loadingHistorial, setLoadingHistorial] = useState(false);
     const [historialVisible, setHistorialVisible] = useState(false);
     const [cerrandoHistorialId, setCerrandoHistorialId] = useState<number | null>(null);
+
+    // Modal detalle historial
+    const [detalleCaja, setDetalleCaja] = useState<CajaHistorial | null>(null);
+    const [detalleLavados, setDetalleLavados] = useState<Lavado[]>([]);
+    const [detalleEgresos, setDetalleEgresos] = useState<Movimiento[]>([]);
+    const [loadingDetalle, setLoadingDetalle] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -298,6 +304,25 @@ export default function Caja() {
             console.error('Error cargando historial:', error);
         } finally {
             setLoadingHistorial(false);
+        }
+    };
+
+    const verDetalleCaja = async (c: CajaHistorial) => {
+        setDetalleCaja(c);
+        setLoadingDetalle(true);
+        try {
+            const res = await fetch(`/api/caja/detalle?id=${c.id}`, {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            const data = await res.json();
+            if (data.success) {
+                setDetalleLavados(data.lavados);
+                setDetalleEgresos(data.egresos);
+            }
+        } catch (error) {
+            console.error('Error cargando detalle:', error);
+        } finally {
+            setLoadingDetalle(false);
         }
     };
 
@@ -783,6 +808,7 @@ export default function Caja() {
                                                 <th className="text-right py-2 px-3 text-gray-500 font-medium">Diferencia</th>
                                                 <th className="text-left py-2 px-3 text-gray-500 font-medium">Estado</th>
                                                 <th className="text-left py-2 px-3 text-gray-500 font-medium">Notas</th>
+                                                <th className="py-2 px-3"></th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -831,6 +857,15 @@ export default function Caja() {
                                                         <td className="py-3 px-3 text-gray-500 text-xs max-w-[160px]" title={c.notas_cierre || ''}>
                                                             {c.notas_cierre ? (c.notas_cierre.length > 40 ? c.notas_cierre.slice(0, 40) + '…' : c.notas_cierre) : '-'}
                                                         </td>
+                                                        <td className="py-3 px-3">
+                                                            <button
+                                                                onClick={() => verDetalleCaja(c)}
+                                                                className="text-gray-400 hover:text-emerald-600 transition-colors"
+                                                                title="Ver movimientos"
+                                                            >
+                                                                <Eye size={16} />
+                                                            </button>
+                                                        </td>
                                                     </tr>
                                                 );
                                             })}
@@ -843,5 +878,149 @@ export default function Caja() {
                 </div>
             </div>
         </div>
+
+        {/* Modal detalle caja historial */}
+        {detalleCaja && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDetalleCaja(null)}>
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-900">
+                                Detalle de caja — {new Date(String(detalleCaja.fecha).split('T')[0] + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                            </h2>
+                            <p className="text-sm text-gray-400 mt-0.5 capitalize">
+                                {detalleCaja.estado === 'cerrada' ? '🔒 Cerrada' : '🟢 Abierta'}
+                                {detalleCaja.estado === 'cerrada' && detalleCaja.diferencia_cierre != null && (
+                                    <span className={`ml-2 font-semibold ${detalleCaja.diferencia_cierre === 0 ? 'text-gray-500' : detalleCaja.diferencia_cierre > 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                                        {detalleCaja.diferencia_cierre === 0 ? '· ✓ Sin diferencia' : detalleCaja.diferencia_cierre > 0 ? `· ▲ Sobrante $${detalleCaja.diferencia_cierre.toLocaleString('es-AR')}` : `· ▼ Faltante $${Math.abs(detalleCaja.diferencia_cierre).toLocaleString('es-AR')}`}
+                                    </span>
+                                )}
+                            </p>
+                        </div>
+                        <button onClick={() => setDetalleCaja(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                            <X size={24} />
+                        </button>
+                    </div>
+
+                    {loadingDetalle ? (
+                        <div className="p-8 text-center text-gray-400">Cargando...</div>
+                    ) : (
+                        <div className="p-6 space-y-6">
+                            {/* Resumen */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div className="bg-gray-50 rounded-xl p-3">
+                                    <p className="text-xs text-gray-500 mb-1">Saldo inicial</p>
+                                    <p className="font-bold text-gray-800">{formatPeso(detalleCaja.saldo_inicial)}</p>
+                                </div>
+                                <div className="bg-green-50 rounded-xl p-3">
+                                    <p className="text-xs text-gray-500 mb-1">💵 Efectivo ({detalleCaja.cant_efectivo})</p>
+                                    <p className="font-bold text-green-700">{formatPeso(detalleCaja.ingresos_efectivo)}</p>
+                                </div>
+                                <div className="bg-blue-50 rounded-xl p-3">
+                                    <p className="text-xs text-gray-500 mb-1">🏦 Transf. ({detalleCaja.cant_transferencia})</p>
+                                    <p className="font-bold text-blue-700">{formatPeso(detalleCaja.ingresos_transferencia)}</p>
+                                </div>
+                                <div className="bg-red-50 rounded-xl p-3">
+                                    <p className="text-xs text-gray-500 mb-1">Egresos</p>
+                                    <p className="font-bold text-red-600">{formatPeso(detalleCaja.total_egresos)}</p>
+                                </div>
+                            </div>
+
+                            {/* Ingresos */}
+                            <div>
+                                <h3 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                                    <TrendingUp size={16} className="text-green-600" />
+                                    Ingresos del día ({detalleLavados.length} lavados)
+                                </h3>
+                                {detalleLavados.length === 0 ? (
+                                    <p className="text-gray-400 text-sm">Sin ingresos registrados.</p>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead>
+                                                <tr className="border-b border-gray-100">
+                                                    <th className="text-left py-2 px-2 text-gray-500 font-medium">Hora</th>
+                                                    <th className="text-left py-2 px-2 text-gray-500 font-medium">Cliente</th>
+                                                    <th className="text-left py-2 px-2 text-gray-500 font-medium">Patente</th>
+                                                    <th className="text-left py-2 px-2 text-gray-500 font-medium">Servicio</th>
+                                                    <th className="text-right py-2 px-2 text-gray-500 font-medium">Monto</th>
+                                                    <th className="text-left py-2 px-2 text-gray-500 font-medium">Método</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {detalleLavados.map((l) => (
+                                                    <tr key={l.id} className="border-b border-gray-50 hover:bg-gray-50">
+                                                        <td className="py-2 px-2 text-gray-500">{formatHora(l.fecha_pago || l.fecha_entregado)}</td>
+                                                        <td className="py-2 px-2 font-medium text-gray-900">{l.nombre_cliente}</td>
+                                                        <td className="py-2 px-2 font-mono text-gray-700">{l.patente}</td>
+                                                        <td className="py-2 px-2 text-gray-600">{l.tipo_limpieza.replace(/_/g, ' ')}</td>
+                                                        <td className="py-2 px-2 font-bold text-right text-gray-900">{formatPeso(parseFloat(String(l.precio)) || 0)}</td>
+                                                        <td className="py-2 px-2">
+                                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${l.metodo_pago === 'efectivo' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                                {l.metodo_pago === 'efectivo' ? '💵 Efectivo' : '🏦 Transfer.'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Egresos */}
+                            <div>
+                                <h3 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                                    <TrendingDown size={16} className="text-red-500" />
+                                    Egresos y Retiros ({detalleEgresos.length})
+                                </h3>
+                                {detalleEgresos.length === 0 ? (
+                                    <p className="text-gray-400 text-sm">Sin egresos registrados.</p>
+                                ) : (
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-gray-100">
+                                                <th className="text-left py-2 px-2 text-gray-500 font-medium">Hora</th>
+                                                <th className="text-left py-2 px-2 text-gray-500 font-medium">Tipo</th>
+                                                <th className="text-left py-2 px-2 text-gray-500 font-medium">Categoría</th>
+                                                <th className="text-left py-2 px-2 text-gray-500 font-medium">Detalle</th>
+                                                <th className="text-right py-2 px-2 text-gray-500 font-medium">Monto</th>
+                                                <th className="text-left py-2 px-2 text-gray-500 font-medium">Pago</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {detalleEgresos.map((e) => (
+                                                <tr key={e.id} className="border-b border-gray-50 hover:bg-gray-50">
+                                                    <td className="py-2 px-2 text-gray-500">{formatHora(e.created_at)}</td>
+                                                    <td className="py-2 px-2">
+                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${e.tipo === 'retiro' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}>
+                                                            {e.tipo === 'retiro' ? '💰 Retiro' : '📤 Egreso'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-2 px-2 text-gray-700 capitalize">{e.categoria || '-'}</td>
+                                                    <td className="py-2 px-2 text-gray-600">{e.descripcion || '-'}</td>
+                                                    <td className="py-2 px-2 font-bold text-right text-red-600">{formatPeso(parseFloat(String(e.monto)) || 0)}</td>
+                                                    <td className="py-2 px-2">
+                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${e.metodo_pago === 'transferencia' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                                                            {e.metodo_pago === 'transferencia' ? '🏦 Transfer.' : '💵 Efectivo'}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+
+                            {detalleCaja.notas_cierre && (
+                                <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-4 py-2">
+                                    📝 {detalleCaja.notas_cierre}
+                                </p>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        )}
     );
 }
