@@ -353,6 +353,7 @@ export default function Caja() {
     const hoyStr = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
     return (
+        <>
         <div className="min-h-screen bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-4">
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
@@ -1022,5 +1023,6 @@ export default function Caja() {
                 </div>
             </div>
         )}
+        </>
     );
 }
