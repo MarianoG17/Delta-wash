@@ -385,9 +385,7 @@ export default function Caja() {
                     <>
                         {/* Aviso si la caja es de un día anterior */}
                         {(() => {
-                            const fechaCaja = caja.fecha instanceof Date
-                                ? caja.fecha.toISOString().split('T')[0]
-                                : String(caja.fecha).split('T')[0];
+                            const fechaCaja = String(caja.fecha).split('T')[0];
                             const hoyLocal = new Date().toISOString().split('T')[0];
                             if (fechaCaja !== hoyLocal) {
                                 const fechaDisplay = new Date(fechaCaja + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: '2-digit' });
@@ -787,9 +785,7 @@ export default function Caja() {
                                         <tbody>
                                             {historial.map((c) => {
                                                 const saldoCierre = c.saldo_inicial + c.ingresos_efectivo - c.total_egresos;
-                                                const fechaStr = c.fecha instanceof Date
-                                                    ? c.fecha.toISOString().split('T')[0]
-                                                    : String(c.fecha).split('T')[0];
+                                                const fechaStr = String(c.fecha).split('T')[0];
                                                 const fechaDisplay = new Date(fechaStr + 'T12:00:00').toLocaleDateString('es-AR', {
                                                     weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric'
                                                 });
