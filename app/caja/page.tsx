@@ -385,7 +385,9 @@ export default function Caja() {
                     <>
                         {/* Aviso si la caja es de un día anterior */}
                         {(() => {
-                            const fechaCaja = String(caja.fecha).split('T')[0];
+                            const fechaCaja = typeof caja.fecha === 'object'
+                                ? (caja.fecha as unknown as Date).toISOString().split('T')[0]
+                                : String(caja.fecha).split('T')[0];
                             const hoyLocal = new Date().toISOString().split('T')[0];
                             if (fechaCaja !== hoyLocal) {
                                 const fechaDisplay = new Date(fechaCaja + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: '2-digit' });
