@@ -264,7 +264,8 @@ export default function Caja() {
             });
             const data = await res.json();
             if (data.success) {
-                // Recargar historial
+                // Recargar caja principal (puede que ya no haya caja activa) y historial
+                cargarCaja();
                 const res2 = await fetch('/api/caja/historial', {
                     headers: { 'Authorization': `Bearer ${getToken()}` }
                 });
@@ -785,7 +786,7 @@ export default function Caja() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {historial.map((c) => {
+                                            {historial.filter(c => c.id !== caja?.id).map((c) => {
                                                 const saldoCierre = c.saldo_inicial + c.ingresos_efectivo - c.total_egresos;
                                                 const fechaStr = String(c.fecha).split('T')[0];
                                                 const fechaDisplay = new Date(fechaStr + 'T12:00:00').toLocaleDateString('es-AR', {
