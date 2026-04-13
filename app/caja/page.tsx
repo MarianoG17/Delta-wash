@@ -33,6 +33,8 @@ interface Lavado {
     metodo_pago: string;
     fecha_pago: string | null;
     fecha_entregado: string | null;
+    extras: string | null;
+    extras_valor: number | null;
 }
 
 interface Movimiento {
@@ -487,7 +489,12 @@ export default function Caja() {
                                                     <td className="py-2 px-2 text-gray-500">{formatHora(l.fecha_pago || l.fecha_entregado)}</td>
                                                     <td className="py-2 px-2 font-medium text-gray-900">{l.nombre_cliente}</td>
                                                     <td className="py-2 px-2 font-mono text-gray-700">{l.patente}</td>
-                                                    <td className="py-2 px-2 text-gray-600">{l.tipo_limpieza.replace(/_/g, ' ')}</td>
+                                                    <td className="py-2 px-2 text-gray-600">
+                                                        {l.tipo_limpieza.replace(/_/g, ' ')}
+                                                        {l.extras && l.extras_valor ? (
+                                                            <span className="block text-xs text-blue-500 mt-0.5">+ {l.extras} ({formatPeso(parseFloat(String(l.extras_valor)))})</span>
+                                                        ) : null}
+                                                    </td>
                                                     <td className="py-2 px-2 font-bold text-right text-gray-900">{formatPeso(parseFloat(String(l.precio)) || 0)}</td>
                                                     <td className="py-2 px-2">
                                                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${l.metodo_pago === 'efectivo' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
@@ -954,7 +961,12 @@ export default function Caja() {
                                                         <td className="py-2 px-2 text-gray-500">{formatHora(l.fecha_pago || l.fecha_entregado)}</td>
                                                         <td className="py-2 px-2 font-medium text-gray-900">{l.nombre_cliente}</td>
                                                         <td className="py-2 px-2 font-mono text-gray-700">{l.patente}</td>
-                                                        <td className="py-2 px-2 text-gray-600">{l.tipo_limpieza.replace(/_/g, ' ')}</td>
+                                                        <td className="py-2 px-2 text-gray-600">
+                                                            {l.tipo_limpieza.replace(/_/g, ' ')}
+                                                            {l.extras && l.extras_valor ? (
+                                                                <span className="block text-xs text-blue-500 mt-0.5">+ {l.extras} ({formatPeso(parseFloat(String(l.extras_valor)))})</span>
+                                                            ) : null}
+                                                        </td>
                                                         <td className="py-2 px-2 font-bold text-right text-gray-900">{formatPeso(parseFloat(String(l.precio)) || 0)}</td>
                                                         <td className="py-2 px-2">
                                                             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${l.metodo_pago === 'efectivo' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>

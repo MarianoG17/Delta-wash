@@ -52,7 +52,7 @@ export async function GET(request: Request) {
 
         // Detalle de lavados del día
         const lavadosResult = await db`
-            SELECT id, nombre_cliente, patente, tipo_limpieza, precio, metodo_pago, fecha_pago, fecha_entregado
+            SELECT id, nombre_cliente, patente, tipo_limpieza, precio, metodo_pago, fecha_pago, fecha_entregado, extras, extras_valor
             FROM registros_lavado
             WHERE pagado = true
                 AND (anulado IS NULL OR anulado = FALSE)
