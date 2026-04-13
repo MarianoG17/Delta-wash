@@ -478,7 +478,7 @@ export default function Caja() {
                                                 <th className="text-left py-2 px-2 text-gray-500 font-medium">Hora</th>
                                                 <th className="text-left py-2 px-2 text-gray-500 font-medium">Cliente</th>
                                                 <th className="text-left py-2 px-2 text-gray-500 font-medium">Patente</th>
-                                                <th className="text-left py-2 px-2 text-gray-500 font-medium">Servicio</th>
+                                                <th className="text-left py-2 px-2 text-gray-500 font-medium">Tipos</th>
                                                 <th className="text-right py-2 px-2 text-gray-500 font-medium">Monto</th>
                                                 <th className="text-left py-2 px-2 text-gray-500 font-medium">Método</th>
                                             </tr>
@@ -950,7 +950,7 @@ export default function Caja() {
                                                     <th className="text-left py-2 px-2 text-gray-500 font-medium">Hora</th>
                                                     <th className="text-left py-2 px-2 text-gray-500 font-medium">Cliente</th>
                                                     <th className="text-left py-2 px-2 text-gray-500 font-medium">Patente</th>
-                                                    <th className="text-left py-2 px-2 text-gray-500 font-medium">Servicio</th>
+                                                    <th className="text-left py-2 px-2 text-gray-500 font-medium">Tipos</th>
                                                     <th className="text-right py-2 px-2 text-gray-500 font-medium">Monto</th>
                                                     <th className="text-left py-2 px-2 text-gray-500 font-medium">Método</th>
                                                 </tr>

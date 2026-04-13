@@ -11,6 +11,8 @@ interface Registro {
     marca_modelo: string;
     patente: string;
     tipo_limpieza: string;
+    extras?: string | null;
+    extras_valor?: number | null;
     nombre_cliente: string;
     celular: string;
     fecha_ingreso: string;
@@ -413,6 +415,9 @@ function HistorialContent() {
                                         Tipo
                                     </th>
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
+                                        Extras
+                                    </th>
+                                    <th className="text-left py-3 px-2 font-semibold text-gray-700">
                                         Importe
                                     </th>
                                     <th className="text-left py-3 px-2 font-semibold text-gray-700">
@@ -466,6 +471,11 @@ function HistorialContent() {
                                         </td>
                                         <td className="py-3 px-2 text-sm text-gray-900">
                                             {registro.tipo_limpieza.replace(/_/g, ' ')}
+                                        </td>
+                                        <td className="py-3 px-2 text-sm text-gray-900">
+                                            {registro.extras && registro.extras_valor
+                                                ? <span>{registro.extras} <span className="text-blue-600">(${Number(registro.extras_valor).toLocaleString('es-AR')})</span></span>
+                                                : '-'}
                                         </td>
                                         <td className="py-3 px-2 text-sm font-semibold text-blue-600">
                                             {registro.precio ? `$${registro.precio.toLocaleString('es-AR')}` : '-'}
